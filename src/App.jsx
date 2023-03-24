@@ -1,18 +1,11 @@
 import { useState } from 'react';
-const { Configuration, OpenAIApi } = require('openai');
-require('dotenv').config();
+
 import './css/App.css';
 
 function App() {
   const [count, setCount] = useState(0);
 
-  //write me code for call OpenAIApi
-  const config = new Configuration({
-    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  });
-  const openai = new OpenAIApi(config);
-
-  return <div className='App'></div>;
+  return <h1 className='text-3xl font-bold underline'>Hello world!</h1>;
 }
 
 export default App;

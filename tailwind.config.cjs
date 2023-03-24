@@ -5,7 +5,7 @@ module.exports = {
     extend: {
       gridTemplateColumns: {
         // main layout
-        main: '0.3fr 1.7fr;',
+        main: '0.4fr 1.7fr;',
       },
     },
   },

@@ -1,12 +1,26 @@
 import chatGPT from '../assets/chatGPT.webp';
+import chatGPTAnime from '../assets/chatGPT.gif';
+import { useState } from 'react';
 
 function ChatText(props) {
+  const [imgSrc, setImgSrc] = useState(chatGPT);
+
+  const handleMouseOver = () => {
+    setImgSrc(chatGPTAnime);
+  };
+
+  const handleMouseOut = () => {
+    setImgSrc(chatGPT);
+  };
   return (
     <div className='rounded-lg m-3 px-5 p-3 bg-slate-200 flex xl:w-2/3 xl:mx-auto'>
       <img
-        src={chatGPT}
+        src={imgSrc}
         alt=''
         className='h-20 w-20 flex-shrink-0 rounded-full'
+        onMouseOver={handleMouseOver}
+        onMouseOut={handleMouseOut}
+        key={imgSrc}
       />
       <p className='mx-10'>
         Lorem ipsum dolor sit amet consectetur, adipisicing elit. Magni aperiam

@@ -1,11 +1,11 @@
 import { Fragment, useState } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
-import chatGPT from '../assets/chatGPT.webp';
-import code from '../assets/code.gif';
-import grammar from '../assets/grammar.gif';
-import sqlTranslate from '../assets/sql-translate.gif';
-import helperJs from '../assets/helper-js.gif';
+import chatGPT from '../assets/chatGPT.mp4';
+import code from '../assets/code.mp4';
+import grammar from '../assets/grammar.mp4';
+import sqlTranslate from '../assets/sql-translate.mp4';
+import helperJs from '../assets/helper-js.mp4';
 
 const robot = [
   {
@@ -64,7 +64,7 @@ export default function Aioption(props) {
             <div className='relative mt-2'>
               <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6'>
                 <span className='flex items-center'>
-                  <img
+                  <video
                     src={selected.avatar}
                     alt=''
                     className='h-5 w-5 flex-shrink-0 rounded-full'
@@ -101,7 +101,7 @@ export default function Aioption(props) {
                       {({ selected, active }) => (
                         <>
                           <div className='flex items-center'>
-                            <img
+                            <video
                               src={person.avatar}
                               alt=''
                               className='h-5 w-5 flex-shrink-0 rounded-full'

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import chatGPT from '../assets/chatGPT.webp';
+import chatGPT from '../assets/chatGPT.mp4';
 import Aioption from './Aioption';
 import LogOut from './Logout';
 
@@ -14,12 +14,18 @@ function Aside(props) {
     <div className='bg-gray-800 w-100 h-screen divide-y divide-gray-100 flex flex-col'>
       <div className='m-3 mt-5 mb-10'>
         <div className='m-3 flex items-center justify-center'>
-          <img
+          {/* <img
             src={selectedOption.avatar || chatGPT}
             alt='robot avatar'
             className='h-20 w-20 flex-shrink-0 rounded-full'
+          /> */}
+          <video
+            src={selectedOption.avatar || chatGPT}
+            autoPlay={true}
+            className='h-20 w-20 flex-shrink-0 rounded-full'
           />
         </div>
+
         <h1 className='text-gray-100 text-2xl italic text-center'>
           Hello, Jean
         </h1>

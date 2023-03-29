@@ -2,8 +2,17 @@ import '../css/App.css';
 import React, { useState } from 'react';
 import code from '../assets/code.gif';
 import { NavLink } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 
 const Register = () => {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm();
+  const onSubmit = data => console.log(data);
+
   return (
     <section className='py-16 xl:pb-56 h-screen bg-white overflow-hidden'>
       <div className='container px-4 mx-auto'>
@@ -14,13 +23,15 @@ const Register = () => {
           <h2 className='mb-9 text-6xl md:text-5xl text-center font-bold font-heading tracking-px-n leading-tight'>
             Create an account &amp; get started.
           </h2>
-          <form>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <label className='block mb-5'>
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
                 id='signUpInput2-1'
                 type='text'
-                placeholder='First &amp; Last Name'
+                placeholder='Username'
+                autoComplete='name'
+                {...register('name', { required: true })}
               />
             </label>
             <label className='block mb-5'>
@@ -29,6 +40,8 @@ const Register = () => {
                 id='signUpInput2-2'
                 type='text'
                 placeholder='Email Address'
+                autoComplete='email'
+                {...register('email', { required: true })}
               />
             </label>
             <label className='block mb-5'>
@@ -37,19 +50,21 @@ const Register = () => {
                 id='signUpInput2-3'
                 type='password'
                 placeholder='Create Password'
+                autoComplete='new-password'
+                {...register('password', { required: true })}
               />
             </label>
             <button
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
-              type='button'
+              type='submit'
             >
               Create Account
             </button>
             <p className='font-medium'>
               <span>Already have an account? </span>
-              <a className='text-teal-600 hover:text-teal-700' href='#'>
+              <span className='text-teal-600 hover:text-teal-700' href='#'>
                 <NavLink to='/login'>Sign In</NavLink>
-              </a>
+              </span>
             </p>
           </form>
         </div>

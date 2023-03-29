@@ -1,8 +1,17 @@
 import '../css/App.css';
 import React, { useState } from 'react';
 import chatGPT from '../assets/chatGPT.gif';
+import { useForm } from 'react-hook-form';
 
 const Login = () => {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm();
+  const onSubmit = data => console.log(data);
+
   return (
     <section className='py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen'>
       <div className='container px-4 mx-auto'>
@@ -17,13 +26,15 @@ const Login = () => {
             Lorem ipsum dolor sit amet, to the con adipiscing. Volutpat tempor
             to the condim entum.
           </p>
-          <form>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <label className='block mb-5'>
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
                 id='signInInput2-1'
                 type='text'
                 placeholder='Email address'
+                {...register('email', { required: true })}
+                autoComplete='email'
               />
             </label>
             <label className='relative block mb-5'>
@@ -40,11 +51,13 @@ const Login = () => {
                 id='signInInput2-2'
                 type='password'
                 placeholder='Password'
+                {...register('password', { required: true })}
+                autoComplete='current-password'
               />
             </label>
             <button
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
-              type='button'
+              type='submit'
             >
               Sign In
             </button>

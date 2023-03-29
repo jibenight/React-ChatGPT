@@ -11,28 +11,50 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // connexion à la base de données
-const db = new sqlite3.Database('ChatData', err => {
+const db = new sqlite3.Database('ChatData.db', err => {
   if (err) {
     return console.error(err.message);
   }
-  console.log('Connected to the ChatData SQlite database.');
+  console.log('Connected to the ChatData.db SQlite database.');
 });
+
+// requete de création de la table users
+const createTableQuery = `
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL
+);
+`;
 
 // création de la table users
 db.serialize(() => {
-  db.run(
-    'CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, password TEXT)'
-  );
+  db.run(createTableQuery, err => {
+    if (err) {
+      console.error(err.message);
+    } else {
+      console.log('Table "users" created or already exists.');
+    }
+  });
+});
+
+// fermeture de la connexion à la base de données
+db.close(err => {
+  if (err) {
+    console.error(err.message);
+  }
+  console.log('Close the database connection.');
 });
 
 // création d'un utilisateur
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   // vérification de l'existence de l'utilisateur
   db.run(
-    'INSERT INTO users (username, password) VALUES (?,?)',
-    [username, hashedPassword],
+    'INSERT INTO users (username, email, password) VALUES (?,?)',
+    [username, email, hashedPassword],
     function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });

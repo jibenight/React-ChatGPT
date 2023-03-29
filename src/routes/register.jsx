@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import code from '../assets/code.gif';
 import { NavLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import axios from 'axios';
 
 const Register = () => {
   const {
@@ -11,7 +12,24 @@ const Register = () => {
     watch,
     formState: { errors },
   } = useForm();
-  const onSubmit = data => console.log(data);
+
+  const onSubmit = data => {
+    const { name, email, password } = data;
+    axios
+      .post('http://localhost:5173/register', {
+        username: name,
+        email,
+        password,
+      })
+      .then(response => {
+        console.log(response.data); // afficher la réponse du serveur
+        // faire quelque chose en cas de succès, comme rediriger vers une autre page
+      })
+      .catch(error => {
+        console.error(error.response.data); // afficher l'erreur du serveur
+        // faire quelque chose en cas d'erreur, comme afficher un message d'erreur à l'utilisateur
+      });
+  };
 
   return (
     <section className='py-16 xl:pb-56 h-screen bg-white overflow-hidden'>

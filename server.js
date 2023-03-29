@@ -4,11 +4,19 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '/dist')));
+// render index.html on the route '/'
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 // connexion à la base de données
 const db = new sqlite3.Database('ChatData.db', err => {
@@ -53,7 +61,7 @@ app.post('/register', async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   // vérification de l'existence de l'utilisateur
   db.run(
-    'INSERT INTO users (username, email, password) VALUES (?,?)',
+    'INSERT INTO users (username, email, password) VALUES (?,?,?)',
     [username, email, hashedPassword],
     function (err) {
       if (err) {
@@ -66,6 +74,7 @@ app.post('/register', async (req, res) => {
   );
 });
 
+// connexion d'un utilisateur
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 

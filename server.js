@@ -11,11 +11,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // connexion à la base de données
-const db = new sqlite3.Database(':memory:', err => {
+const db = new sqlite3.Database('ChatData', err => {
   if (err) {
     return console.error(err.message);
   }
-  console.log('Connected to the in-memory SQlite database.');
+  console.log('Connected to the ChatData SQlite database.');
 });
 
 // création de la table users

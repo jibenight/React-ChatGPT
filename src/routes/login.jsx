@@ -15,18 +15,27 @@ const Login = () => {
   const onSubmit = data => {
     const { email, password } = data;
     axios
-      .post('http://localhost:3001/login', {
+      .post('http://localhost:5173/login', {
         email,
         password,
       })
       .then(response => {
-        console.log(response.data); // afficher la réponse du serveur
-        // faire quelque chose en cas de succès, comme rediriger vers une autre page
-        redirect('/');
+        if (response.status === 200) {
+          console.log(response.data);
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          window.location.href = '/';
+        }
       })
       .catch(error => {
-        console.error(error.response.data); // afficher l'erreur du serveur
-        // faire quelque chose en cas d'erreur, comme afficher un message d'erreur à l'utilisateur
+        if (error.response && error.response.status === 401) {
+          if (
+            error.response.data &&
+            error.response.data.message === 'invalid email'
+          ) {
+            console.log('email invalide');
+          }
+        }
       });
   };
 

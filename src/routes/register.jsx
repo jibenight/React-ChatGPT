@@ -4,6 +4,7 @@ import code from '../assets/code.gif';
 import { NavLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
+const port = 5173;
 
 const Register = () => {
   const {
@@ -15,7 +16,7 @@ const Register = () => {
   const onSubmit = data => {
     const { name, email, password } = data;
     axios
-      .post('http://localhost:3001/register', {
+      .post(`http://localhost:${port}/register`, {
         username: name,
         email,
         password,

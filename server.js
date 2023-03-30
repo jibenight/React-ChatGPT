@@ -25,9 +25,9 @@ app.use(express.static(path.join(__dirname, '/dist')));
 app.use(morgan('tiny'));
 
 // render index.html on the route '/'
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// });
 
 // connexion à la base de données
 const db = new sqlite3.Database('ChatData.db', err => {
@@ -79,30 +79,26 @@ app.post('/register', async (req, res) => {
 
 // connexion d'un utilisateur
 app.post('/login', (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  db.get(
-    'SELECT * FROM users WHERE username = ?',
-    [username],
-    async (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      if (!row) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      const match = await bcrypt.compare(password, row.password);
-      if (match) {
-        res.status(200).json({ message: 'Login successful', userId: row.id });
-      } else {
-        res.status(401).json({ error: 'Incorrect password' });
-      }
+  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    if (!row) {
+      return res.status(404).json({ error: 'email not found' });
+    }
+
+    const match = await bcrypt.compare(password, row.password);
+    if (match) {
+      res.status(200).json({ message: 'Login successful', userId: row.id });
+    } else {
+      res.status(401).json({ error: 'Incorrect password' });
+    }
+  });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5173;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

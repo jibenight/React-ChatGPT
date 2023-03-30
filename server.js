@@ -1,18 +1,29 @@
+// Description: serveur node.js
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
 const path = require('path');
 
+// sqlite3 pour la base de données
+const sqlite3 = require('sqlite3').verbose();
+
+// cors pour la gestion des requêtes
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
+// bcrypt pour le hashage des mots de passe
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
+// logger pour le serveur
+const morgan = require('morgan');
+
+// création de l'application express
 const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-
-// Serve static files from the React app
 app.use(express.static(path.join(__dirname, '/dist')));
+app.use(morgan('tiny'));
+
 // render index.html on the route '/'
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
@@ -23,7 +34,7 @@ const db = new sqlite3.Database('ChatData.db', err => {
   if (err) {
     return console.error(err.message);
   }
-  console.log('Connected to the ChatData.db SQlite database.');
+  console.log('1) Connected to the ChatData.db SQlite database => OK.');
 });
 
 // requete de création de la table users
@@ -42,17 +53,9 @@ db.serialize(() => {
     if (err) {
       console.error(err.message);
     } else {
-      console.log('Table "users" created or already exists.');
+      console.log('2) Table "users" created or already exists => OK.');
     }
   });
-});
-
-// fermeture de la connexion à la base de données
-db.close(err => {
-  if (err) {
-    console.error(err.message);
-  }
-  console.log('Close the database connection.');
 });
 
 // création d'un utilisateur
@@ -85,7 +88,6 @@ app.post('/login', (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-
       if (!row) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -102,5 +104,15 @@ app.post('/login', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
+// terminated process
+process.on('SIGTERM', () => {
+  server.close(() => {
+    console.log('Server terminated');
+    // close database connection
+    db.close();
+    console.log('3) Close the database connection => OK.');
+  });
 });

@@ -9,14 +9,13 @@ const Register = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm();
 
   const onSubmit = data => {
     const { name, email, password } = data;
     axios
-      .post('http://localhost:5173/register', {
+      .post('http://localhost:3001/register', {
         username: name,
         email,
         password,

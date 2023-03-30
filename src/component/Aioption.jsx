@@ -92,7 +92,7 @@ export default function Aioption(props) {
                       key={person.id}
                       className={({ active }) =>
                         classNames(
-                          active ? 'bg-teal-600 text-white' : 'text-gray-900',
+                          active ? 'bg-teal-500 text-white' : 'text-gray-900',
                           'relative cursor-default select-none py-2 pl-3 pr-9'
                         )
                       }

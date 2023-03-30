@@ -66,7 +66,7 @@ app.post('/register', async (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    if (row.user_count >= 1) {
+    if (row.user_count >= 10) {
       return res.status(400).json({ error: 'Only one user allowed' });
     }
 

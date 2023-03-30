@@ -59,22 +59,50 @@ db.serialize(() => {
 });
 
 // création d'un utilisateur
+const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
+
 app.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, saltRounds);
-  // vérification de l'existence de l'utilisateur
-  db.run(
-    'INSERT INTO users (username, email, password) VALUES (?,?,?)',
-    [username, email, hashedPassword],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res
-        .status(201)
-        .json({ message: 'User registered successfully', userId: this.lastID });
+  db.get(checkUserCountQuery, async (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    if (row.user_count >= 1) {
+      return res.status(400).json({ error: 'Only one user allowed' });
+    }
+
+    const { username, email, password } = req.body;
+    // Vérification si l'email existe déjà
+    const emailExists = await db.get(
+      'SELECT email FROM users WHERE email = ?',
+      email
+    );
+    if (emailExists) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    // Vérification du mot de passe
+    if (!/^(?=.\d)(?=.[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/.test(password)) {
+      return res.status(400).json({
+        error:
+          'Password must be at least 8 characters long, with at least one uppercase letter and one digit',
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    db.run(
+      'INSERT INTO users (username, email, password) VALUES (?,?,?)',
+      [username, email, hashedPassword],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res
+          .status(201)
+          .json({
+            message: 'User registered successfully',
+            userId: this.lastID,
+          });
+      }
+    );
+  });
 });
 
 // connexion d'un utilisateur
@@ -98,6 +126,7 @@ app.post('/login', (req, res) => {
   });
 });
 
+// serveur node.js
 const PORT = process.env.PORT || 5173;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

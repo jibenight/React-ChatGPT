@@ -26,8 +26,18 @@ const Register = () => {
         // faire quelque chose en cas de succès, comme rediriger vers une autre page
       })
       .catch(error => {
-        console.error(error.response.data); // afficher l'erreur du serveur
-        // faire quelque chose en cas d'erreur, comme afficher un message d'erreur à l'utilisateur
+        if (error.response.data.error === 'Email already exists') {
+          setErrorMessage('Email already exists');
+        } else if (
+          error.response.data.error ===
+          'Password must be at least 8 characters long, with at least one uppercase letter and one digit'
+        ) {
+          setErrorMessage(
+            'Password must be at least 8 characters long, with at least one uppercase letter and one digit'
+          );
+        } else {
+          setErrorMessage('An error occurred');
+        }
       });
   };
 

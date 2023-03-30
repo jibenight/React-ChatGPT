@@ -58,9 +58,9 @@ db.serialize(() => {
   });
 });
 
-// création d'un utilisateur
+// requete SQL pour vérifier le nombre d'utilisateurs
 const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
-
+// création d'un utilisateur
 app.post('/register', async (req, res) => {
   db.get(checkUserCountQuery, async (err, row) => {
     if (err) {
@@ -94,12 +94,10 @@ app.post('/register', async (req, res) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
-        res
-          .status(201)
-          .json({
-            message: 'User registered successfully',
-            userId: this.lastID,
-          });
+        res.status(201).json({
+          message: 'User registered successfully',
+          userId: this.lastID,
+        });
       }
     );
   });

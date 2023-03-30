@@ -7,6 +7,12 @@ import axios from 'axios';
 const port = 5173;
 
 const Register = () => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const {
     register,
     handleSubmit,
@@ -72,16 +78,77 @@ const Register = () => {
                 {...register('email', { required: true })}
               />
             </label>
-            <label className='block mb-5'>
+
+            {/* <label className='block mb-1 relative'>
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
                 id='signUpInput2-3'
-                type='password'
+                type={showPassword ? 'text' : 'password'}
                 placeholder='Create Password'
                 autoComplete='new-password'
                 {...register('password', { required: true })}
               />
+              <button
+                type='button'
+                onClick={togglePasswordVisibility}
+                className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
             </label>
+            <p className='font-thin text-xs italic mb-5'>
+              Password must be at least 8 characters long, with at least one
+              uppercase letter and one digit
+            </p> */}
+
+            <label className='block mb-5 relative'>
+              <input
+                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
+                id='signUpInput2-3'
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Create Password'
+                autoComplete='new-password'
+                {...register('password', { required: true })}
+              />
+              <button
+                type='button'
+                onClick={togglePasswordVisibility}
+                className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </label>
+            <label className='block mb-1 relative'>
+              <input
+                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
+                id='signUpInput2-4'
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Confirm Password'
+                autoComplete='new-password'
+                {...register('confirmPassword', {
+                  required: true,
+                  validate: value =>
+                    value === watch('password') || 'The passwords do not match',
+                })}
+              />
+              <button
+                type='button'
+                onClick={togglePasswordVisibility}
+                className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </label>
+            <p className='font-thin text-xs italic mb-5'>
+              Password must be at least 8 characters long, with at least one
+              uppercase letter and one digit
+            </p>
+            {errors.confirmPassword && (
+              <p className='text-red-500 mb-5'>
+                {errors.confirmPassword.message}
+              </p>
+            )}
+
             <button
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
               type='submit'

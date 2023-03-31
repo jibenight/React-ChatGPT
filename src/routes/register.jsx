@@ -1,13 +1,17 @@
 import '../css/App.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import code from '../assets/code.gif';
 import { NavLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
+import seePassword from '../assets/eye.svg';
+import hidePassword from '../assets/no-eye.svg';
 const port = 5173;
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -16,8 +20,19 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    watch,
+    reset,
     formState: { errors },
   } = useForm();
+
+  const updateErrorMessages = (apiErrors, formErrors) => {
+    let newErrors = [...apiErrors];
+    // Include form validation errors
+    if (formErrors.confirmPassword) {
+      newErrors.push(formErrors.confirmPassword.message);
+    }
+    setErrorMessage(newErrors);
+  };
 
   const onSubmit = data => {
     const { name, email, password } = data;
@@ -28,27 +43,26 @@ const Register = () => {
         password,
       })
       .then(response => {
-        console.log(response.data); // afficher la réponse du serveur
-        // faire quelque chose en cas de succès, comme rediriger vers une autre page
+        setSuccessMessage('Account created successfully');
+        setErrorMessage([]); // Clear the error messages list
+        reset(); // Reset the form
       })
       .catch(error => {
-        if (error.response.data.error === 'Email already exists') {
-          setErrorMessage('Email already exists');
-        } else if (
-          error.response.data.error ===
-          'Password must be at least 8 characters long, with at least one uppercase letter and one digit'
-        ) {
-          setErrorMessage(
+        let apiErrors = [];
+        if (error.response.data.error === 'exists') {
+          apiErrors.push('Email already exists');
+        }
+        if (error.response.data.error === 'characters') {
+          apiErrors.push(
             'Password must be at least 8 characters long, with at least one uppercase letter and one digit'
           );
-        } else {
-          setErrorMessage('An error occurred');
         }
+        updateErrorMessages(apiErrors, errors); // Pass errors object from useForm
       });
   };
 
   return (
-    <section className='py-16 xl:pb-56 h-screen bg-white overflow-hidden'>
+    <section className='py-16 xl:pb-56 bg-white overflow-hidden'>
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>
@@ -78,29 +92,6 @@ const Register = () => {
                 {...register('email', { required: true })}
               />
             </label>
-
-            {/* <label className='block mb-1 relative'>
-              <input
-                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
-                id='signUpInput2-3'
-                type={showPassword ? 'text' : 'password'}
-                placeholder='Create Password'
-                autoComplete='new-password'
-                {...register('password', { required: true })}
-              />
-              <button
-                type='button'
-                onClick={togglePasswordVisibility}
-                className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </label>
-            <p className='font-thin text-xs italic mb-5'>
-              Password must be at least 8 characters long, with at least one
-              uppercase letter and one digit
-            </p> */}
-
             <label className='block mb-5 relative'>
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
@@ -115,7 +106,11 @@ const Register = () => {
                 onClick={togglePasswordVisibility}
                 className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? (
+                  <img src={seePassword} alt='Hide Password' />
+                ) : (
+                  <img src={hidePassword} alt='Show Password' />
+                )}
               </button>
             </label>
             <label className='block mb-1 relative'>
@@ -136,19 +131,26 @@ const Register = () => {
                 onClick={togglePasswordVisibility}
                 className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? (
+                  <img src={seePassword} alt='Hide Password' />
+                ) : (
+                  <img src={hidePassword} alt='Show Password' />
+                )}
               </button>
             </label>
             <p className='font-thin text-xs italic mb-5'>
               Password must be at least 8 characters long, with at least one
               uppercase letter and one digit
             </p>
-            {errors.confirmPassword && (
-              <p className='text-red-500 mb-5'>
-                {errors.confirmPassword.message}
-              </p>
-            )}
 
+            {errorMessage.map((error, index) => (
+              <p key={index} className='text-red-500 mb-5'>
+                {error}
+              </p>
+            ))}
+            {successMessage && (
+              <p className='text-green-500 mb-5'>{successMessage}</p>
+            )}
             <button
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
               type='submit'

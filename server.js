@@ -72,18 +72,21 @@ app.post('/register', async (req, res) => {
 
     const { username, email, password } = req.body;
     // Vérification si l'email existe déjà
-    const emailExists = await db.get(
-      'SELECT email FROM users WHERE email = ?',
-      email
-    );
+    const emailExists = await new Promise((resolve, reject) => {
+      db.get('SELECT email FROM users WHERE email = ?', email, (err, row) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(row);
+      });
+    });
     if (emailExists) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: 'exists' });
     }
     // Vérification du mot de passe
-    if (!/^(?=.\d)(?=.[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/.test(password)) {
+    if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/.test(password)) {
       return res.status(400).json({
-        error:
-          'Password must be at least 8 characters long, with at least one uppercase letter and one digit',
+        error: 'characters',
       });
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);

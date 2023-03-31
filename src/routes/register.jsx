@@ -1,5 +1,5 @@
 import '../css/App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import code from '../assets/code.gif';
 import { NavLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -10,7 +10,7 @@ const port = 5173;
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   const togglePasswordVisibility = () => {
@@ -25,15 +25,6 @@ const Register = () => {
     formState: { errors },
   } = useForm();
 
-  const updateErrorMessages = (apiErrors, formErrors) => {
-    let newErrors = [...apiErrors];
-    // Include form validation errors
-    if (formErrors.confirmPassword) {
-      newErrors.push(formErrors.confirmPassword.message);
-    }
-    setErrorMessage(newErrors);
-  };
-
   const onSubmit = data => {
     const { name, email, password } = data;
     axios
@@ -44,20 +35,19 @@ const Register = () => {
       })
       .then(response => {
         setSuccessMessage('Account created successfully');
-        setErrorMessage([]); // Clear the error messages list
-        reset(); // Reset the form
+        setErrorMessage('');
+        reset();
       })
       .catch(error => {
-        let apiErrors = [];
         if (error.response.data.error === 'exists') {
-          apiErrors.push('Email already exists');
-        }
-        if (error.response.data.error === 'characters') {
-          apiErrors.push(
+          setErrorMessage('Email already exists');
+        } else if (error.response.data.error === 'characters') {
+          setErrorMessage(
             'Password must be at least 8 characters long, with at least one uppercase letter and one digit'
           );
+        } else {
+          setErrorMessage('An error occurred');
         }
-        updateErrorMessages(apiErrors, errors); // Pass errors object from useForm
       });
   };
 
@@ -92,6 +82,7 @@ const Register = () => {
                 {...register('email', { required: true })}
               />
             </label>
+
             <label className='block mb-5 relative'>
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
@@ -142,15 +133,21 @@ const Register = () => {
               Password must be at least 8 characters long, with at least one
               uppercase letter and one digit
             </p>
+            {/* 
+            {errorMessage && (
+              <p className='text-red-500 mb-5'>{errorMessage}</p>
+            )} */}
 
-            {errorMessage.map((error, index) => (
-              <p key={index} className='text-red-500 mb-5'>
-                {error}
+            {errors.confirmPassword && (
+              <p className='text-red-500 mb-5'>
+                {errors.confirmPassword.message}
               </p>
-            ))}
+            )}
+
             {successMessage && (
               <p className='text-green-500 mb-5'>{successMessage}</p>
             )}
+
             <button
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
               type='submit'

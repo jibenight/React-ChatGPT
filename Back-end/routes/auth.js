@@ -4,7 +4,7 @@ const express = require('express');
 const auth = express.Router();
 const db = require('../models/database');
 const jwt = require('jsonwebtoken');
-const secretKey = 'your-secret-key';
+const secretKey = process.env.SECRET_KEY;
 
 // Requête SQL pour vérifier le nombre d'utilisateurs
 const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
@@ -89,7 +89,7 @@ auth.post('/login', (req, res) => {
 
     const match = await bcrypt.compare(password, row.password);
     if (match) {
-      const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '1h' });
+      const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '7d' });
       res
         .status(200)
         .json({ message: 'Login successful', userId: row.id, token });

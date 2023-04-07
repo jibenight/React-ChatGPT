@@ -7,13 +7,13 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 //database
-const db = require('./database');
+const db = require('./models/database');
 
 // post routes
-const auth = require('./auth');
+const auth = require('./routes/auth');
 
 // api routes
-const api = require('./api');
+const userApi = require('./routes/users-api');
 
 // logger pour le serveur
 const morgan = require('morgan');
@@ -35,7 +35,7 @@ app.use(morgan('tiny'));
 app.use('/', auth);
 
 // api
-app.use('/api', api);
+app.use('/api/users', userApi);
 
 // serveur node.js
 const PORT = process.env.PORT || 5173;

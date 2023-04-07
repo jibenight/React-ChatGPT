@@ -1,5 +1,6 @@
 const express = require('express');
-const api = express.Router();
+const userApi = express.Router();
+const isAuthenticated = require('../middlewares/isAuthenticated');
 
 // gestion des fonctions asynchrones dans les routes Express
 const asyncHandler = fn => (req, res, next) => {
@@ -7,7 +8,7 @@ const asyncHandler = fn => (req, res, next) => {
 };
 
 // middleware
-api.get(
+userApi.get(
   '/api/users',
   isAuthenticated,
   asyncHandler(async (req, res) => {
@@ -22,4 +23,4 @@ api.get(
   })
 );
 
-module.exports = api;
+module.exports = userApi;

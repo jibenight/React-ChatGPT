@@ -1,8 +1,11 @@
 // sqlite3 pour la base de données
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+const dbPath = path.join(__dirname, '../..', 'database', 'ChatData.db');
 
 // connexion à la base de données
-const db = new sqlite3.Database('ChatData.db', err => {
+const db = new sqlite3.Database(dbPath, err => {
   if (err) {
     return console.error(err.message);
   }

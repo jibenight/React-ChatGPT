@@ -2,7 +2,9 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const express = require('express');
 const auth = express.Router();
-const db = require('./database');
+const db = require('../models/database');
+const jwt = require('jsonwebtoken');
+const secretKey = 'your-secret-key';
 
 // Requête SQL pour vérifier le nombre d'utilisateurs
 const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
@@ -54,6 +56,26 @@ auth.post('/register', async (req, res) => {
 });
 
 // connexion d'un utilisateur
+// auth.post('/login', (req, res) => {
+//   const { email, password } = req.body;
+
+//   db.get('SELECT * FROM users WHERE email = ?', [email], async (err, row) => {
+//     if (err) {
+//       return res.status(500).json({ error: err.message });
+//     }
+//     if (!row) {
+//       return res.status(404).json({ error: 'email not found' });
+//     }
+
+//     const match = await bcrypt.compare(password, row.password);
+//     if (match) {
+//       res.status(200).json({ message: 'Login successful', userId: row.id });
+//     } else {
+//       res.status(401).json({ error: 'Incorrect password' });
+//     }
+//   });
+// });
+
 auth.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -67,7 +89,10 @@ auth.post('/login', (req, res) => {
 
     const match = await bcrypt.compare(password, row.password);
     if (match) {
-      res.status(200).json({ message: 'Login successful', userId: row.id });
+      const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '1h' });
+      res
+        .status(200)
+        .json({ message: 'Login successful', userId: row.id, token });
     } else {
       res.status(401).json({ error: 'Incorrect password' });
     }

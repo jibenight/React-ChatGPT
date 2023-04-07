@@ -3,8 +3,8 @@ import chatGPT from '../assets/chatGPT.mp4';
 import Aioption from './Aioption';
 import LogOut from './Logout';
 
-function Aside(props) {
-  const [selectedOption, setSelectedOption] = useState(props);
+function Aside({ setProfil, profil }) {
+  const [selectedOption, setSelectedOption] = useState(profil);
 
   function handleSelectOption(option) {
     setSelectedOption(option);
@@ -36,7 +36,7 @@ function Aside(props) {
       </div>
 
       <div className=' flex justify-center items-center m-3 p-3'>
-        <LogOut />
+        <LogOut setProfil={setProfil} profil={profil} />
       </div>
     </div>
   );

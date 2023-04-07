@@ -1,13 +1,13 @@
 import logoutAnime from '../assets/logout.gif';
 import logout from '../assets/logout.webp';
-import profil from '../assets/profil.webp';
+import profilImg from '../assets/profil.webp';
 import profilAnime from '../assets/profil.gif';
 import React, { useState } from 'react';
 
-function LogOut() {
+function LogOut({ setProfil, profil }) {
   const [images, setImages] = useState({
     logoutSrc: logout,
-    profilSrc: profil,
+    profilSrc: profilImg,
   });
 
   // pour changer l'image quand on passe la souris dessus
@@ -23,7 +23,7 @@ function LogOut() {
     if (key === 'logoutSrc') {
       setImages({ ...images, logoutSrc: logout });
     } else if (key === 'profilSrc') {
-      setImages({ ...images, profilSrc: profil });
+      setImages({ ...images, profilSrc: profilImg });
     }
   };
 
@@ -32,16 +32,20 @@ function LogOut() {
     // Supprimez les informations d'authentification stockées localement
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-
     // Redirigez l'utilisateur vers la page de connexion
     window.location.href = '/login';
+  };
+
+  // pour afficher ou masquer le Profil
+  const toggleProfil = () => {
+    setProfil(!profil);
   };
 
   return (
     <div className='flex justify-evenly w-full'>
       <div className='flex flex-col items-center'>
         <div className='flex items-center justify-center rounded-full bg-white h-12 w-12'>
-          <a href=''>
+          <button onClick={toggleProfil}>
             <img
               src={images.profilSrc}
               alt='icon for log out'
@@ -49,13 +53,13 @@ function LogOut() {
               onMouseOver={() => handleMouseOver('profilSrc')}
               onMouseOut={() => handleMouseOut('profilSrc')}
             />
-          </a>
+          </button>
         </div>
         <p className='mr-2 text-white italic text-lg'>Profil</p>
       </div>
       <div className='flex flex-col items-center'>
         <div className='flex items-center justify-center rounded-full bg-white h-12 w-12'>
-          <a href='' onClick={handleLogout}>
+          <button onClick={handleLogout}>
             <img
               src={images.logoutSrc}
               alt='icon for log out'
@@ -63,7 +67,7 @@ function LogOut() {
               onMouseOver={() => handleMouseOver('logoutSrc')}
               onMouseOut={() => handleMouseOut('logoutSrc')}
             />
-          </a>
+          </button>
         </div>
         <p className='mr-2 text-white italic text-lg'>Log Out</p>
       </div>

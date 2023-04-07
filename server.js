@@ -12,6 +12,9 @@ const db = require('./database');
 // post routes
 const auth = require('./auth');
 
+// api routes
+const api = require('./api');
+
 // logger pour le serveur
 const morgan = require('morgan');
 
@@ -30,6 +33,9 @@ app.use(morgan('tiny'));
 
 // routes
 app.use('/', auth);
+
+// api
+app.use('/api', api);
 
 // serveur node.js
 const PORT = process.env.PORT || 5173;

@@ -14,11 +14,6 @@ function Aside({ setProfil, profil }) {
     <div className='bg-gray-800 w-100 h-screen divide-y divide-gray-100 flex flex-col'>
       <div className='m-3 mt-5 mb-10'>
         <div className='m-3 flex items-center justify-center'>
-          {/* <img
-            src={selectedOption.avatar || chatGPT}
-            alt='robot avatar'
-            className='h-20 w-20 flex-shrink-0 rounded-full'
-          /> */}
           <video
             src={selectedOption.avatar || chatGPT}
             autoPlay={true}
@@ -27,7 +22,7 @@ function Aside({ setProfil, profil }) {
         </div>
 
         <h1 className='text-gray-100 text-2xl italic text-center'>
-          Hello, Jean
+          Hello, jean
         </h1>
       </div>
 

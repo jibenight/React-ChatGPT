@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 // Description: serveur node.js
 const express = require('express');
 const path = require('path');

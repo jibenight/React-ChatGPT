@@ -55,27 +55,7 @@ auth.post('/register', async (req, res) => {
   });
 });
 
-// connexion d'un utilisateur
-// auth.post('/login', (req, res) => {
-//   const { email, password } = req.body;
-
-//   db.get('SELECT * FROM users WHERE email = ?', [email], async (err, row) => {
-//     if (err) {
-//       return res.status(500).json({ error: err.message });
-//     }
-//     if (!row) {
-//       return res.status(404).json({ error: 'email not found' });
-//     }
-
-//     const match = await bcrypt.compare(password, row.password);
-//     if (match) {
-//       res.status(200).json({ message: 'Login successful', userId: row.id });
-//     } else {
-//       res.status(401).json({ error: 'Incorrect password' });
-//     }
-//   });
-// });
-
+// pour la connexion
 auth.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -90,9 +70,17 @@ auth.post('/login', (req, res) => {
     const match = await bcrypt.compare(password, row.password);
     if (match) {
       const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '7d' });
+      console.log('Generated token:', token);
+      res;
+
       res
         .status(200)
-        .json({ message: 'Login successful', userId: row.id, token });
+        .json({
+          message: 'Login successful',
+          userId: row.id,
+          token,
+          username: row.username,
+        });
     } else {
       res.status(401).json({ error: 'Incorrect password' });
     }

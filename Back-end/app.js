@@ -12,7 +12,7 @@ const db = require('./models/database');
 // post routes
 const auth = require('./routes/auth');
 
-// api routes
+// api routes user
 const userApi = require('./routes/users-api');
 
 // logger pour le serveur

@@ -73,14 +73,13 @@ auth.post('/login', (req, res) => {
       console.log('Generated token:', token);
       res;
 
-      res
-        .status(200)
-        .json({
-          message: 'Login successful',
-          userId: row.id,
-          token,
-          username: row.username,
-        });
+      res.status(200).json({
+        message: 'Login successful',
+        userId: row.id,
+        token,
+        username: row.username,
+        email: row.email,
+      });
     } else {
       res.status(401).json({ error: 'Incorrect password' });
     }

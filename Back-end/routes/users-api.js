@@ -17,6 +17,7 @@ userApi.get(
     try {
       const rows = await db.all(query, [req.user.id]);
       res.json(rows);
+      console.log(rows);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }

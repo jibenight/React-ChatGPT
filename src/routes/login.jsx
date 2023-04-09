@@ -1,8 +1,8 @@
 import '../css/App.css';
-import React, { useState } from 'react';
 import chatGPT from '../assets/chatGPT.gif';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../UserContext';
 
 const Login = () => {
@@ -12,7 +12,7 @@ const Login = () => {
     watch,
     formState: { errors },
   } = useForm();
-  const { setUserData } = useUser();
+  const { userData, setUserData } = useUser();
 
   const onSubmit = data => {
     const { email, password } = data;
@@ -23,13 +23,16 @@ const Login = () => {
       })
       .then(response => {
         if (response.status === 200) {
-          console.log(response.data);
-          localStorage.setItem('token', response.data.token);
-          localStorage.setItem('user', JSON.stringify(response.data.user));
+          const { token, userId, username, email } = response.data;
+          localStorage.setItem('token', token);
+          localStorage.setItem(
+            'user',
+            JSON.stringify({ userId, username, email })
+          );
           setUserData({
-            id: user.id,
-            username: user.username,
-            email: user.email,
+            id: userId,
+            username: username,
+            email: email,
           });
           window.location.href = '/';
         }

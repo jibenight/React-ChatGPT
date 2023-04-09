@@ -25,7 +25,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '/dist')));
+//app.use(express.static(path.join(__dirname, '/dist')));
 app.use(morgan('tiny'));
 
 // render index.html on the route '/'

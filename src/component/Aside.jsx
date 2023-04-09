@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import chatGPT from '../assets/chatGPT.mp4';
 import Aioption from './Aioption';
 import LogOut from './Logout';
+import { useUser } from '../UserContext';
 
 function Aside({ setProfil, profil }) {
   const [selectedOption, setSelectedOption] = useState(profil);
+  const { userData } = useUser();
 
   function handleSelectOption(option) {
     setSelectedOption(option);
   }
+
+  // Vérifiez si userData existe et contient un username
+  const hasUserData = userData && userData.username;
 
   return (
     <div className='bg-gray-800 w-100 h-screen divide-y divide-gray-100 flex flex-col'>
@@ -21,9 +26,16 @@ function Aside({ setProfil, profil }) {
           />
         </div>
 
-        <h1 className='text-gray-100 text-2xl italic text-center'>
-          Hello, jean
-        </h1>
+        {/* N'affichez le texte d'accueil que si userData est disponible */}
+        {hasUserData ? (
+          <h1 className='text-gray-100 text-2xl italic text-center'>
+            Hello, {userData.username}
+          </h1>
+        ) : (
+          <h1 className='text-gray-100 text-2xl italic text-center'>
+            Loading...
+          </h1>
+        )}
       </div>
 
       <div className='m-3 flex-grow'>

@@ -9,6 +9,8 @@ function Profil() {
     setprofilData(!profilData);
   };
 
+  console.log(userData);
+
   return (
     <div className='relative bg-gray-100 h-screen'>
       <div className='m-5'>
@@ -19,9 +21,9 @@ function Profil() {
       <div className='bg-slate-200 m-5 p-5 rounded-lg'>
         {userData && (
           <>
-            <p className='m-2 text-lg'>Username:{userData.username}</p>
-            <p className='m-2 text-lg'>Email:{userData.email}</p>
-            <p className='m-2 text-lg'>Password:</p>
+            <p className='m-2 text-lg'>Username: {userData.username}</p>
+            <p className='m-2 text-lg'>Email: {userData.email}</p>
+            <p className='m-2 text-lg'>Password: </p>
           </>
         )}
         {profilData ? (

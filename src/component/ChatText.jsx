@@ -13,7 +13,7 @@ function ChatText(props) {
     setImgSrc(chatGPT);
   };
   return (
-    <div className='rounded-lg m-3 px-5 p-3 bg-slate-200 flex xl:w-2/3 xl:mx-auto'>
+    <div className=' m-3  flex xl:w-2/3 xl:mx-auto'>
       <img
         src={imgSrc}
         alt=''
@@ -22,7 +22,7 @@ function ChatText(props) {
         onMouseOut={handleMouseOut}
         key={imgSrc}
       />
-      <p className='mx-10'>
+      <p className='mx-5 px-5 p-3 rounded-lg bg-slate-200'>
         Lorem ipsum dolor sit amet consectetur, adipisicing elit. Magni aperiam
         quod voluptatem ipsa totam laudantium ducimus nesciunt velit enim nulla
         provident, autem vitae? Libero itaque exercitationem adipisci dolore

@@ -17,6 +17,9 @@ const auth = require('./routes/auth');
 // api routes user
 const userApi = require('./routes/users-api');
 
+// api routes openai
+const openaiApiRoute = require('./routes/openaiApi');
+
 // logger pour le serveur
 const morgan = require('morgan');
 
@@ -38,6 +41,9 @@ app.use('/', auth);
 
 // api
 app.use('/api/users', userApi);
+
+// Utilisez le routeur OpenAI API
+app.use('/api/openai', openaiApiRoute);
 
 // serveur node.js
 const PORT = process.env.PORT || 5173;

@@ -48,6 +48,20 @@ function classNames(...classes) {
 export default function Aioption(props) {
   const [selected, setSelected] = useState(robot[0]);
 
+  // Exemple d'appel à l'API (ajoutez l'identifiant du modèle sélectionné)
+  fetch('/api/openai/message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId: userId,
+      sessionId: sessionId,
+      message: message,
+      modelId: selected.id, // Ajoutez l'identifiant du modèle sélectionné
+    }),
+  });
+
   function handleSelectOption(option) {
     setSelected(option);
     props.setSelectedOption(option);

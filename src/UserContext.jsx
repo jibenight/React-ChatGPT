@@ -10,8 +10,10 @@ export function UserProvider({ children }) {
   const [userData, setUserData] = useState({});
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
+    localStorage.removeItem('user'); // Supprime les données stockées dans le localStorage
+    const userJson = localStorage.getItem('user');
+    if (userJson) {
+      const user = JSON.parse(userJson);
       setUserData(user);
     }
   }, []);

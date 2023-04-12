@@ -8,6 +8,32 @@ function Aside({ setProfil, profil }) {
   const [selectedOption, setSelectedOption] = useState(profil);
   const { userData } = useUser();
 
+  const handleMessageSend = message => {
+    // Ici, vous pouvez appeler la fonction `fetch` pour envoyer les données au backend
+    // Utilisez selectedOption.id pour obtenir l'identifiant du modèle sélectionné
+    fetch('/api/openai/message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: userId, // Assurez-vous que vous avez une variable userId valide
+        sessionId: sessionId, // Assurez-vous que vous avez une variable sessionId valide
+        message: message,
+        modelId: selectedOption.id, // Utilisez l'identifiant du modèle sélectionné
+      }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Ajoutez le message utilisateur et la réponse de l'IA à l'état messages
+        setMessages(prevMessages => [
+          ...prevMessages,
+          { type: 'user', content: message },
+          { type: 'ai', content: data.message },
+        ]);
+      });
+  };
+
   function handleSelectOption(option) {
     setSelectedOption(option);
   }

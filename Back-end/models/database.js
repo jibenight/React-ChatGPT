@@ -1,10 +1,20 @@
 // sqlite3 pour la base de données
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, '../..', 'database', 'ChatData.db');
+// chemin vers le répertoire de la base de données
+const dbDir = path.join(__dirname, '../..', 'database');
 
-// connexion à la base de données
+// chemin vers le fichier de la base de données
+const dbPath = path.join(dbDir, 'ChatData.db');
+
+// vérifiez si le répertoire de la base de données existe, sinon créez-le
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// connexion à la base de données (la créera si elle n'existe pas)
 const db = new sqlite3.Database(dbPath, err => {
   if (err) {
     return console.error(err.message);
@@ -44,17 +54,6 @@ const createChatHistoryTableQuery = `
   );
   `;
 
-// requete de création de la table password_resets
-const createPasswordResetsTableQuery = `
-CREATE TABLE IF NOT EXISTS password_resets (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT NOT NULL,
-  token TEXT NOT NULL UNIQUE,
-  expires_at DATETIME NOT NULL,
-  FOREIGN KEY (email) REFERENCES users (email) ON DELETE CASCADE
-);
-`;
-
 // création de la table users
 db.serialize(() => {
   db.run(createUsersTableQuery, err => {
@@ -80,17 +79,6 @@ db.serialize(() => {
       console.error(err.message);
     } else {
       console.log('4) Table "chat_history" created or already exists => OK.');
-    }
-  });
-
-  // création de table Password_Resets
-  db.run(createPasswordResetsTableQuery, err => {
-    if (err) {
-      console.error(err.message);
-    } else {
-      console.log(
-        '5) Table "password_resets" created or already exists => OK.'
-      );
     }
   });
 });

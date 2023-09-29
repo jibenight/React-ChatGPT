@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './routes/App';
 import Login from './routes/login';
+import ResetPasswordRequest from './routes/resetPasswordRequest';
 import Register from './routes/register';
 import './css/index.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -15,6 +16,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/login' element={<Login />} />
+          <Route
+            path='/reset-password-request'
+            element={<ResetPasswordRequest />}
+          />
           <Route path='/' element={<PrivateRoute />}>
             <Route index element={<App />} />
           </Route>

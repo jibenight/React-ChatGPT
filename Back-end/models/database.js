@@ -44,6 +44,17 @@ const createChatHistoryTableQuery = `
   );
   `;
 
+// requete de création de la table password_resets
+const createPasswordResetsTableQuery = `
+CREATE TABLE IF NOT EXISTS password_resets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  FOREIGN KEY (email) REFERENCES users (email) ON DELETE CASCADE
+);
+`;
+
 // création de la table users
 db.serialize(() => {
   db.run(createUsersTableQuery, err => {
@@ -69,6 +80,17 @@ db.serialize(() => {
       console.error(err.message);
     } else {
       console.log('4) Table "chat_history" created or already exists => OK.');
+    }
+  });
+
+  // création de table Password_Resets
+  db.run(createPasswordResetsTableQuery, err => {
+    if (err) {
+      console.error(err.message);
+    } else {
+      console.log(
+        '5) Table "password_resets" created or already exists => OK.'
+      );
     }
   });
 });

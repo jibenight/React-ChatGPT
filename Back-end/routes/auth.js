@@ -24,13 +24,14 @@ const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
 
 // pour l'inscription
 auth.post('/register', async (req, res) => {
+  console.log(req.body);
   db.get(checkUserCountQuery, async (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    if (row.user_count >= 10) {
-      return res.status(400).json({ error: 'Only one user allowed' });
-    }
+    // if (row.user_count >= 10) {
+    //   return res.status(400).json({ error: 'Only one user allowed' });
+    // }
 
     const { username, email, password } = req.body;
     // Vérification si l'email existe déjà
@@ -43,10 +44,12 @@ auth.post('/register', async (req, res) => {
       });
     });
     if (emailExists) {
+      console.log('email issue');
       return res.status(400).json({ error: 'exists' });
     }
     // Vérification du mot de passe
-    if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/.test(password)) {
+    if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(password)) {
+      console.log('password issue');
       return res.status(400).json({
         error: 'characters',
       });

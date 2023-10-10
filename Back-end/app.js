@@ -40,10 +40,10 @@ app.use(morgan('tiny'));
 app.use('/', auth);
 
 // api
-app.use('/api/users', userApi);
+app.use('/', userApi);
 
 // Utilisez le routeur OpenAI API
-app.use('/api/openai', openaiApiRoute);
+app.use('/', openaiApiRoute);
 
 // serveur node.js
 const PORT = process.env.PORT || 5173;

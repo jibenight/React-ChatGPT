@@ -7,11 +7,13 @@ const isAuthenticated = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.log('No token provided');
     return res.status(401).json({ error: 'No token provided' });
   }
 
   jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {
+      console.log('Invalid token', err);
       return res.status(401).json({ error: 'Invalid token' });
     }
 

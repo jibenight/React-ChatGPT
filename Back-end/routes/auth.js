@@ -82,13 +82,10 @@ auth.post('/login', (req, res) => {
     if (!row) {
       return res.status(404).json({ error: 'email not found' });
     }
-
     const match = await bcrypt.compare(password, row.password);
     if (match) {
       const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '7d' });
-      console.log('Generated token:', token);
       res;
-
       res.status(200).json({
         message: 'Login successful',
         userId: row.id,

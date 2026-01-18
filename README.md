@@ -11,29 +11,37 @@ L'application est structurée en deux parties principales : le back-end et le fr
 Le back-end comprend les éléments suivants :
 
 - `app.js` : Le fichier principal qui initialise le serveur Express.
-- Base de données : Fichier SQLite utilisé pour stocker les données des utilisateurs et les clés API OpenAI.
-- `routes` : Contient les routes pour l'enregistrement (`register.js`) et la connexion (`login.js`) des utilisateurs.
+- `models/database.js` : Gestion de la base de données SQLite `ChatData.db`.
+- `routes/auth.js` : Routes pour l'authentification (inscription, connexion, réinitialisation de mot de passe).
+- `routes/users-api.js` : API de gestion des utilisateurs.
+- `routes/openaiApi.js` : Gestion des interactions avec l'API OpenAI.
 
 ### Front-end :
 
-Le front-end est construit avec React et est organisé en plusieurs composants et routes.
+Le front-end est construit avec React et est organisé en plusieurs dossiers.
 
-#### Routes :
+#### Routes (`src/routes`) :
 
-- `App.jsx` : Le composant racine qui gère l'affichage des composants `Aside` et `ChatZone`.
-- `Login.jsx` : Gère la page de connexion de l'utilisateur.
-- `Register.jsx` : Gère la page d'inscription de l'utilisateur.
+- `App.jsx` : Le composant racine connecté.
+- `login.jsx` : Page de connexion.
+- `register.jsx` : Page d'inscription.
+- `resetPasswordRequest.jsx` : Page de demande de réinitialisation de mot de passe.
 
-#### Composants :
+#### Composants (`src/component`) :
 
-- `Aside` : Gère la sélection du modèle d'IA et l'envoi des messages à l'API OpenAI.
-- `Aioption` : Permet à l'utilisateur de sélectionner un modèle d'IA.
-- `LogOut` : Gère la déconnexion de l'utilisateur.
-- `ChatZone` : Gère l'affichage des messages et l'envoi des messages à l'API OpenAI.
-- `ChatText` : Affiche les messages de l'utilisateur et les réponses de l'IA.
-- `ChatInput` : Gère la saisie des messages de l'utilisateur.
-- `DropDown` : Composant pour la sélection du modèle d'IA.
-- `Profil` : Affiche les informations de profil de l'utilisateur.
+- `Aside.jsx` : Barre latérale, gestion du profil et sélection des modèles.
+- `Aioption.jsx` : Liste des options d'IA.
+- `ChatZone.jsx` : Zone principale de chat.
+- `ChatText.jsx` : Affichage des messages individuels.
+- `ChatInput.jsx` : Champ de saisie des messages.
+- `Dropdown.jsx` : Menu déroulant.
+- `Logout.jsx` : Bouton de déconnexion.
+- `Profil.jsx` : Affichage et édition du profil utilisateur.
+
+#### Contextes et Utilitaires :
+
+- `src/UserContext.jsx` : Contexte React pour la gestion de l'état utilisateur global.
+- `src/PrivateRoute.jsx` : Composant de protection des routes nécessitant une authentification.
 
 ## Prérequis
 
@@ -45,7 +53,7 @@ Le front-end est construit avec React et est organisé en plusieurs composants e
 
 Clonez ce dépôt sur votre machine locale et installez les dépendances :
 
-```
+```bash
 git clone git@github.com:jibenight/React-ChatGPT.git
 cd React-ChatGPT
 npm install
@@ -53,20 +61,39 @@ npm install
 
 ## Utilisation
 
-Pour démarrer l'application, exécutez :
+Pour utiliser l'application, vous devez lancer le front-end et le back-end.
 
-```
-npm run dev
+**Attention aux ports :**
+Par défaut, Vite (front-end) et le serveur Express (back-end) tentent tous deux d'utiliser le port `5173`.
+Certaines fonctionnalités (comme la réinitialisation de mot de passe) s'attendent à ce que le back-end soit sur `http://localhost:5173`.
+
+Il est recommandé de lancer le back-end en premier pour qu'il prenne le port 5173, puis le front-end (Vite passera automatiquement sur le port suivant, ex: 5174).
+
+1. Démarrer le serveur Back-end :
+```bash
 npm run serve
 ```
+*(Le serveur devrait démarrer sur http://localhost:5173)*
 
-La première commande démarre le serveur de développement de Vite pour le front-end. La seconde commande démarre le serveur back-end en Node.js.
+2. Démarrer le serveur Front-end (dans un nouveau terminal) :
+```bash
+npm run dev
+```
+*(Vite détectera que le port 5173 est occupé et proposera d'utiliser le port 5174 ou un autre)*
 
-Ouvrez votre navigateur et accédez à `http://127.0.0.1:5173` pour utiliser l'application.
+Ouvrez votre navigateur sur l'URL indiquée par Vite (ex: `http://localhost:5174`).
+
+## Tests API
+
+Une collection de tests API pour **Bruno** est disponible dans le dossier `REact chat /`.
+- `bruno.json`
+- `reggister.bru`
+
+Vous pouvez utiliser ces fichiers pour tester les endpoints du back-end directement.
 
 ## Configuration de l'API OpenAI
 
-Les clés API d'OpenAI sont stockées dans la base de données SQLite. Vous devrez ajouter votre clé API à la base de données avant de pouvoir utiliser l'application.
+Les clés API d'OpenAI sont stockées dans la base de données SQLite. Vous devrez ajouter votre clé API à la base de données via l'interface utilisateur ou directement en base avant de pouvoir utiliser l'application.
 
 ## Contribution
 

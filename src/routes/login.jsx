@@ -17,7 +17,7 @@ const Login = () => {
   const onSubmit = data => {
     const { email, password } = data;
     axios
-      .post('http://localhost:5173/login', {
+      .post('http://localhost:3000/login', {
         email,
         password,
       })
@@ -78,7 +78,7 @@ const Login = () => {
               <div className='absolute right-4 top-1/2 transform -translate-y-1/2'>
                 <a
                   className='text-sm text-teal-600 hover:text-teal-700 font-medium'
-                  href='#'
+                  href='/reset-password-request'
                 >
                   Forgot Password?
                 </a>

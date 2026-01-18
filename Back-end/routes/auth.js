@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: process.env.ACCOUNT_USER,
+    user: process.env.EMAIL_USER,
     pass: process.env.PASSWORD,
   },
 });
@@ -119,7 +119,7 @@ auth.post('/reset-password-request', (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+        const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
         const mailOptions = {
           from: process.env.EMAIL_USER,
           to: email,

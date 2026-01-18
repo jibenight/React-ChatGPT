@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './routes/App';
 import Login from './routes/login';
 import ResetPasswordRequest from './routes/resetPasswordRequest';
+import ResetPassword from './routes/resetPassword';
 import Register from './routes/register';
 import './css/index.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -19,6 +20,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route
             path='/reset-password-request'
             element={<ResetPasswordRequest />}
+          />
+          <Route
+            path='/reset-password'
+            element={<ResetPassword />}
           />
           <Route path='/' element={<PrivateRoute />}>
             <Route index element={<App />} />

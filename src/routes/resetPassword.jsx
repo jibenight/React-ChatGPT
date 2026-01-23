@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import React from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { API_BASE } from '../apiConfig';
 
 const ResetPassword = () => {
   const {
@@ -19,7 +20,7 @@ const ResetPassword = () => {
   const onSubmit = data => {
     const { password } = data;
     axios
-      .post('http://localhost:3000/reset-password', {
+      .post(`${API_BASE}/reset-password`, {
         token,
         newPassword: password,
       })

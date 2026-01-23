@@ -1,104 +1,57 @@
 # Projet de Chatbot AI
 
-Ce projet est un chatbot d'IA qui utilise les modèles d'OpenAI pour interagir avec les utilisateurs. L'application est construite avec React pour le front-end et Node.js pour le back-end, et utilise SQLite pour le stockage des données.
+Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec front React + Vite, back Express/SQLite et chiffrement des clés API côté base.
 
-## Structure de l'application
-
-L'application est structurée en deux parties principales : le back-end et le front-end.
-
-### Back-end :
-
-Le back-end comprend les éléments suivants :
-
-- `app.js` : Le fichier principal qui initialise le serveur Express.
-- `models/database.js` : Gestion de la base de données SQLite `ChatData.db`.
-- `routes/auth.js` : Routes pour l'authentification (inscription, connexion, réinitialisation de mot de passe).
-- `routes/users-api.js` : API de gestion des utilisateurs.
-- `routes/openaiApi.js` : Gestion des interactions avec l'API OpenAI.
-
-### Front-end :
-
-Le front-end est construit avec React et est organisé en plusieurs dossiers.
-
-#### Routes (`src/routes`) :
-
-- `App.jsx` : Le composant racine connecté.
-- `login.jsx` : Page de connexion.
-- `register.jsx` : Page d'inscription.
-- `resetPasswordRequest.jsx` : Page de demande de réinitialisation de mot de passe.
-
-#### Composants (`src/component`) :
-
-- `Aside.jsx` : Barre latérale, gestion du profil et sélection des modèles.
-- `Aioption.jsx` : Liste des options d'IA.
-- `ChatZone.jsx` : Zone principale de chat.
-- `ChatText.jsx` : Affichage des messages individuels.
-- `ChatInput.jsx` : Champ de saisie des messages.
-- `Dropdown.jsx` : Menu déroulant.
-- `Logout.jsx` : Bouton de déconnexion.
-- `Profil.jsx` : Affichage et édition du profil utilisateur.
-
-#### Contextes et Utilitaires :
-
-- `src/UserContext.jsx` : Contexte React pour la gestion de l'état utilisateur global.
-- `src/PrivateRoute.jsx` : Composant de protection des routes nécessitant une authentification.
+## Structure
+- **Back-end** (`Back-end/`) : `app.js` (serveur Express), `models/database.js` (SQLite `database/ChatData.db` auto-créée), routes `auth.js` (inscription/connexion), `users-api.js` (profil + clés API), `chatApi.js` (requêtes IA), middlewares.
+- **Front-end** (`src/`) : routes `login.jsx`, `register.jsx`, `resetPassword*.jsx`, composants (`Aside`, `ChatZone`, `Profil`, etc.), contexte utilisateur `UserContext.jsx`.
+- **Tests API** : collection Bruno dans `REact chat /` (`bruno.json`, `reggister.bru`).
 
 ## Prérequis
-
-- Node.js
-- NPM
-- SQLite
+- Node.js 18+
+- npm
+- SQLite (embarqué via `sqlite3`)
 
 ## Installation
-
-Clonez ce dépôt sur votre machine locale et installez les dépendances :
-
 ```bash
-git clone git@github.com:jibenight/React-ChatGPT.git
-cd React-ChatGPT
 npm install
 ```
 
-## Utilisation
-
-Pour utiliser l'application, vous devez lancer le front-end et le back-end.
-
-**Attention aux ports :**
-Par défaut, Vite (front-end) et le serveur Express (back-end) tentent tous deux d'utiliser le port `5173`.
-Certaines fonctionnalités (comme la réinitialisation de mot de passe) s'attendent à ce que le back-end soit sur `http://localhost:5173`.
-
-Il est recommandé de lancer le back-end en premier pour qu'il prenne le port 5173, puis le front-end (Vite passera automatiquement sur le port suivant, ex: 5174).
-
-1. Démarrer le serveur Back-end :
-```bash
-npm run serve
+## Variables d'environnement
+Créer un fichier `.env` à la racine (ou `.env.local` pour Vite) :
 ```
-*(Le serveur devrait démarrer sur http://localhost:5173)*
+SECRET_KEY=...           # JWT
+ENCRYPTION_KEY=...       # Chiffre les clés API en base
+ACCOUNT_USER=...         # Compte d'envoi d'email (reset MDP)
+PASSWORD=...             # Mot de passe ou app password
+VITE_API_URL=http://localhost:3000   # Base d'URL API consommée par le front
+PORT=3000                # (optionnel) Port du back
+```
 
-2. Démarrer le serveur Front-end (dans un nouveau terminal) :
+## Lancement
+Dans deux terminaux :
 ```bash
+# Back (port 3000 par défaut)
+npm run serve
+
+# Front (Vite) — lit VITE_API_URL
 npm run dev
 ```
-*(Vite détectera que le port 5173 est occupé et proposera d'utiliser le port 5174 ou un autre)*
+Ouvrir l’URL affichée par Vite (ex. http://localhost:5173). Le front appelle le back via `VITE_API_URL` (par défaut `http://localhost:3000`).
 
-Ouvrez votre navigateur sur l'URL indiquée par Vite (ex: `http://localhost:5174`).
+## Base de données
+- Fichier : `database/ChatData.db` (créé au démarrage si absent).
+- Tables : `users`, `api_keys` (clés chiffrées AES), `chat_history`, `password_resets`.
+- Lecture rapide : `sqlite3 database/ChatData.db` puis `.tables`, `.schema users`, `SELECT * FROM users LIMIT 5;`.
 
-## Tests API
+## Fonctionnalités backend
+- Authentification : `/register`, `/login`, reset mot de passe.
+- Profil : update username/password, stockage chiffré des clés API par provider (`openai`, `gemini`, `claude`, `mistral`).
+- Chat : `/api/chat/message` routé vers le provider selon `provider` dans le payload.
 
-Une collection de tests API pour **Bruno** est disponible dans le dossier `REact chat /`.
-- `bruno.json`
-- `reggister.bru`
-
-Vous pouvez utiliser ces fichiers pour tester les endpoints du back-end directement.
-
-## Configuration de l'API OpenAI
-
-Les clés API d'OpenAI sont stockées dans la base de données SQLite. Vous devrez ajouter votre clé API à la base de données via l'interface utilisateur ou directement en base avant de pouvoir utiliser l'application.
-
-## Contribution
-
-Les contributions à ce projet sont les bienvenues. N'hésitez pas à ouvrir un problème ou à soumettre une demande d'extraction.
+## Débogage courant
+- Erreur `MODULE_NOT_FOUND @google/generative-ai` ou similaires : exécuter `npm install` (dépendances ajoutées : `@google/generative-ai`, `@anthropic-ai/sdk`, `@mistralai/mistralai`).
+- Port utilisé : ajuster `PORT` et `VITE_API_URL` si 3000 est pris.
 
 ## Licence
-
-Ce projet est sous licence MIT. Consultez le fichier `LICENSE` pour plus d'informations.
+MIT.

@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import seePassword from '../assets/eye.svg';
 import hidePassword from '../assets/no-eye.svg';
-const port = 5173;
+import { API_BASE } from '../apiConfig';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +28,7 @@ const Register = () => {
   const onSubmit = data => {
     const { name, email, password } = data;
     axios
-      .post(`http://localhost:${port}/register`, {
+      .post(`${API_BASE}/register`, {
         username: name,
         email,
         password,

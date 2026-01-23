@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useUser } from '../UserContext';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-const port = 5173;
+import { API_BASE } from '../apiConfig';
 const token = localStorage.getItem('token');
 
 function Profil() {
@@ -48,7 +48,7 @@ function Profil() {
     if (data.username || data.password) {
       try {
         const response = await axios.post(
-          `http://localhost:${port}/api/update-user-data`,
+          `${API_BASE}/api/update-user-data`,
           updatedData,
           {
             headers: {
@@ -74,7 +74,7 @@ function Profil() {
     if (data.api_key) {
       try {
         const response = await axios.post(
-          `http://localhost:${port}/api/update-api-key`,
+          `${API_BASE}/api/update-api-key`,
           { apiKey: data.api_key },
           {
             headers: {

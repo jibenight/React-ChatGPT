@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../UserContext';
+import { API_BASE } from '../apiConfig';
 
 const Login = () => {
   const {
@@ -17,7 +18,7 @@ const Login = () => {
   const onSubmit = data => {
     const { email, password } = data;
     axios
-      .post('http://localhost:3000/login', {
+      .post(`${API_BASE}/login`, {
         email,
         password,
       })

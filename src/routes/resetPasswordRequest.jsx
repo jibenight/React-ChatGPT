@@ -3,6 +3,7 @@ import chatGPT from '../assets/chatGPT.gif';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import React from 'react';
+import { API_BASE } from '../apiConfig';
 
 const ResetPasswordRequest = () => {
   const {
@@ -14,7 +15,7 @@ const ResetPasswordRequest = () => {
   const onSubmit = data => {
     const { email } = data;
     axios
-      .post('http://localhost:3000/reset-password-request', {
+      .post(`${API_BASE}/reset-password-request`, {
         email,
       })
       .then(response => {

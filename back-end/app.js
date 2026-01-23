@@ -1,32 +1,62 @@
 require('dotenv').config();
+
+// Description: serveur node.js
 const express = require('express');
+const path = require('path');
+
+// cors pour la gestion des requêtes
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const morgan = require('morgan');
+
+//database
 const db = require('./models/database');
 
-const authRoutes = require('./routes/auth');
-const userApiRoutes = require('./routes/users-api');
-const chatApiRoutes = require('./routes/chatApi');
+// post routes
+const auth = require('./routes/auth');
 
+// api routes user
+const userApi = require('./routes/users-api');
+
+// api routes openai
+const openaiApiRoute = require('./routes/openaiApi');
+
+// logger pour le serveur
+const morgan = require('morgan');
+
+// création de l'application express
 const app = express();
-
 app.use(cors());
-app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+//app.use(express.static(path.join(__dirname, '/dist')));
 app.use(morgan('tiny'));
 
-// Mount routes
-app.use('/', authRoutes);
-app.use('/', userApiRoutes);
-app.use('/api/chat', chatApiRoutes);
+// render index.html on the route '/'
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// });
 
+// routes
+app.use('/', auth);
+
+// api
+app.use('/', userApi);
+
+// Utilisez le routeur OpenAI API
+app.use('/', openaiApiRoute);
+
+// serveur node.js
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
+// terminated process
 process.on('SIGTERM', () => {
-  db.close();
+  server.close(() => {
+    console.log('Server terminated');
+    // close database connection
+    db.close();
+    console.log('3) Close the database connection => OK.');
+  });
 });
-// End of file

@@ -3,35 +3,40 @@ import upload from '../assets/telecharger.png';
 import navigation from '../assets/navigation.png';
 import microphone from '../assets/microphone.png';
 
-function ChatInput() {
+function ChatInput({ onSend, loading }) {
   const {
     register,
     handleSubmit,
-    watch,
-    formState: { errors },
+    reset,
   } = useForm();
-  const onSubmit = data => console.log(data);
+
+  const onSubmit = data => {
+    if (onSend) {
+      onSend(data.message || '');
+      reset({ message: '' });
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className='absolute bottom-3 flex items-center justify-between w-full p-3 border-t border-gray-300'>
-        <button>
-          <img src={upload} alt='' className='h-6 w-6' />
+        <button type='button' disabled>
+          <img src={upload} alt='' className='h-6 w-6 opacity-50' />
         </button>
 
         <input
           type='text'
           placeholder='Message'
           className='block w-full py-2 pl-4 mx-3 bg-gray-200 rounded-full outline-none focus:text-gray-700'
-          name='message'
-          {...register('example')}
+          {...register('message')}
           required
+          disabled={loading}
         />
 
-        <button>
-          <img src={microphone} alt='' className='h-6 w-6' />
+        <button type='button' disabled>
+          <img src={microphone} alt='' className='h-6 w-6 opacity-50' />
         </button>
-        <button type='submit' className='mx-2'>
+        <button type='submit' className='mx-2' disabled={loading}>
           <img src={navigation} alt='' className='h-6 w-6 rotate-90' />
         </button>
       </div>

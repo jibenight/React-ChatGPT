@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '../UserContext';
 import { API_BASE } from '../apiConfig';
 
-const Login = () => {
+const Login = ({ isModal }) => {
   const {
     register,
     handleSubmit,
@@ -28,7 +28,7 @@ const Login = () => {
           localStorage.setItem('token', token);
           localStorage.setItem(
             'user',
-            JSON.stringify({ userId, username, email })
+            JSON.stringify({ userId, username, email }),
           );
           setUserData({
             id: userId,
@@ -51,7 +51,13 @@ const Login = () => {
   };
 
   return (
-    <section className='py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen'>
+    <section
+      className={
+        isModal
+          ? 'py-8 bg-white'
+          : 'py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen'
+      }
+    >
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>

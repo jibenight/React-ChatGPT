@@ -8,7 +8,7 @@ import seePassword from '../assets/eye.svg';
 import hidePassword from '../assets/no-eye.svg';
 import { API_BASE } from '../apiConfig';
 
-const Register = () => {
+const Register = ({ isModal, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -43,7 +43,7 @@ const Register = () => {
           setErrorMessage('Email already exists');
         } else if (error.response.data.error === 'characters') {
           setErrorMessage(
-            'Password must be at least 8 characters long, with at least one uppercase letter and one digit'
+            'Password must be at least 8 characters long, with at least one uppercase letter and one digit',
           );
         } else {
           setErrorMessage('An error occurred');
@@ -52,7 +52,11 @@ const Register = () => {
   };
 
   return (
-    <section className='py-16 xl:pb-56 bg-white overflow-hidden'>
+    <section
+      className={
+        isModal ? 'py-8 bg-white' : 'py-16 xl:pb-56 bg-white overflow-hidden'
+      }
+    >
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>
@@ -156,8 +160,19 @@ const Register = () => {
             </button>
             <p className='font-medium'>
               <span>Already have an account? </span>
-              <span className='text-teal-600 hover:text-teal-700' href='#'>
-                <NavLink to='/login'>Sign In</NavLink>
+              <span className='text-teal-600 hover:text-teal-700 cursor-pointer'>
+                {isModal && onSwitchToLogin ? (
+                  <a
+                    onClick={e => {
+                      e.preventDefault();
+                      onSwitchToLogin();
+                    }}
+                  >
+                    Sign In
+                  </a>
+                ) : (
+                  <NavLink to='/login'>Sign In</NavLink>
+                )}
               </span>
             </p>
           </form>

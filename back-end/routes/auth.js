@@ -33,7 +33,8 @@ auth.post('/register', async (req, res) => {
     //   return res.status(400).json({ error: 'Only one user allowed' });
     // }
 
-    const { username, email, password } = req.body;
+    const { username, password } = req.body;
+    const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
     // Vérification si l'email existe déjà
     const emailExists = await new Promise((resolve, reject) => {
       db.get('SELECT email FROM users WHERE email = ?', email, (err, row) => {
@@ -66,14 +67,15 @@ auth.post('/register', async (req, res) => {
           message: 'User registered successfully',
           userId: this.lastID,
         });
-      }
+      },
     );
   });
 });
 
 // pour la connexion
 auth.post('/login', (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
 
   db.get('SELECT * FROM users WHERE email = ?', [email], async (err, row) => {
     if (err) {
@@ -101,7 +103,7 @@ auth.post('/login', (req, res) => {
 
 // Route pour la demande de réinitialisation
 auth.post('/reset-password-request', (req, res) => {
-  const { email } = req.body;
+  const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
   db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
@@ -132,7 +134,7 @@ auth.post('/reset-password-request', (req, res) => {
           }
           res.status(200).json({ message: 'Reset email sent' });
         });
-      }
+      },
     );
   });
 });
@@ -140,8 +142,17 @@ auth.post('/reset-password-request', (req, res) => {
 // Route pour la réinitialisation
 auth.post('/reset-password', (req, res) => {
   const { token, newPassword } = req.body;
+
+  // Vérification de la complexité du mot de passe
+  if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(newPassword)) {
+    return res.status(400).json({
+      error:
+        'Password must contain at least 8 characters, one uppercase, one lowercase and one number.',
+    });
+  }
+
   db.get(
-    'SELECT * FROM password_resets WHERE token = ?',
+    'SELECT * FROM password_resets WHERE token = ? AND expires_at > DATETIME("now")',
     [token],
     async (err, row) => {
       if (err) {
@@ -166,11 +177,11 @@ auth.post('/reset-password', (req, res) => {
                 return res.status(500).json({ error: err.message });
               }
               res.status(200).json({ message: 'Password reset successfully' });
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 });
 

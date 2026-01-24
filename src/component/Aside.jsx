@@ -1,55 +1,23 @@
-import { useState, useEffect } from 'react';
-import chatGPT from '../assets/chatGPT.mp4';
+import { useUser } from '../UserContext';
 import Aioption from './Aioption';
 import LogOut from './Logout';
-import { useUser } from '../UserContext';
+import chatGPT from '../assets/chatGPT.mp4';
 
-function Aside({ setProfil, profil }) {
-  const [selectedOption, setSelectedOption] = useState(profil);
+function Aside({ setProfil, profil, selectedOption, setSelectedOption }) {
   const { userData } = useUser();
-
-  const handleMessageSend = message => {
-    fetch('/api/openai/message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: userId,
-        sessionId: sessionId,
-        message: message,
-        modelId: selectedOption.id,
-      }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        setMessages(prevMessages => [
-          ...prevMessages,
-          { type: 'user', content: message },
-          { type: 'ai', content: data.message },
-        ]);
-      });
-  };
-
-  function handleSelectOption(option) {
-    setSelectedOption(option);
-  }
-
-  // Vérifiez si userData existe et contient un username
   const hasUserData = userData && userData.username;
 
   return (
-    <div className='bg-gray-800 w-100 h-screen divide-y divide-gray-100 flex flex-col'>
+    <div className='bg-gray-800 w-64 h-screen divide-y divide-gray-100 flex flex-col flex-shrink-0'>
       <div className='m-3 mt-5 mb-10'>
         <div className='m-3 flex items-center justify-center'>
           <video
-            src={selectedOption.avatar || chatGPT}
+            src={selectedOption?.avatar || chatGPT}
             autoPlay={true}
             className='h-20 w-20 flex-shrink-0 rounded-full'
           />
         </div>
 
-        {/* N'affichez le texte d'accueil que si userData est disponible */}
         {hasUserData ? (
           <h1 className='text-gray-100 text-2xl italic text-center'>
             Hello, {userData.username}
@@ -62,7 +30,10 @@ function Aside({ setProfil, profil }) {
       </div>
 
       <div className='m-3 flex-grow'>
-        <Aioption setSelectedOption={handleSelectOption} />
+        <Aioption
+          selectedOption={selectedOption}
+          setSelectedOption={setSelectedOption}
+        />
       </div>
 
       <div className=' flex justify-center items-center m-3 p-3'>

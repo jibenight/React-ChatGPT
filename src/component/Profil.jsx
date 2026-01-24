@@ -3,7 +3,6 @@ import { useUser } from '../UserContext';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import { API_BASE } from '../apiConfig';
-const token = localStorage.getItem('token');
 
 function Profil() {
   const { userData, setUserData } = useUser();
@@ -37,7 +36,7 @@ function Profil() {
     console.log(data);
     // Filtrer les clés-valeurs pour lesquelles les valeurs ne sont pas vides
     const updatedData = Object.fromEntries(
-      Object.entries(data).filter(([key, value]) => value && value.trim())
+      Object.entries(data).filter(([key, value]) => value && value.trim()),
     );
     console.log('Submitting data:', updatedData); // Ajoutez cette ligne pour voir les données soumises
 
@@ -46,6 +45,7 @@ function Profil() {
       return;
     }
     if (data.username || data.password) {
+      const token = localStorage.getItem('token');
       try {
         const response = await axios.post(
           `${API_BASE}/api/update-user-data`,
@@ -54,7 +54,7 @@ function Profil() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         if (response.data.message === 'User data updated successfully') {
           // Mettre à jour le contexte utilisateur avec les nouvelles données
@@ -72,6 +72,7 @@ function Profil() {
     }
 
     if (data.api_key) {
+      const token = localStorage.getItem('token');
       try {
         const response = await axios.post(
           `${API_BASE}/api/update-api-key`,
@@ -80,7 +81,7 @@ function Profil() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         console.log('API Key updated:', response.data);
         reset({ api_key: '' });
@@ -90,82 +91,159 @@ function Profil() {
     }
   };
   return (
-    <div className='relative bg-gray-100 h-screen'>
-      <div className='m-5'>
-        <h1 className='text-4xl italic text-center'>Your profil</h1>
-      </div>
-      <hr className='my-12 h-px border-t-0 bg-transparent bg-gradient-to-r from-transparent via-neutral-500 to-transparent opacity-25 dark:opacity-100' />
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className='bg-slate-200 m-5 p-5 rounded-lg'>
-          {userData && (
-            <>
-              <p className='m-2 text-lg'>Username: {userData.username}</p>
-              <p className='m-2 text-lg'>Email: {userData.email}</p>
-              <p className='m-2 text-lg'>OpenAi: </p>
-            </>
-          )}
-          {!profilData && (
-            <div className='flex flex-col'>
-              <input
-                {...register('username')}
-                placeholder='Enter new username'
-                className='mb-4 p-2 border rounded'
-              />
-              <input
-                {...register('password')}
-                placeholder='Enter new password'
-                className='mb-4 p-2 border rounded'
-              />
-              <input
-                {...register('passwordConfirmation')}
-                placeholder='Confirm new password'
-                className='mb-4 p-2 border rounded'
-              />
-
-              <input
-                {...register('api_key')}
-                placeholder='Enter new API Key'
-                className='mb-4 p-2 border rounded'
-              />
-
-              {errors.passwordConfirmation && (
-                <span className='text-red-500'>
-                  {errors.passwordConfirmation.message}
-                </span>
-              )}
-
+    <div className='relative bg-gray-50 h-screen flex-1 overflow-y-auto'>
+      <div className='max-w-3xl mx-auto px-4 py-10'>
+        <h1 className='text-3xl font-bold text-gray-900 text-center mb-8'>
+          Your Profile
+        </h1>
+        <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+          <div className='bg-white shadow rounded-xl overflow-hidden'>
+            <div className='px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center'>
+              <h3 className='text-lg font-medium leading-6 text-gray-900'>
+                User Information
+              </h3>
               <button
-                className='mt-5 py-2 px-6 w-28 text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
-                type='submit'
+                onClick={toogleProfilData}
+                className='text-sm font-medium text-teal-600 hover:text-teal-500 focus:outline-none'
+                type='button'
               >
-                Update
+                {profilData ? 'Edit' : 'Cancel'}
               </button>
             </div>
-          )}
-          <button
-            onClick={toogleProfilData}
-            className='mt-5 py-2 px-6 w-28 text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
-            type='button'
-          >
-            {profilData ? 'Change' : 'Cancel'}
-          </button>
-        </div>
 
-        <div className='bg-slate-200 m-5 p-5 rounded-lg'>
-          <button
-            className='mr-3 py-2 px-6 w-48 text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
-            type='submit'
-          >
-            Delete Account
-          </button>
-          <button
-            className='py-2 px-6 w-48 text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
-            type='submit'
-          >
-            Delete openAi API
-          </button>
-        </div>
-      </form>
+            <div className='px-6 py-5 space-y-6'>
+              {userData && (
+                <dl className='grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2'>
+                  <div className='sm:col-span-1'>
+                    <dt className='text-sm font-medium text-gray-500'>
+                      Username
+                    </dt>
+                    <dd className='mt-1 text-sm text-gray-900'>
+                      {userData.username}
+                    </dd>
+                  </div>
+                  <div className='sm:col-span-1'>
+                    <dt className='text-sm font-medium text-gray-500'>Email</dt>
+                    <dd className='mt-1 text-sm text-gray-900'>
+                      {userData.email}
+                    </dd>
+                  </div>
+                  <div className='sm:col-span-2'>
+                    <dt className='text-sm font-medium text-gray-500'>
+                      OpenAI API Key
+                    </dt>
+                    <dd className='mt-1 text-sm text-gray-900'>••••••••</dd>
+                  </div>
+                </dl>
+              )}
+
+              {!profilData && (
+                <div className='border-t border-gray-200 pt-6 mt-6'>
+                  <div className='grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6'>
+                    <div className='sm:col-span-4'>
+                      <label className='block text-sm font-medium text-gray-700'>
+                        New Username
+                      </label>
+                      <div className='mt-1'>
+                        <input
+                          {...register('username')}
+                          type='text'
+                          className='shadow-sm focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
+                          placeholder='Enter new username'
+                        />
+                      </div>
+                    </div>
+
+                    <div className='sm:col-span-3'>
+                      <label className='block text-sm font-medium text-gray-700'>
+                        New Password
+                      </label>
+                      <div className='mt-1'>
+                        <input
+                          {...register('password')}
+                          type='password'
+                          className='shadow-sm focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
+                          placeholder='Enter new password'
+                        />
+                      </div>
+                    </div>
+
+                    <div className='sm:col-span-3'>
+                      <label className='block text-sm font-medium text-gray-700'>
+                        Confirm Password
+                      </label>
+                      <div className='mt-1'>
+                        <input
+                          {...register('passwordConfirmation')}
+                          type='password'
+                          className='shadow-sm focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
+                          placeholder='Confirm new password'
+                        />
+                      </div>
+                    </div>
+                    {errors.passwordConfirmation && (
+                      <p className='text-red-500 text-sm sm:col-span-6'>
+                        {errors.passwordConfirmation.message}
+                      </p>
+                    )}
+
+                    <div className='sm:col-span-6'>
+                      <label className='block text-sm font-medium text-gray-700'>
+                        API Key
+                      </label>
+                      <div className='mt-1'>
+                        <input
+                          {...register('api_key')}
+                          type='text'
+                          className='shadow-sm focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border'
+                          placeholder='sk-...'
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='mt-6 flex justify-end'>
+                    <button
+                      className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500'
+                      type='submit'
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className='bg-white shadow rounded-xl overflow-hidden'>
+            <div className='px-6 py-5 border-b border-gray-200 bg-red-50'>
+              <h3 className='text-lg font-medium leading-6 text-red-800'>
+                Danger Zone
+              </h3>
+            </div>
+            <div className='px-6 py-5'>
+              <p className='text-sm text-gray-500 mb-4'>
+                Once you delete your account or API key, there is no going back.
+                Please be certain.
+              </p>
+              <div className='flex flex-col sm:flex-row gap-3'>
+                <button
+                  className='inline-flex justify-center py-2 px-4 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
+                  type='submit'
+                >
+                  Delete Account
+                </button>
+                <button
+                  className='inline-flex justify-center py-2 px-4 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
+                  type='submit'
+                >
+                  Delete OpenAI API
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

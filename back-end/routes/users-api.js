@@ -20,11 +20,10 @@ userApi.get(
     try {
       const rows = await db.all(query, [req.user.id]);
       res.json(rows);
-      console.log(rows);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
-  })
+  }),
 );
 
 userApi.post(
@@ -37,7 +36,7 @@ userApi.post(
     const encryptionKey = process.env.ENCRYPTION_KEY; // Assume you have set this environment variable
     const encryptedApiKey = cryptoJS.AES.encrypt(
       apiKey,
-      encryptionKey
+      encryptionKey,
     ).toString();
 
     console.log(userId);
@@ -56,7 +55,7 @@ userApi.post(
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
-  })
+  }),
 );
 
 userApi.post(
@@ -81,7 +80,7 @@ userApi.post(
               reject(err);
             }
             resolve(row);
-          }
+          },
         );
       });
       if (usernameExists) {
@@ -122,7 +121,7 @@ userApi.post(
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
-  })
+  }),
 );
 
 module.exports = userApi;

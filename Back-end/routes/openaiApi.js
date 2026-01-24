@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const openai = require('openai');
+const OpenAI = require('openai');
 const db = require('../models/database');
 const bcrypt = require('bcrypt');
 
@@ -12,7 +12,7 @@ router.get('/history/:userId/:sessionId', async (req, res) => {
   try {
     const history = await db.all(
       'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
-      [userId, sessionId]
+      [userId, sessionId],
     );
     res.json(history);
   } catch (err) {
@@ -27,7 +27,7 @@ router.post('/message', async (req, res) => {
   // Récupérer la clé d'API cryptée pour cet utilisateur
   const result = await db.get(
     'SELECT api_key FROM api_keys WHERE user_id = ?',
-    [userId]
+    [userId],
   );
 
   if (!result) {
@@ -39,49 +39,49 @@ router.post('/message', async (req, res) => {
   // Décrypter la clé d'API
   const apiKey = await bcrypt.compare(
     process.env.OPENAI_API_KEY,
-    encryptedApiKey
+    encryptedApiKey,
   );
 
   if (!apiKey) {
     return res.status(401).json({ error: 'Failed to decrypt API key' });
   }
 
-  // Configurez OpenAI avec la clé d'API décryptée
-  openai.apiKey = apiKey;
+  // Instanciation par requête pour éviter les conflits (Race Condition)
+  const openai = new OpenAI({ apiKey });
 
   // Construire la prompte avec l'historique du chat
   let history = await db.all(
     'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
-    [userId, sessionId]
+    [userId, sessionId],
   );
 
-  let prompt = 'User: ' + message + '\n';
-
-  history.forEach(msg => {
-    prompt += 'User: ' + msg.message + '\n';
-  });
+  // Conversion de l'historique pour l'API Chat
+  // Note: Idéalement, ajoutez une colonne 'role' dans votre DB pour distinguer user/assistant
+  const messages = history.map(msg => ({
+    role: 'user', // Défaut temporaire
+    content: msg.message,
+  }));
+  messages.push({ role: 'user', content: message });
 
   try {
-    const response = await openai.Completion.create({
-      engine: 'text-davinci-002',
-      prompt: prompt,
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: messages,
       max_tokens: 150,
-      n: 1,
-      stop: null,
       temperature: 0.8,
     });
 
-    const reply = response.choices[0].text.trim();
+    const reply = response.choices[0].message.content.trim();
 
     // Enregistrer le message de l'utilisateur et la réponse de l'IA dans la base de données
     await db.run(
       'INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)',
-      [userId, sessionId, message]
+      [userId, sessionId, message],
     );
 
     await db.run(
       'INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)',
-      [userId, sessionId, reply]
+      [userId, sessionId, reply],
     );
 
     res.json({ reply: reply });

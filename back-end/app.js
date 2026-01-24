@@ -6,7 +6,6 @@ const path = require('path');
 
 // cors pour la gestion des requêtes
 const cors = require('cors');
-const bodyParser = require('body-parser');
 
 //database
 const db = require('./models/database');
@@ -20,14 +19,17 @@ const userApi = require('./routes/users-api');
 // api routes openai
 const openaiApiRoute = require('./routes/openaiApi');
 
+// api routes chat (multi-providers)
+const chatApiRoute = require('./routes/chatApi');
+
 // logger pour le serveur
 const morgan = require('morgan');
 
 // création de l'application express
 const app = express();
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 //app.use(express.static(path.join(__dirname, '/dist')));
 app.use(morgan('tiny'));
 
@@ -45,9 +47,12 @@ app.use('/', userApi);
 // Utilisez le routeur OpenAI API
 app.use('/', openaiApiRoute);
 
+// Utilisez le routeur Chat API (pour /api/chat/message)
+app.use('/api/chat', chatApiRoute);
+
 // serveur node.js
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 

@@ -1,8 +1,8 @@
 import '../css/App.css';
 import { useState } from 'react';
-import Aside from './components/layout/Aside';
-import ChatZone from './features/chat/ChatZone';
-import Profil from './features/profile/Profile';
+import Aside from '../component/Aside';
+import ChatZone from '../component/ChatZone';
+import Profil from '../component/Profil';
 import { v4 as uuidv4 } from 'uuid';
 
 function App() {

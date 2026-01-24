@@ -1,3 +1,5 @@
+const express = require('express');
+const router = express.Router();
 const openai = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -5,33 +7,34 @@ const MistralClient = require('@mistralai/mistralai');
 const db = require('../models/database');
 const cryptoJS = require('crypto-js');
 
-exports.sendMessage = async (req, res) => {
+router.post('/message', async (req, res) => {
   const { userId, sessionId, message, provider } = req.body;
   const targetProvider = provider || 'openai';
 
+  const result = await new Promise((resolve, reject) => {
+    db.get('SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?', [userId, targetProvider], (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+
+  if (!result) return res.status(400).json({ error: `API key not found for ${targetProvider}` });
+
+  const encryptionKey = process.env.ENCRYPTION_KEY;
+  let apiKey;
   try {
-      const result = await new Promise((resolve, reject) => {
-        db.get('SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?', [userId, targetProvider], (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        });
-      });
+      const bytes = cryptoJS.AES.decrypt(result.api_key, encryptionKey);
+      apiKey = bytes.toString(cryptoJS.enc.Utf8);
+  } catch (e) {
+      return res.status(500).json({ error: 'Failed to decrypt API key' });
+  }
 
-      if (!result) return res.status(400).json({ error: `API key not found for ${targetProvider}` });
+  if (!apiKey) return res.status(401).json({ error: 'Invalid API key' });
 
-      const encryptionKey = process.env.ENCRYPTION_KEY;
-      let apiKey;
-      try {
-          const bytes = cryptoJS.AES.decrypt(result.api_key, encryptionKey);
-          apiKey = bytes.toString(cryptoJS.enc.Utf8);
-      } catch (e) {
-          return res.status(500).json({ error: 'Failed to decrypt API key' });
-      }
-
-      if (!apiKey) return res.status(401).json({ error: 'Invalid API key' });
-
-      let reply = '';
+  let reply = '';
+  try {
       if (targetProvider === 'openai') {
+          // Legacy config for openai ^3.2.1
           const configuration = new openai.Configuration({ apiKey });
           const openaiApi = new openai.OpenAIApi(configuration);
           try {
@@ -74,22 +77,14 @@ exports.sendMessage = async (req, res) => {
           reply = chatResponse.choices[0].message.content;
       }
 
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, message], (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
-      });
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, reply], (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
-      });
+      await db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, message]);
+      await db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, reply]);
 
       res.json({ reply });
   } catch (err) {
       console.error(err);
       res.status(500).json({ error: err.message });
   }
-};
+});
+
+module.exports = router;

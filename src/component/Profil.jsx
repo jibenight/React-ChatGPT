@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useUser } from '../../UserContext';
+import { useUser } from '../UserContext';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { API_BASE } from '../../apiConfig';
+import { API_BASE } from '../apiConfig';
 
 function Profil() {
   const { userData, setUserData } = useUser();

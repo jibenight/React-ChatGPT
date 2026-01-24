@@ -1,10 +1,10 @@
-import '../css/App.css';
-import chatGPT from '../assets/chatGPT.gif';
+import '../../css/App.css';
+import chatGPT from '../../assets/chatGPT.gif';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { useUser } from '../UserContext';
-import { API_BASE } from '../apiConfig';
+import { useUser } from '../../UserContext';
+import { API_BASE } from '../../apiConfig';
 
 const Login = ({ isModal }) => {
   const {

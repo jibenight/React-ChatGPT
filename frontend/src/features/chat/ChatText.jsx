@@ -1,5 +1,5 @@
-import chatGPT from '../assets/chatGPT.webp';
-import chatGPTAnime from '../assets/chatGPT.gif';
+import chatGPT from '../../assets/chatGPT.webp';
+import chatGPTAnime from '../../assets/chatGPT.gif';
 import { useMemo, useState } from 'react';
 
 function ChatText({ messages = [], error }) {

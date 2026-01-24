@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import ChatInput from './ChatInput';
 import ChatText from './ChatText';
-import { useUser } from '../UserContext';
-import { API_BASE } from '../apiConfig';
+import { useUser } from '../../UserContext';
+import { API_BASE } from '../../apiConfig';
 
 function ChatZone({ selectedOption, sessionId }) {
   const { userData } = useUser();

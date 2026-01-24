@@ -1,11 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
-import chatGPT from '../assets/chatGPT.mp4';
-import code from '../assets/code.mp4';
-import grammar from '../assets/grammar.mp4';
-import sqlTranslate from '../assets/sql-translate.mp4';
-import helperJs from '../assets/helper-js.mp4';
+import chatGPT from '../../assets/chatGPT.mp4';
+import code from '../../assets/code.mp4';
+import grammar from '../../assets/grammar.mp4';
+import sqlTranslate from '../../assets/sql-translate.mp4';
+import helperJs from '../../assets/helper-js.mp4';
 
 const providers = [
   {

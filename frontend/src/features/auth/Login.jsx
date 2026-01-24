@@ -14,6 +14,7 @@ const Login = ({ isModal }) => {
     formState: { errors },
   } = useForm();
   const { userData, setUserData } = useUser();
+  const [errorMessage, setErrorMessage] = useState('');
 
   const onSubmit = data => {
     const { email, password } = data;
@@ -35,17 +36,25 @@ const Login = ({ isModal }) => {
             username: username,
             email: email,
           });
+          setErrorMessage('');
           window.location.href = '/';
         }
       })
       .catch(error => {
-        if (error.response && error.response.status === 401) {
-          if (
-            error.response.data &&
-            error.response.data.message === 'invalid email'
-          ) {
-            console.log('email invalide');
-          }
+        if (!error.response) {
+          setErrorMessage('Backend injoignable. Vérifie que le serveur tourne.');
+          return;
+        }
+        const status = error.response.status;
+        const apiError = error.response.data?.error;
+        if (status === 404) {
+          setErrorMessage('Email introuvable.');
+        } else if (status === 401) {
+          setErrorMessage('Mot de passe incorrect.');
+        } else if (apiError) {
+          setErrorMessage(apiError);
+        } else {
+          setErrorMessage('Une erreur est survenue.');
         }
       });
   };
@@ -105,6 +114,9 @@ const Login = ({ isModal }) => {
             >
               Sign In
             </button>
+            {errorMessage && (
+              <p className='text-red-500 mb-5'>{errorMessage}</p>
+            )}
           </form>
         </div>
       </div>

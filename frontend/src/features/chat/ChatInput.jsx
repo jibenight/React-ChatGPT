@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
-import upload from '../assets/telecharger.png';
-import navigation from '../assets/navigation.png';
-import microphone from '../assets/microphone.png';
+import upload from '../../assets/telecharger.png';
+import navigation from '../../assets/navigation.png';
+import microphone from '../../assets/microphone.png';
 
 function ChatInput({ onSend, loading }) {
   const {

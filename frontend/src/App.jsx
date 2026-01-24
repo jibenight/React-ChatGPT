@@ -1,4 +1,4 @@
-import '../css/App.css';
+import './css/App.css';
 import { useState } from 'react';
 import Aside from './components/layout/Aside';
 import ChatZone from './features/chat/ChatZone';

@@ -1,11 +1,11 @@
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const express = require('express');
+const auth = express.Router();
+const db = require('../models/database');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
-const db = require('../models/database');
-require('dotenv').config();
-
 const secretKey = process.env.SECRET_KEY;
 
 // Création du transporter Nodemailer
@@ -19,10 +19,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-exports.register = async (req, res) => {
-  console.log(req.body);
-  const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
+// Requête SQL pour vérifier le nombre d'utilisateurs
+const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
 
+// pour l'inscription
+auth.post('/register', async (req, res) => {
+  console.log(req.body);
   db.get(checkUserCountQuery, async (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
@@ -68,9 +70,10 @@ exports.register = async (req, res) => {
       },
     );
   });
-};
+});
 
-exports.login = (req, res) => {
+// pour la connexion
+auth.post('/login', (req, res) => {
   const { password } = req.body;
   const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
 
@@ -84,6 +87,7 @@ exports.login = (req, res) => {
     const match = await bcrypt.compare(password, row.password);
     if (match) {
       const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '7d' });
+      res;
       res.status(200).json({
         message: 'Login successful',
         userId: row.id,
@@ -95,9 +99,10 @@ exports.login = (req, res) => {
       res.status(401).json({ error: 'Incorrect password' });
     }
   });
-};
+});
 
-exports.resetPasswordRequest = (req, res) => {
+// Route pour la demande de réinitialisation
+auth.post('/reset-password-request', (req, res) => {
   const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
   db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
     if (err) {
@@ -132,9 +137,10 @@ exports.resetPasswordRequest = (req, res) => {
       },
     );
   });
-};
+});
 
-exports.resetPassword = (req, res) => {
+// Route pour la réinitialisation
+auth.post('/reset-password', (req, res) => {
   const { token, newPassword } = req.body;
 
   // Vérification de la complexité du mot de passe
@@ -177,4 +183,6 @@ exports.resetPassword = (req, res) => {
       );
     },
   );
-};
+});
+
+module.exports = auth;

@@ -1,12 +1,12 @@
-import '../../css/App.css';
+import '../css/App.css';
 import React, { useState } from 'react';
-import code from '../../assets/code.gif';
+import code from '../assets/code.gif';
 import { NavLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import seePassword from '../../assets/eye.svg';
-import hidePassword from '../../assets/no-eye.svg';
-import { API_BASE } from '../../apiConfig';
+import seePassword from '../assets/eye.svg';
+import hidePassword from '../assets/no-eye.svg';
+import { API_BASE } from '../apiConfig';
 
 const Register = ({ isModal, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);

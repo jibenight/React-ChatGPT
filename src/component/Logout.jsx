@@ -1,7 +1,7 @@
-import logoutAnime from '../../assets/logout.gif';
-import logout from '../../assets/logout.webp';
-import profilImg from '../../assets/profil.webp';
-import profilAnime from '../../assets/profil.gif';
+import logoutAnime from '../assets/logout.gif';
+import logout from '../assets/logout.webp';
+import profilImg from '../assets/profil.webp';
+import profilAnime from '../assets/profil.gif';
 import React, { useState } from 'react';
 
 function LogOut({ setProfil, profil }) {

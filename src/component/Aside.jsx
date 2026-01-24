@@ -1,7 +1,7 @@
-import { useUser } from '../../UserContext';
-import Aioption from '../../features/chat/AiOption';
-import LogOut from '../../features/auth/Logout';
-import chatGPT from '../../assets/chatGPT.mp4';
+import { useUser } from '../UserContext';
+import Aioption from './Aioption';
+import LogOut from './Logout';
+import chatGPT from '../assets/chatGPT.mp4';
 
 function Aside({ setProfil, profil, selectedOption, setSelectedOption }) {
   const { userData } = useUser();

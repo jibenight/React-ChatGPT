@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import Login from './features/auth/Login';
-import Home from './features/chat/Home';
-import ResetPasswordRequest from './features/auth/ResetPasswordRequest';
-import ResetPassword from './features/auth/ResetPassword';
-import Register from './features/auth/Register';
+import App from './routes/App';
+import Login from './routes/login';
+import Home from './routes/Home';
+import ResetPasswordRequest from './routes/resetPasswordRequest';
+import ResetPassword from './routes/resetPassword';
+import Register from './routes/register';
 import './css/index.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';

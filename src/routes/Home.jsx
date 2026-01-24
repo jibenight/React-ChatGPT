@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import codeGif from '../../assets/code.gif';
-import MatrixBackground from '../../components/common/MatrixBackground';
-import Login from '../auth/Login';
-import Register from '../auth/Register';
-import Modal from '../../components/common/Modal.jsx';
+import codeGif from '../assets/code.gif';
+import MatrixBackground from '../component/MatrixBackground';
+import Login from './login';
+import Register from './register';
+import Modal from '../component/Modal.jsx';
 
 function Home() {
   // Vérification simple de la présence du token pour adapter l'interface

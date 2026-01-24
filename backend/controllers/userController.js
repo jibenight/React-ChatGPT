@@ -8,12 +8,7 @@ const saltRounds = 10;
 exports.getUsers = async (req, res) => {
   const query = 'SELECT * FROM users WHERE id = ?;';
   try {
-    const rows = await new Promise((resolve, reject) => {
-        db.all(query, [req.user.id], (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
-    });
+    const rows = await db.all(query, [req.user.id]);
     res.json(rows);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -37,12 +32,7 @@ exports.updateApiKey = async (req, res) => {
   `;
 
   try {
-    await new Promise((resolve, reject) => {
-      db.run(query, [userId, userId, encryptedApiKey], function(err) {
-        if (err) reject(err);
-        else resolve(this);
-      });
-    });
+    await db.run(query, [userId, userId, encryptedApiKey]);
     res.status(200).json({ message: 'API Key updated successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -58,12 +48,7 @@ exports.updateUserData = async (req, res) => {
 
   try {
     if (username) {
-        const usernameExists = await new Promise((resolve, reject) => {
-            db.get('SELECT username FROM users WHERE username = ? AND id != ?', [username, userId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
+        const usernameExists = await db.get('SELECT username FROM users WHERE username = ? AND id != ?', [username, userId]);
         if (usernameExists) {
             return res.status(400).json({ error: 'Username already exists' });
         }
@@ -98,12 +83,7 @@ exports.updateUserData = async (req, res) => {
     query += ' WHERE id = ?;';
     params.push(userId);
 
-    await new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
-            if (err) reject(err);
-            else resolve(this);
-        });
-    });
+    await db.run(query, params);
 
     console.log(`User data updated successfully for user ID: ${userId}`);
     res.status(200).json({ message: 'User data updated successfully' });

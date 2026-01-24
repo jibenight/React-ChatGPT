@@ -3,55 +3,81 @@
 Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec front React + Vite, back Express/SQLite et chiffrement des clés API côté base.
 
 ## Structure
-- **Back-end** (`Back-end/`) : `app.js` (serveur Express), `models/database.js` (SQLite `database/ChatData.db` auto-créée), routes `auth.js` (inscription/connexion), `users-api.js` (profil + clés API), `chatApi.js` (requêtes IA), middlewares.
-- **Front-end** (`src/`) : routes `login.jsx`, `register.jsx`, `resetPassword*.jsx`, composants (`Aside`, `ChatZone`, `Profil`, etc.), contexte utilisateur `UserContext.jsx`.
-- **Tests API** : collection Bruno dans `REact chat /` (`bruno.json`, `reggister.bru`).
+Le projet est séparé en deux dossiers distincts :
+- **Backend** (`backend/`) : Serveur Express, logique métier (Controllers), modèles (SQLite), et routes.
+- **Frontend** (`frontend/`) : Application React avec Vite, organisée par fonctionnalités (`features/`).
+
+### Architecture
+- **Backend** :
+    - `controllers/` : Logique métier (Auth, Chat, User, OpenAI).
+    - `routes/` : Définition des endpoints API.
+    - `models/` : Gestion de la base de données SQLite (`database/ChatData.db`).
+- **Frontend** :
+    - `features/` : Modules fonctionnels (`auth`, `chat`, `profile`).
+    - `components/` : Composants UI réutilisables (`common`, `layout`).
 
 ## Prérequis
 - Node.js 18+
 - npm
-- SQLite (embarqué via `sqlite3`)
+- SQLite
 
 ## Installation
+
+Installez les dépendances pour le frontend et le backend :
+
 ```bash
-npm install
+npm install # Installe les scripts racine
+npm run install:all # Installe les dépendances dans frontend/ et backend/
+```
+
+Ou manuellement :
+```bash
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
 ## Variables d'environnement
-Créer un fichier `.env` à la racine (ou `.env.local` pour Vite) :
+Créer un fichier `.env` dans **`backend/`** (pour le serveur) et `.env` dans **`frontend/`** (si nécessaire).
+
+**Backend (`backend/.env`)** :
 ```
 SECRET_KEY=...           # JWT
-ENCRYPTION_KEY=...       # Chiffre les clés API en base
-ACCOUNT_USER=...         # Compte d'envoi d'email (reset MDP)
-PASSWORD=...             # Mot de passe ou app password
-VITE_API_URL=http://localhost:3000   # Base d'URL API consommée par le front
+ENCRYPTION_KEY=...       # Chiffre les clés API en base (AES)
+EMAIL_USER=...           # Compte d'envoi d'email (reset MDP)
+PASSWORD=...             # Mot de passe ou app password email
 PORT=3000                # (optionnel) Port du back
+OPENAI_API_KEY=...       # Clé maître OpenAI (si utilisé pour le chiffrement/déchiffrement interne)
+```
+
+**Frontend (`frontend/.env`)** :
+```
+VITE_API_URL=http://localhost:3000   # URL de l'API Backend
 ```
 
 ## Lancement
-Dans deux terminaux :
-```bash
-# Back (port 3000 par défaut)
-npm run serve
 
-# Front (Vite) — lit VITE_API_URL
-npm run dev
+Depuis la racine du projet, vous pouvez utiliser les commandes suivantes :
+
+```bash
+# Lancer le backend (http://localhost:3000)
+npm run start:backend
+
+# Lancer le frontend (http://localhost:5173)
+npm run start:frontend
 ```
-Ouvrir l’URL affichée par Vite (ex. http://localhost:5173). Le front appelle le back via `VITE_API_URL` (par défaut `http://localhost:3000`).
 
 ## Base de données
-- Fichier : `database/ChatData.db` (créé au démarrage si absent).
-- Tables : `users`, `api_keys` (clés chiffrées AES), `chat_history`, `password_resets`.
-- Lecture rapide : `sqlite3 database/ChatData.db` puis `.tables`, `.schema users`, `SELECT * FROM users LIMIT 5;`.
+- Fichier : `database/ChatData.db` (créé automatiquement au démarrage du backend si absent).
+- Tables : `users`, `api_keys`, `chat_history`, `password_resets`.
 
-## Fonctionnalités backend
-- Authentification : `/register`, `/login`, reset mot de passe.
-- Profil : update username/password, stockage chiffré des clés API par provider (`openai`, `gemini`, `claude`, `mistral`).
-- Chat : `/api/chat/message` routé vers le provider selon `provider` dans le payload.
+## Fonctionnalités
+- **Authentification** : Inscription, Connexion, Réinitialisation de mot de passe.
+- **Profil** : Gestion du compte, ajout des clés API personnelles (chiffrées).
+- **Chat Multi-Modèles** : Discussion avec OpenAI, Gemini, Claude, Mistral.
 
 ## Débogage courant
-- Erreur `MODULE_NOT_FOUND @google/generative-ai` ou similaires : exécuter `npm install` (dépendances ajoutées : `@google/generative-ai`, `@anthropic-ai/sdk`, `@mistralai/mistralai`).
-- Port utilisé : ajuster `PORT` et `VITE_API_URL` si 3000 est pris.
+- **Erreur de module** : Assurez-vous d'avoir lancé `npm install` dans les DEUX dossiers `frontend` et `backend`.
+- **Base de données** : Si la base est verrouillée, assurez-vous qu'aucun autre processus n'y accède.
 
 ## Licence
 MIT.

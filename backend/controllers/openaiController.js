@@ -7,16 +7,10 @@ exports.getHistory = async (req, res) => {
   const sessionId = req.params.sessionId;
 
   try {
-    const history = await new Promise((resolve, reject) => {
-        db.all(
-            'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
-            [userId, sessionId],
-            (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            }
-        );
-    });
+    const history = await db.all(
+        'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
+        [userId, sessionId]
+    );
     res.json(history);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch chat history' });
@@ -28,16 +22,10 @@ exports.sendMessage = async (req, res) => {
 
   // Récupérer la clé d'API cryptée pour cet utilisateur
   try {
-      const result = await new Promise((resolve, reject) => {
-          db.get(
-            'SELECT api_key FROM api_keys WHERE user_id = ?',
-            [userId],
-            (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            }
-          );
-      });
+      const result = await db.get(
+        'SELECT api_key FROM api_keys WHERE user_id = ?',
+        [userId]
+      );
 
       if (!result) {
         return res.status(400).json({ error: 'API key not found for this user' });
@@ -59,16 +47,10 @@ exports.sendMessage = async (req, res) => {
       const openai = new OpenAI({ apiKey });
 
       // Construire la prompte avec l'historique du chat
-      let history = await new Promise((resolve, reject) => {
-        db.all(
-            'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
-            [userId, sessionId],
-            (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            }
-        );
-      });
+      let history = await db.all(
+        'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
+        [userId, sessionId]
+      );
 
       // Conversion de l'historique pour l'API Chat
       const messages = history.map(msg => ({
@@ -87,21 +69,15 @@ exports.sendMessage = async (req, res) => {
       const reply = response.choices[0].message.content.trim();
 
       // Enregistrer le message de l'utilisateur et la réponse de l'IA dans la base de données
-      await new Promise((resolve, reject) => {
-        db.run(
-          'INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)',
-          [userId, sessionId, message],
-          (err) => { if (err) reject(err); else resolve(); }
-        );
-      });
+      await db.run(
+        'INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)',
+        [userId, sessionId, message]
+      );
 
-      await new Promise((resolve, reject) => {
-        db.run(
-          'INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)',
-          [userId, sessionId, reply],
-          (err) => { if (err) reject(err); else resolve(); }
-        );
-      });
+      await db.run(
+        'INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)',
+        [userId, sessionId, reply]
+      );
 
       res.json({ reply: reply });
   } catch (err) {
@@ -116,12 +92,10 @@ exports.storeApiKey = async (req, res) => {
   try {
     const encryptedApiKey = await bcrypt.hash(apiKey, 10);
 
-    await new Promise((resolve, reject) => {
-        db.run('INSERT INTO api_keys (user_id, api_key) VALUES (?, ?)', [
-          userId,
-          encryptedApiKey,
-        ], (err) => { if (err) reject(err); else resolve(); });
-    });
+    await db.run('INSERT INTO api_keys (user_id, api_key) VALUES (?, ?)', [
+      userId,
+      encryptedApiKey,
+    ]);
     res.status(201).json({ message: 'API key stored successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to store API key' });

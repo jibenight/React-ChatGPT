@@ -10,12 +10,7 @@ exports.sendMessage = async (req, res) => {
   const targetProvider = provider || 'openai';
 
   try {
-      const result = await new Promise((resolve, reject) => {
-        db.get('SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?', [userId, targetProvider], (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        });
-      });
+      const result = await db.get('SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?', [userId, targetProvider]);
 
       if (!result) return res.status(400).json({ error: `API key not found for ${targetProvider}` });
 
@@ -74,18 +69,8 @@ exports.sendMessage = async (req, res) => {
           reply = chatResponse.choices[0].message.content;
       }
 
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, message], (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
-      });
-      await new Promise((resolve, reject) => {
-        db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, reply], (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
-      });
+      await db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, message]);
+      await db.run('INSERT INTO chat_history (user_id, session_id, message) VALUES (?, ?, ?)', [userId, sessionId, reply]);
 
       res.json({ reply });
   } catch (err) {

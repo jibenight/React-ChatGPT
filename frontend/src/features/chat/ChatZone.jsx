@@ -46,9 +46,47 @@ function ChatZone({ selectedOption, sessionId }) {
     }
   };
 
+  const activeModelLabel =
+    selectedOption?.name ||
+    `${selectedOption?.provider || 'OpenAI'} – ${
+      selectedOption?.model || 'gpt-4o'
+    }`;
+
+  const handleClear = () => {
+    setMessages([]);
+    setError('');
+  };
+
   return (
-    <div className='relative bg-gray-100 h-screen flex flex-col flex-1'>
-      <ChatText messages={messages} error={error} />
+    <div className='relative flex h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-gray-100 via-white to-gray-50'>
+      <header className='sticky top-0 z-10 border-b border-gray-200/70 bg-white/80 backdrop-blur'>
+        <div className='mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3'>
+          <div className='space-y-1'>
+            <p className='text-[11px] uppercase tracking-[0.2em] text-gray-400'>
+              Conversation
+            </p>
+            <h2 className='text-lg font-semibold text-gray-800'>Chat</h2>
+          </div>
+          <div className='flex items-center gap-2'>
+            <button
+              type='button'
+              onClick={handleClear}
+              disabled={messages.length === 0}
+              className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              Clear chat
+            </button>
+            <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm'>
+              <span className='h-2 w-2 rounded-full bg-teal-400' />
+              <span className='truncate max-w-[170px] sm:max-w-[240px]'>
+                {activeModelLabel}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <ChatText messages={messages} error={error} loading={loading} />
       <ChatInput onSend={handleSend} loading={loading} />
     </div>
   );

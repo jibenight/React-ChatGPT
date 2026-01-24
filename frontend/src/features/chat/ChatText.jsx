@@ -1,9 +1,10 @@
 import chatGPT from '../../assets/chatGPT.webp';
 import chatGPTAnime from '../../assets/chatGPT.gif';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-function ChatText({ messages = [], error }) {
+function ChatText({ messages = [], error, loading }) {
   const [imgSrc, setImgSrc] = useState(chatGPT);
+  const endRef = useRef(null);
 
   const renderedMessages = useMemo(() => {
     if (messages.length === 0) {
@@ -25,36 +26,76 @@ function ChatText({ messages = [], error }) {
     setImgSrc(chatGPT);
   };
 
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading, error]);
+
   return (
-    <div className='m-3 flex flex-col gap-4 xl:w-2/3 xl:mx-auto pb-24'>
-      {renderedMessages.map((msg, index) => (
-        <div
-          key={index}
-          className={`flex ${msg.role === 'assistant' ? '' : 'justify-end'}`}
-        >
-          {msg.role === 'assistant' && (
-            <img
-              src={imgSrc}
-              alt=''
-              className='h-12 w-12 flex-shrink-0 rounded-full'
-              onMouseOver={handleMouseOver}
-              onMouseOut={handleMouseOut}
-            />
-          )}
-          <p
-            className={`mx-3 px-5 py-3 rounded-lg bg-slate-200 max-w-xl ${
-              msg.role === 'assistant' ? '' : 'bg-teal-100'
-            }`}
-          >
-            {msg.content}
-          </p>
-        </div>
-      ))}
-      {error && (
-        <p className='text-red-600 text-sm mx-3'>
-          {error}
-        </p>
-      )}
+    <div className='flex-1 overflow-y-auto'>
+      <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6'>
+        {renderedMessages.map((msg, index) => {
+          const isAssistant = msg.role === 'assistant';
+          return (
+            <div
+              key={index}
+              className={`flex items-start gap-3 ${
+                isAssistant ? 'justify-start' : 'justify-end'
+              }`}
+            >
+              {isAssistant && (
+                <div className='mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200'>
+                  <img
+                    src={imgSrc}
+                    alt=''
+                    className='h-8 w-8 rounded-full'
+                    onMouseOver={handleMouseOver}
+                    onMouseOut={handleMouseOut}
+                  />
+                </div>
+              )}
+              <div
+                className={`max-w-[80%] rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-sm ${
+                  isAssistant
+                    ? 'bg-white text-gray-700 ring-1 ring-gray-200'
+                    : 'bg-teal-500 text-white'
+                }`}
+              >
+                <p className='whitespace-pre-wrap'>{msg.content}</p>
+              </div>
+              {!isAssistant && (
+                <div className='mt-1 hidden h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-700 sm:flex'>
+                  You
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {loading && (
+          <div className='flex items-start gap-3'>
+            <div className='mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200'>
+              <img
+                src={imgSrc}
+                alt=''
+                className='h-8 w-8 rounded-full'
+                onMouseOver={handleMouseOver}
+                onMouseOut={handleMouseOut}
+              />
+            </div>
+            <div className='max-w-[70%] rounded-2xl bg-white px-5 py-4 text-sm text-gray-500 shadow-sm ring-1 ring-gray-200'>
+              <span className='animate-pulse'>Réflexion en cours…</span>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className='rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600'>
+            {error}
+          </div>
+        )}
+
+        <div ref={endRef} />
+      </div>
     </div>
   );
 }

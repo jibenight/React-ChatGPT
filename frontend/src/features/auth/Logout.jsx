@@ -3,8 +3,10 @@ import logout from '../../assets/logout.webp';
 import profilImg from '../../assets/profil.webp';
 import profilAnime from '../../assets/profil.gif';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function LogOut({ setProfil, profil }) {
+  const navigate = useNavigate();
   const [images, setImages] = useState({
     logoutSrc: logout,
     profilSrc: profilImg,
@@ -33,7 +35,7 @@ function LogOut({ setProfil, profil }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     // Redirigez l'utilisateur vers la page de connexion
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   // pour afficher ou masquer le Profil

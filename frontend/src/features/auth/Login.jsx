@@ -1,12 +1,14 @@
 import '../../css/App.css';
 import chatGPT from '../../assets/chatGPT.gif';
 import { useForm } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../UserContext';
 import { API_BASE } from '../../apiConfig';
 
 const Login = ({ isModal }) => {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -37,7 +39,7 @@ const Login = ({ isModal }) => {
             email: email,
           });
           setErrorMessage('');
-          window.location.href = '/';
+          navigate('/chat');
         }
       })
       .catch(error => {
@@ -92,12 +94,12 @@ const Login = ({ isModal }) => {
             </label>
             <label className='relative block mb-5'>
               <div className='absolute right-4 top-1/2 transform -translate-y-1/2'>
-                <a
+                <Link
                   className='text-sm text-teal-600 hover:text-teal-700 font-medium'
-                  href='/reset-password-request'
+                  to='/reset-password-request'
                 >
                   Forgot Password?
-                </a>
+                </Link>
               </div>
               <input
                 className='px-4 pr-36 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
@@ -109,7 +111,7 @@ const Login = ({ isModal }) => {
               />
             </label>
             <button
-              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-4xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
+              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
               type='submit'
             >
               Sign In

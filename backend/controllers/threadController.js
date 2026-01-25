@@ -148,3 +148,45 @@ exports.deleteThread = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.updateThread = async (req, res) => {
+  const userId = req.user.id;
+  const { threadId } = req.params;
+  const { title } = req.body || {};
+  const trimmedTitle = typeof title === 'string' ? title.trim() : '';
+  const nextTitle = trimmedTitle.length > 0 ? trimmedTitle : null;
+
+  try {
+    const thread = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT id FROM threads WHERE id = ? AND user_id = ?',
+        [threadId, userId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        },
+      );
+    });
+
+    if (!thread) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE threads
+         SET title = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ? AND user_id = ?`,
+        [nextTitle, threadId, userId],
+        err => {
+          if (err) reject(err);
+          else resolve();
+        },
+      );
+    });
+
+    res.status(200).json({ id: threadId, title: nextTitle });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -21,11 +21,11 @@ const providers = [
   {
     id: 'gemini',
     name: 'Gemini',
-    description: 'Modèles Google Gemini 1.5',
+    description: 'Modèles Google Gemini 2.5',
     avatar: helperJs,
     models: [
-      { id: 'gemini-1.5-pro', label: 'gemini-1.5-pro' },
-      { id: 'gemini-1.5-flash', label: 'gemini-1.5-flash' },
+      { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro' },
+      { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash' },
     ],
   },
   {

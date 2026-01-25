@@ -12,6 +12,8 @@ function Projects() {
     open: false,
     threadId: null,
   });
+  const [editingThreadId, setEditingThreadId] = useState(null);
+  const [editingThreadTitle, setEditingThreadTitle] = useState('');
   const [confirmProjectDelete, setConfirmProjectDelete] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
@@ -74,6 +76,8 @@ function Projects() {
   useEffect(() => {
     if (!selectedProject) {
       setThreads([]);
+      setEditingThreadId(null);
+      setEditingThreadTitle('');
       return;
     }
     loadThreads(selectedProject.id);
@@ -158,6 +162,36 @@ function Projects() {
       setStatus({
         type: 'error',
         text: 'Impossible de supprimer la conversation.',
+      });
+    }
+  };
+
+  const handleStartRenameThread = thread => {
+    setEditingThreadId(thread.id);
+    setEditingThreadTitle(thread.title || '');
+  };
+
+  const handleCancelRenameThread = () => {
+    setEditingThreadId(null);
+    setEditingThreadTitle('');
+  };
+
+  const handleRenameThread = async threadId => {
+    if (!token || !selectedProject) return;
+    try {
+      await axios.patch(
+        `${API_BASE}/api/threads/${threadId}`,
+        { title: editingThreadTitle },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setStatus({ type: 'success', text: 'Conversation renommée.' });
+      handleCancelRenameThread();
+      await loadThreads(selectedProject.id);
+    } catch (err) {
+      console.error(err);
+      setStatus({
+        type: 'error',
+        text: 'Impossible de renommer la conversation.',
       });
     }
   };
@@ -384,36 +418,79 @@ function Projects() {
                         Aucune conversation pour ce projet.
                       </p>
                     ) : (
-                      threads.map(thread => (
-                        <div
-                          key={thread.id}
-                          className='flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs'
-                        >
-                          <span className='font-semibold text-gray-700'>
-                            {thread.title || 'Conversation sans titre'}
-                          </span>
-                          <div className='flex items-center gap-2'>
-                            <Link
-                              to={`/chat?projectId=${selectedProject.id}&threadId=${thread.id}`}
-                              className='text-xs font-semibold text-teal-600 hover:text-teal-700'
-                            >
-                              Ouvrir
-                            </Link>
-                            <button
-                              type='button'
-                              onClick={() =>
-                                setConfirmThreadDelete({
-                                  open: true,
-                                  threadId: thread.id,
-                                })
-                              }
-                              className='text-xs font-semibold text-red-600 hover:text-red-700'
-                            >
-                              Supprimer
-                            </button>
+                      threads.map(thread => {
+                        const isEditing = editingThreadId === thread.id;
+                        return (
+                          <div
+                            key={thread.id}
+                            className='flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs'
+                          >
+                            {isEditing ? (
+                              <input
+                                type='text'
+                                value={editingThreadTitle}
+                                onChange={event =>
+                                  setEditingThreadTitle(event.target.value)
+                                }
+                                placeholder='Titre de conversation'
+                                className='mr-3 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200'
+                              />
+                            ) : (
+                              <span className='font-semibold text-gray-700'>
+                                {thread.title || 'Conversation sans titre'}
+                              </span>
+                            )}
+                            <div className='flex items-center gap-2'>
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    type='button'
+                                    onClick={() => handleRenameThread(thread.id)}
+                                    className='text-xs font-semibold text-teal-600 hover:text-teal-700'
+                                  >
+                                    Enregistrer
+                                  </button>
+                                  <button
+                                    type='button'
+                                    onClick={handleCancelRenameThread}
+                                    className='text-xs font-semibold text-gray-500 hover:text-gray-700'
+                                  >
+                                    Annuler
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <Link
+                                    to={`/chat?projectId=${selectedProject.id}&threadId=${thread.id}`}
+                                    className='text-xs font-semibold text-teal-600 hover:text-teal-700'
+                                  >
+                                    Ouvrir
+                                  </Link>
+                                  <button
+                                    type='button'
+                                    onClick={() => handleStartRenameThread(thread)}
+                                    className='text-xs font-semibold text-gray-600 hover:text-gray-800'
+                                  >
+                                    Renommer
+                                  </button>
+                                  <button
+                                    type='button'
+                                    onClick={() =>
+                                      setConfirmThreadDelete({
+                                        open: true,
+                                        threadId: thread.id,
+                                      })
+                                    }
+                                    className='text-xs font-semibold text-red-600 hover:text-red-700'
+                                  >
+                                    Supprimer
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

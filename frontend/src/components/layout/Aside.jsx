@@ -36,14 +36,10 @@ function Aside({
     open: false,
     threadId: null,
   });
-  const providerLabel =
-    selectedOption?.name ||
-    `${selectedOption?.provider || 'OpenAI'} – ${selectedOption?.model || ''}`;
   const providerAvatar = selectedOption?.avatar || chatGPT;
   const activeProject = projects.find(
     project => project.id === selectedProjectId,
   );
-  const activeThread = threads.find(thread => thread.id === selectedThreadId);
 
   useEffect(() => {
     const stored = localStorage.getItem('selected_provider');
@@ -254,18 +250,6 @@ function Aside({
 
       <div className='flex-1 px-4 py-6'>
         <div className='space-y-4'>
-          <div className='rounded-2xl border border-gray-700/60 bg-gray-900/40 p-4 text-sm text-gray-300'>
-            <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>
-              Session active
-            </p>
-            <p className='mt-2 text-sm font-semibold text-gray-100'>
-              {providerLabel}
-            </p>
-            <p className='mt-2 text-xs text-gray-400'>
-              Changez le fournisseur pour adapter la réponse à votre besoin.
-            </p>
-          </div>
-
           <div className='rounded-2xl border border-gray-700/60 bg-gray-900/30 p-4 text-sm text-gray-200'>
             <div className='flex items-center justify-between'>
               <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>
@@ -282,9 +266,52 @@ function Aside({
             <p className='mt-2 text-sm font-semibold text-gray-100'>
               {activeProject?.name || 'Aucun'}
             </p>
-            <p className='mt-2 text-xs text-gray-400'>
-              Conversation: {activeThread?.title || 'Aucun'}
-            </p>
+          </div>
+
+          <div className='rounded-2xl border border-gray-700/60 bg-gray-900/30 p-4 text-sm text-gray-200'>
+            <div className='flex items-center justify-between'>
+              <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>
+                Conversations
+              </p>
+              <button
+                type='button'
+                onClick={handleCreateThread}
+                className='rounded-full border border-gray-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-200 hover:border-gray-500 hover:text-white'
+              >
+                Nouveau
+              </button>
+            </div>
+            <input
+              type='text'
+              value={newThreadTitle}
+              onChange={event => setNewThreadTitle(event.target.value)}
+              placeholder='Titre de conversation (optionnel)'
+              className='mt-2 w-full rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2 text-xs text-gray-100 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30'
+            />
+            <div className='mt-3 space-y-2'>
+              {loadingThreads ? (
+                <p className='text-xs text-gray-500'>Chargement...</p>
+              ) : threads.length === 0 ? (
+                <p className='text-xs text-gray-500'>
+                  Aucune conversation pour le moment
+                </p>
+              ) : (
+                threads.map(thread => (
+                  <button
+                    key={thread.id}
+                    type='button'
+                    onClick={() => setSelectedThreadId(thread.id)}
+                    className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
+                      selectedThreadId === thread.id
+                        ? 'bg-teal-500/20 text-teal-100'
+                        : 'text-gray-300 hover:bg-gray-700/40'
+                    }`}
+                  >
+                    {thread.title || 'Conversation sans titre'}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>

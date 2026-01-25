@@ -19,5 +19,10 @@ threads.delete(
   isAuthenticated,
   asyncHandler(threadController.deleteThread),
 );
+threads.patch(
+  '/api/threads/:threadId',
+  isAuthenticated,
+  asyncHandler(threadController.updateThread),
+);
 
 module.exports = threads;

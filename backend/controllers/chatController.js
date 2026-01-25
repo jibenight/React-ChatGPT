@@ -1,5 +1,5 @@
 const openai = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 const Anthropic = require('@anthropic-ai/sdk');
 const MistralClient = require('@mistralai/mistralai');
 const db = require('../models/database');
@@ -11,7 +11,7 @@ exports.sendMessage = async (req, res) => {
   const targetProvider = provider || 'openai';
   const defaultModels = {
     openai: 'gpt-4o',
-    gemini: 'gemini-1.5-pro',
+    gemini: 'gemini-2.5-pro',
     claude: 'claude-3-5-sonnet-20240620',
     mistral: 'mistral-large-latest',
   };
@@ -178,8 +178,7 @@ exports.sendMessage = async (req, res) => {
         reply = response.data.choices[0].text.trim();
       }
     } else if (targetProvider === 'gemini') {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const geminiModel = genAI.getGenerativeModel({ model: targetModel });
+      const genAI = new GoogleGenAI({ apiKey });
       const historyText = history
         .map(entry =>
           entry.role === 'assistant'
@@ -190,9 +189,11 @@ exports.sendMessage = async (req, res) => {
       const combinedPrompt = [systemPrompt, historyText]
         .filter(Boolean)
         .join('\n\n');
-      const result = await geminiModel.generateContent(combinedPrompt);
-      const response = await result.response;
-      reply = response.text();
+      const response = await genAI.models.generateContent({
+        model: targetModel,
+        contents: combinedPrompt,
+      });
+      reply = response.text || '';
     } else if (targetProvider === 'claude') {
       const anthropic = new Anthropic({ apiKey: apiKey });
       const msg = await anthropic.messages.create({

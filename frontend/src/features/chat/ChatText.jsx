@@ -64,7 +64,7 @@ function ChatText({ messages = [], error, loading }) {
               </div>
               {!isAssistant && (
                 <div className='mt-1 hidden h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-700 sm:flex'>
-                  You
+                  Vous
                 </div>
               )}
             </div>

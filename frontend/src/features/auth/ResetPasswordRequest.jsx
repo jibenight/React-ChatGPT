@@ -21,13 +21,13 @@ const ResetPasswordRequest = () => {
       .then(response => {
         if (response.status === 200) {
           // Gérer la réponse réussie ici, par exemple :
-          alert('Email de réinitialisation envoyé.');
+          alert('E-mail de réinitialisation envoyé.');
         }
       })
       .catch(error => {
         if (error.response && error.response.status === 404) {
           // Gérer les erreurs ici, par exemple :
-          alert('Email non trouvé.');
+          alert('E-mail non trouvé.');
         }
       });
   };

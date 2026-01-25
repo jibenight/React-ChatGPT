@@ -11,5 +11,7 @@ const asyncHandler = fn => (req, res, next) => {
 userApi.get('/api/users', isAuthenticated, asyncHandler(userController.getUsers));
 userApi.post('/api/update-api-key', isAuthenticated, asyncHandler(userController.updateApiKey));
 userApi.post('/api/update-user-data', isAuthenticated, asyncHandler(userController.updateUserData));
+userApi.get('/api/api-keys', isAuthenticated, asyncHandler(userController.getApiKeys));
+userApi.delete('/api/api-keys/:provider', isAuthenticated, asyncHandler(userController.deleteApiKey));
 
 module.exports = userApi;

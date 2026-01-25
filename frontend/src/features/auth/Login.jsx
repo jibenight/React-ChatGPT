@@ -44,13 +44,13 @@ const Login = ({ isModal }) => {
       })
       .catch(error => {
         if (!error.response) {
-          setErrorMessage('Backend injoignable. Vérifie que le serveur tourne.');
+          setErrorMessage('Serveur injoignable. Vérifie que le serveur tourne.');
           return;
         }
         const status = error.response.status;
         const apiError = error.response.data?.error;
         if (status === 404) {
-          setErrorMessage('Email introuvable.');
+          setErrorMessage('E-mail introuvable.');
         } else if (status === 401) {
           setErrorMessage('Mot de passe incorrect.');
         } else if (apiError) {
@@ -75,11 +75,10 @@ const Login = ({ isModal }) => {
             <img src={chatGPT} alt='Gif annimé robot' />
           </div>
           <h2 className='mb-4 text-6xl md:text-7xl text-center font-bold font-heading tracking-px-n leading-tight'>
-            Welcome Back
+            Bon retour
           </h2>
           <p className='mb-12 font-medium text-lg text-gray-600 leading-normal'>
-            Lorem ipsum dolor sit amet, to the con adipiscing. Volutpat tempor
-            to the condim entum.
+            Connectez-vous pour retrouver vos conversations et vos projets.
           </p>
           <form onSubmit={handleSubmit(onSubmit)}>
             <label className='block mb-5'>
@@ -87,7 +86,7 @@ const Login = ({ isModal }) => {
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
                 id='signInInput2-1'
                 type='text'
-                placeholder='Email address'
+                placeholder='Adresse e-mail'
                 {...register('email', { required: true })}
                 autoComplete='email'
               />
@@ -98,14 +97,14 @@ const Login = ({ isModal }) => {
                   className='text-sm text-teal-600 hover:text-teal-700 font-medium'
                   to='/reset-password-request'
                 >
-                  Forgot Password?
+                  Mot de passe oublié ?
                 </Link>
               </div>
               <input
                 className='px-4 pr-36 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
                 id='signInInput2-2'
                 type='password'
-                placeholder='Password'
+                placeholder='Mot de passe'
                 {...register('password', { required: true })}
                 autoComplete='current-password'
               />
@@ -114,7 +113,7 @@ const Login = ({ isModal }) => {
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
               type='submit'
             >
-              Sign In
+              Se connecter
             </button>
             {errorMessage && (
               <p className='text-red-500 mb-5'>{errorMessage}</p>

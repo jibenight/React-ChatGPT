@@ -50,7 +50,7 @@ function LogOut({ setProfil, profil }) {
           <button onClick={toggleProfil}>
             <img
               src={images.profilSrc}
-              alt='icon for log out'
+              alt='Icône de profil'
               className='h-9 w-9 rounded-full'
               onMouseOver={() => handleMouseOver('profilSrc')}
               onMouseOut={() => handleMouseOut('profilSrc')}
@@ -64,14 +64,14 @@ function LogOut({ setProfil, profil }) {
           <button onClick={handleLogout}>
             <img
               src={images.logoutSrc}
-              alt='icon for log out'
+              alt='Icône de déconnexion'
               className='h-8 w-8'
               onMouseOver={() => handleMouseOver('logoutSrc')}
               onMouseOut={() => handleMouseOut('logoutSrc')}
             />
           </button>
         </div>
-        <p className='mr-2 text-white italic text-lg'>Log Out</p>
+        <p className='mr-2 text-white italic text-lg'>Déconnexion</p>
       </div>
     </div>
   );

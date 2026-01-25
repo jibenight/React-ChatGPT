@@ -34,19 +34,19 @@ const Register = ({ isModal, onSwitchToLogin }) => {
         password,
       })
       .then(response => {
-        setSuccessMessage('Account created successfully');
+        setSuccessMessage('Compte créé avec succès');
         setErrorMessage('');
         reset();
       })
       .catch(error => {
         if (error.response.data.error === 'exists') {
-          setErrorMessage('Email already exists');
+          setErrorMessage('Cet e-mail existe déjà');
         } else if (error.response.data.error === 'characters') {
           setErrorMessage(
-            'Password must be at least 8 characters long, with at least one uppercase letter and one digit',
+            'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre',
           );
         } else {
-          setErrorMessage('An error occurred');
+          setErrorMessage('Une erreur est survenue');
         }
       });
   };
@@ -63,7 +63,7 @@ const Register = ({ isModal, onSwitchToLogin }) => {
             <img src={code} alt='Gif annimé robot' />
           </div>
           <h2 className='mb-9 text-6xl md:text-5xl text-center font-bold font-heading tracking-px-n leading-tight'>
-            Create an account &amp; get started.
+            Créez un compte et commencez.
           </h2>
           <form onSubmit={handleSubmit(onSubmit)}>
             <label className='block mb-5'>
@@ -71,7 +71,7 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
                 id='signUpInput2-1'
                 type='text'
-                placeholder='Username'
+                placeholder="Nom d'utilisateur"
                 autoComplete='name'
                 {...register('name', { required: true })}
               />
@@ -81,7 +81,7 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
                 id='signUpInput2-2'
                 type='text'
-                placeholder='Email Address'
+                placeholder='Adresse e-mail'
                 autoComplete='email'
                 {...register('email', { required: true })}
               />
@@ -92,7 +92,7 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
                 id='signUpInput2-3'
                 type={showPassword ? 'text' : 'password'}
-                placeholder='Create Password'
+                placeholder='Créer un mot de passe'
                 autoComplete='new-password'
                 {...register('password', { required: true })}
               />
@@ -102,9 +102,9 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
               >
                 {showPassword ? (
-                  <img src={seePassword} alt='Hide Password' />
+                  <img src={seePassword} alt='Masquer le mot de passe' />
                 ) : (
-                  <img src={hidePassword} alt='Show Password' />
+                  <img src={hidePassword} alt='Afficher le mot de passe' />
                 )}
               </button>
             </label>
@@ -113,12 +113,13 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300'
                 id='signUpInput2-4'
                 type={showPassword ? 'text' : 'password'}
-                placeholder='Confirm Password'
+                placeholder='Confirmer le mot de passe'
                 autoComplete='new-password'
                 {...register('confirmPassword', {
                   required: true,
                   validate: value =>
-                    value === watch('password') || 'The passwords do not match',
+                    value === watch('password') ||
+                    'Les mots de passe ne correspondent pas',
                 })}
               />
               <button
@@ -127,15 +128,15 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-teal-500'
               >
                 {showPassword ? (
-                  <img src={seePassword} alt='Hide Password' />
+                  <img src={seePassword} alt='Masquer le mot de passe' />
                 ) : (
-                  <img src={hidePassword} alt='Show Password' />
+                  <img src={hidePassword} alt='Afficher le mot de passe' />
                 )}
               </button>
             </label>
             <p className='font-thin text-xs italic mb-5'>
-              Password must be at least 8 characters long, with at least one
-              uppercase letter and one digit
+              Le mot de passe doit contenir au moins 8 caractères, une
+              majuscule et un chiffre
             </p>
             {/* 
             {errorMessage && (
@@ -156,10 +157,10 @@ const Register = ({ isModal, onSwitchToLogin }) => {
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
               type='submit'
             >
-              Create Account
+              Créer un compte
             </button>
             <p className='font-medium'>
-              <span>Already have an account? </span>
+              <span>Déjà un compte ? </span>
               <span className='text-teal-600 hover:text-teal-700 cursor-pointer'>
                 {isModal && onSwitchToLogin ? (
                   <a
@@ -168,10 +169,10 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                       onSwitchToLogin();
                     }}
                   >
-                    Sign In
+                    Se connecter
                   </a>
                 ) : (
-                  <NavLink to='/login'>Sign In</NavLink>
+                  <NavLink to='/login'>Se connecter</NavLink>
                 )}
               </span>
             </p>

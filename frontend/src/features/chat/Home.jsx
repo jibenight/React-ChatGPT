@@ -19,7 +19,7 @@ function Home() {
           <div className='flex justify-between h-16 items-center'>
             <div className='flex-shrink-0 flex items-center gap-2'>
               <div className='h-8 w-8 bg-teal-400 rounded-full flex items-center justify-center shadow-sm'>
-                <span className='text-white font-bold text-sm'>AI</span>
+                <span className='text-white font-bold text-sm'>IA</span>
               </div>
               <h1 className='text-2xl font-bold text-gray-800 tracking-tight'>
                 ChatBot
@@ -60,7 +60,7 @@ function Home() {
         <div className='relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center'>
           <img
             src={codeGif}
-            alt='Code Animation'
+            alt='Animation de code'
             className='mx-auto w-48 mb-8'
           />
           <h2 className='text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl mb-6'>
@@ -222,12 +222,12 @@ function Home() {
           <div className='flex flex-col md:flex-row justify-between items-center'>
             <div className='flex items-center gap-2 mb-4 md:mb-0'>
               <div className='h-6 w-6 bg-teal-500 rounded-full flex items-center justify-center'>
-                <span className='text-white text-xs font-bold'>AI</span>
+                <span className='text-white text-xs font-bold'>IA</span>
               </div>
               <span className='text-lg font-semibold'>ChatBot</span>
             </div>
             <p className='text-center text-sm text-gray-400'>
-              &copy; {new Date().getFullYear()} AI ChatBot Project. Tous droits
+              &copy; {new Date().getFullYear()} Projet ChatBot IA. Tous droits
               réservés.
             </p>
           </div>

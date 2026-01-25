@@ -15,6 +15,8 @@ const auth = require('./routes/auth');
 
 // api routes user
 const userApi = require('./routes/users-api');
+const projectsApi = require('./routes/projects');
+const threadsApi = require('./routes/threads');
 
 // api routes openai
 const openaiApiRoute = require('./routes/openaiApi');
@@ -43,6 +45,8 @@ app.use('/', auth);
 
 // api
 app.use('/', userApi);
+app.use('/', projectsApi);
+app.use('/', threadsApi);
 
 // Utilisez le routeur OpenAI API
 app.use('/', openaiApiRoute);

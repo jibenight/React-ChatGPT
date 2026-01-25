@@ -50,8 +50,8 @@ const providers = [
   },
   {
     id: 'sql-helper',
-    name: 'SQL helper',
-    description: 'Prompt SQL (OpenAI)',
+    name: 'Assistant SQL',
+    description: 'Assistant SQL (OpenAI)',
     avatar: sqlTranslate,
     models: [{ id: 'gpt-4o-mini', label: 'gpt-4o-mini' }],
     provider: 'openai',
@@ -64,24 +64,36 @@ function classNames(...classes) {
 
 export default function Aioption({ selectedOption, setSelectedOption }) {
   const defaultProvider = providers[0];
-  const [selectedProvider, setSelectedProvider] = useState(defaultProvider);
-  const [selectedModel, setSelectedModel] = useState(defaultProvider.models[0]);
+  const resolveProvider = selection => {
+    if (selection?.provider) {
+      return (
+        providers.find(
+          p => p.id === selection.provider || p.provider === selection.provider,
+        ) || defaultProvider
+      );
+    }
+    return defaultProvider;
+  };
+
+  const resolveModel = (provider, selection) => {
+    if (selection?.model) {
+      return (
+        provider.models.find(model => model.id === selection.model) ||
+        provider.models[0]
+      );
+    }
+    return provider.models[0];
+  };
+
+  const initialProvider = resolveProvider(selectedOption);
+  const initialModel = resolveModel(initialProvider, selectedOption);
+
+  const [selectedProvider, setSelectedProvider] = useState(initialProvider);
+  const [selectedModel, setSelectedModel] = useState(initialModel);
 
   useEffect(() => {
     // Hydrate from parent selection if provided
-    if (selectedOption?.provider) {
-      const provider =
-        providers.find(
-          p =>
-            p.id === selectedOption.provider ||
-            p.provider === selectedOption.provider,
-        ) || defaultProvider;
-      const model =
-        provider.models.find(m => m.id === selectedOption.model) ||
-        provider.models[0];
-      setSelectedProvider(provider);
-      setSelectedModel(model);
-    } else if (setSelectedOption) {
+    if (!selectedOption?.provider && setSelectedOption) {
       // Push defaults upward on first render if parent has nothing
       setSelectedOption({
         provider: defaultProvider.id,
@@ -89,19 +101,40 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
         name: `${defaultProvider.name} – ${defaultProvider.models[0].label}`,
         avatar: defaultProvider.avatar,
       });
+      return;
+    }
+
+    if (selectedOption?.provider) {
+      const provider = resolveProvider(selectedOption);
+      const model = resolveModel(provider, selectedOption);
+      if (provider.id !== selectedProvider.id) {
+        setSelectedProvider(provider);
+      }
+      if (model.id !== selectedModel.id) {
+        setSelectedModel(model);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOption]);
 
   useEffect(() => {
     if (!setSelectedOption) return;
-    setSelectedOption({
+    const next = {
       provider: selectedProvider.provider || selectedProvider.id,
       model: selectedModel.id,
       name: `${selectedProvider.name} – ${selectedModel.label}`,
       avatar: selectedProvider.avatar,
-    });
-  }, [selectedProvider, selectedModel, setSelectedOption]);
+    };
+    if (
+      selectedOption?.provider === next.provider &&
+      selectedOption?.model === next.model &&
+      selectedOption?.name === next.name &&
+      selectedOption?.avatar === next.avatar
+    ) {
+      return;
+    }
+    setSelectedOption(next);
+  }, [selectedProvider, selectedModel, selectedOption, setSelectedOption]);
 
   const modelsForProvider = useMemo(
     () => selectedProvider.models || [],
@@ -129,7 +162,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                     <video
                       src={selectedProvider.avatar}
                       alt=''
-                      className='h-5 w-5 flex-shrink-0 rounded-full'
+                      className='h-5 w-5 shrink-0 rounded-full'
                       autoPlay
                       muted
                       loop
@@ -172,7 +205,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                               <video
                                 src={option.avatar}
                                 alt=''
-                                className='h-5 w-5 flex-shrink-0 rounded-full'
+                                className='h-5 w-5 shrink-0 rounded-full'
                                 autoPlay
                                 muted
                                 loop

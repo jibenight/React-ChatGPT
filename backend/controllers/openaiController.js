@@ -30,8 +30,8 @@ exports.sendMessage = async (req, res) => {
   try {
       const result = await new Promise((resolve, reject) => {
           db.get(
-            'SELECT api_key FROM api_keys WHERE user_id = ?',
-            [userId],
+            'SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?',
+            [userId, 'openai'],
             (err, row) => {
                 if (err) reject(err);
                 else resolve(row);
@@ -117,10 +117,11 @@ exports.storeApiKey = async (req, res) => {
     const encryptedApiKey = await bcrypt.hash(apiKey, 10);
 
     await new Promise((resolve, reject) => {
-        db.run('INSERT INTO api_keys (user_id, api_key) VALUES (?, ?)', [
-          userId,
-          encryptedApiKey,
-        ], (err) => { if (err) reject(err); else resolve(); });
+        db.run(
+          'INSERT INTO api_keys (user_id, provider, api_key) VALUES (?, ?, ?)',
+          [userId, 'openai', encryptedApiKey],
+          (err) => { if (err) reject(err); else resolve(); },
+        );
     });
     res.status(201).json({ message: 'API key stored successfully' });
   } catch (err) {

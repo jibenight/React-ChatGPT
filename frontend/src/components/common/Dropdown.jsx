@@ -39,7 +39,7 @@ export default function Dropdown() {
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
-                  Account settings
+                  Paramètres du compte
                 </button>
               )}
             </Menu.Item>
@@ -65,7 +65,7 @@ export default function Dropdown() {
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
-                  License
+                  Licence
                 </button>
               )}
             </Menu.Item>
@@ -79,7 +79,7 @@ export default function Dropdown() {
                       'block w-full px-4 py-2 text-left text-sm'
                     )}
                   >
-                    Sign out
+                    Déconnexion
                   </button>
                 )}
               </Menu.Item>

@@ -12,6 +12,8 @@ function Aside({
   profil,
   selectedOption,
   setSelectedOption,
+  projectMode,
+  setProjectMode,
   selectedProjectId,
   setSelectedProjectId,
   selectedThreadId,
@@ -36,10 +38,18 @@ function Aside({
     open: false,
     threadId: null,
   });
+  const [editingThreadId, setEditingThreadId] = useState(null);
+  const [editingThreadTitle, setEditingThreadTitle] = useState('');
+  const [showThreadManager, setShowThreadManager] = useState(false);
   const providerAvatar = selectedOption?.avatar || chatGPT;
   const activeProject = projects.find(
     project => project.id === selectedProjectId,
   );
+  const visibleThreads = projectMode
+    ? threads
+    : threads.filter(
+        thread => thread.project_id === null || thread.project_id === undefined,
+      );
 
   useEffect(() => {
     const stored = localStorage.getItem('selected_provider');
@@ -100,16 +110,15 @@ function Aside({
   }, [userData]);
 
   useEffect(() => {
-    fetchThreads(selectedProjectId);
-  }, [selectedProjectId]);
+    fetchThreads(projectMode ? selectedProjectId : null);
+  }, [projectMode, selectedProjectId]);
 
   useEffect(() => {
-    if (selectedProjectId) {
-      fetchThreads(selectedProjectId);
-    }
-  }, [selectedThreadId]);
+    fetchThreads(projectMode ? selectedProjectId : null);
+  }, [selectedThreadId, projectMode, selectedProjectId]);
 
   const handleSelectProject = projectId => {
+    setProjectMode(true);
     setSelectedProjectId(projectId);
     setSelectedThreadId(null);
   };
@@ -145,8 +154,9 @@ function Aside({
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const url = selectedProjectId
-        ? `${API_BASE}/api/projects/${selectedProjectId}/threads`
+      const targetProjectId = projectMode ? selectedProjectId : null;
+      const url = targetProjectId
+        ? `${API_BASE}/api/projects/${targetProjectId}/threads`
         : `${API_BASE}/api/threads`;
       const response = await axios.post(
         url,
@@ -154,10 +164,54 @@ function Aside({
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setNewThreadTitle('');
-      await fetchThreads(selectedProjectId);
+      await fetchThreads(projectMode ? targetProjectId : null);
       if (response.data?.id) {
         setSelectedThreadId(response.data.id);
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleStartRenameThread = thread => {
+    setEditingThreadId(thread.id);
+    setEditingThreadTitle(thread.title || '');
+  };
+
+  const handleCancelRenameThread = () => {
+    setEditingThreadId(null);
+    setEditingThreadTitle('');
+  };
+
+  const handleRenameThread = async threadId => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await axios.patch(
+        `${API_BASE}/api/threads/${threadId}`,
+        { title: editingThreadTitle },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      handleCancelRenameThread();
+      await fetchThreads(projectMode ? selectedProjectId : null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAssignThread = async (threadId, projectId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await axios.patch(
+        `${API_BASE}/api/threads/${threadId}`,
+        { projectId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (projectMode && projectId !== selectedProjectId) {
+        setSelectedThreadId(null);
+      }
+      await fetchThreads(projectMode ? selectedProjectId : null);
     } catch (err) {
       console.error(err);
     }
@@ -173,11 +227,20 @@ function Aside({
       if (selectedThreadId === threadId) {
         setSelectedThreadId(null);
       }
-      await fetchThreads(selectedProjectId);
+      await fetchThreads(projectMode ? selectedProjectId : null);
     } catch (err) {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    if (!projectMode) {
+      setSelectedProjectId(null);
+      setSelectedThreadId(null);
+    }
+    handleCancelRenameThread();
+    setShowThreadManager(false);
+  }, [projectMode, setSelectedProjectId, setSelectedThreadId]);
 
   const openPicker = () => {
     setShowProviderPicker(true);
@@ -225,8 +288,8 @@ function Aside({
 
   return (
     <aside className='relative bg-gray-800 w-80 h-screen flex flex-col shrink-0 overflow-hidden'>
-      <div className='px-4 pt-6'>
-        <div className='flex items-center gap-3 rounded-2xl bg-gray-900/60 p-3'>
+      <div className='px-4 pt-2'>
+        <div className='flex items-center gap-3 rounded-2xl border border-gray-700/60 bg-gray-900/40 p-3'>
           <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-700'>
             <video
               src={providerAvatar}
@@ -248,31 +311,67 @@ function Aside({
         </div>
       </div>
 
-      <div className='flex-1 px-4 py-6'>
-        <div className='space-y-4'>
-          <div className='rounded-2xl border border-gray-700/60 bg-gray-900/30 p-4 text-sm text-gray-200'>
-            <div className='flex items-center justify-between'>
-              <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>
-                Projet actif
-              </p>
-              <button
-                type='button'
-                onClick={() => setShowProjectPanel(true)}
-                className='rounded-full border border-gray-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-200 hover:border-gray-500 hover:text-white'
-              >
-                Gérer
-              </button>
-            </div>
-            <p className='mt-2 text-sm font-semibold text-gray-100'>
-              {activeProject?.name || 'Aucun'}
-            </p>
+      <div className='px-4 pt-2'>
+        <div className='rounded-2xl border border-gray-700/60 bg-gray-900/40 p-3'>
+          {/* <p className='pb-2 text-[10px] uppercase tracking-[0.2em] text-gray-500'>
+            Mode
+          </p> */}
+          <div className='flex rounded-full bg-gray-900/70 p-1'>
+            <button
+              type='button'
+              onClick={() => setProjectMode(true)}
+              className={`flex-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                projectMode
+                  ? 'bg-teal-500/20 text-teal-100'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Projet
+            </button>
+            <button
+              type='button'
+              onClick={() => setProjectMode(false)}
+              className={`flex-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                !projectMode
+                  ? 'bg-teal-500/20 text-teal-100'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Sans projet
+            </button>
           </div>
+        </div>
+      </div>
 
-          <div className='rounded-2xl border border-gray-700/60 bg-gray-900/30 p-4 text-sm text-gray-200'>
-            <div className='flex items-center justify-between'>
+      <div className='flex-1 min-h-0 px-4 pt-2'>
+        <div className='flex h-full min-h-0 flex-col gap-2'>
+          {projectMode && (
+            <div className='flex  shrink-0 flex-col justify-between rounded-2xl border border-gray-700/60 bg-gray-900/40 p-3 text-sm text-gray-200'>
+              <div className='flex items-center justify-between'>
+                <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>
+                  Projet actif
+                </p>
+                <button
+                  type='button'
+                  onClick={() => setShowProjectPanel(true)}
+                  className='rounded-full border border-gray-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-200 hover:border-gray-500 hover:text-white'
+                >
+                  Gérer
+                </button>
+              </div>
+              <p className='mt-2 text-sm font-semibold text-gray-100'>
+                {activeProject?.name || 'Aucun'}
+              </p>
+            </div>
+          )}
+
+          <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-700/60 bg-gray-900/40 p-3 text-sm text-gray-200'>
+            <div className='space-y-2'>
               <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>
                 Conversations
               </p>
+            </div>
+            <div className='mt-2 flex items-center gap-2'>
               <button
                 type='button'
                 onClick={handleCreateThread}
@@ -280,6 +379,18 @@ function Aside({
               >
                 Nouveau
               </button>
+              {visibleThreads.length > 0 && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setShowThreadManager(prev => !prev);
+                    handleCancelRenameThread();
+                  }}
+                  className='rounded-full border border-gray-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-200 hover:border-gray-500 hover:text-white'
+                >
+                  {showThreadManager ? 'Fermer' : 'Gérer'}
+                </button>
+              )}
             </div>
             <input
               type='text'
@@ -288,15 +399,117 @@ function Aside({
               placeholder='Titre de conversation (optionnel)'
               className='mt-2 w-full rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2 text-xs text-gray-100 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30'
             />
-            <div className='mt-3 space-y-2'>
+            <div className='mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pr-1'>
               {loadingThreads ? (
                 <p className='text-xs text-gray-500'>Chargement...</p>
-              ) : threads.length === 0 ? (
+              ) : visibleThreads.length === 0 ? (
                 <p className='text-xs text-gray-500'>
                   Aucune conversation pour le moment
                 </p>
+              ) : showThreadManager ? (
+                visibleThreads.map(thread => {
+                  const isEditing = editingThreadId === thread.id;
+                  return (
+                    <div
+                      key={thread.id}
+                      className={`rounded-lg border px-3 py-2 text-xs transition ${
+                        selectedThreadId === thread.id
+                          ? 'border-teal-500/40 bg-teal-500/10 text-teal-100'
+                          : 'border-gray-700/60 bg-gray-900/40 text-gray-300'
+                      }`}
+                    >
+                      <div className='text-xs font-semibold text-gray-100'>
+                        {isEditing ? (
+                          <input
+                            type='text'
+                            value={editingThreadTitle}
+                            onChange={event =>
+                              setEditingThreadTitle(event.target.value)
+                            }
+                            placeholder='Titre de conversation'
+                            className='w-full rounded-lg border border-gray-700 bg-gray-900/70 px-2 py-1 text-xs text-gray-100 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30'
+                          />
+                        ) : (
+                          <span>
+                            {thread.title || 'Conversation sans titre'}
+                          </span>
+                        )}
+                      </div>
+                      <div className='mt-2 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em]'>
+                        {isEditing ? (
+                          <>
+                            <button
+                              type='button'
+                              onClick={() => handleRenameThread(thread.id)}
+                              className='text-teal-200 hover:text-teal-100'
+                            >
+                              Enregistrer
+                            </button>
+                            <button
+                              type='button'
+                              onClick={handleCancelRenameThread}
+                              className='text-gray-400 hover:text-gray-200'
+                            >
+                              Annuler
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type='button'
+                              onClick={() => setSelectedThreadId(thread.id)}
+                              className='text-teal-200 hover:text-teal-100'
+                            >
+                              Ouvrir
+                            </button>
+                            <button
+                              type='button'
+                              onClick={() => handleStartRenameThread(thread)}
+                              className='text-gray-400 hover:text-gray-200'
+                            >
+                              Renommer
+                            </button>
+                            <button
+                              type='button'
+                              onClick={() =>
+                                setConfirmThreadDelete({
+                                  open: true,
+                                  threadId: thread.id,
+                                })
+                              }
+                              className='text-red-400 hover:text-red-300'
+                            >
+                              Supprimer
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      <div className='mt-2'>
+                        <select
+                          value={thread.project_id ?? ''}
+                          onChange={event => {
+                            const value = event.target.value;
+                            const parsed = value === '' ? null : Number(value);
+                            handleAssignThread(
+                              thread.id,
+                              Number.isNaN(parsed) ? null : parsed,
+                            );
+                          }}
+                          className='w-full rounded-lg border border-gray-700 bg-gray-900/70 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-gray-200 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30'
+                        >
+                          <option value=''>Sans projet</option>
+                          {projects.map(project => (
+                            <option key={project.id} value={project.id}>
+                              {project.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
-                threads.map(thread => (
+                visibleThreads.map(thread => (
                   <button
                     key={thread.id}
                     type='button'
@@ -316,7 +529,7 @@ function Aside({
         </div>
       </div>
 
-      <div className='px-4 pb-4'>
+      <div className='px-4 py-2'>
         <button
           type='button'
           onClick={openPicker}
@@ -334,7 +547,7 @@ function Aside({
       </div>
 
       <div
-        className={`absolute inset-0 z-40 bg-gray-900/95 px-4 py-5 transition-transform duration-300 ease-out ${
+        className={`absolute inset-0 z-40 flex h-full flex-col bg-gray-900/95 px-4 py-5 transition-transform duration-300 ease-out ${
           showProjectPanel ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -356,7 +569,7 @@ function Aside({
           </button>
         </div>
 
-        <div className='mt-4 space-y-4 overflow-y-auto pb-24'>
+        <div className='mt-4 flex-1 min-h-0 space-y-4 overflow-y-auto pb-24 pr-1'>
           <Link
             to='/projects'
             className='flex items-center justify-between rounded-2xl border border-gray-700/60 bg-gray-900/60 px-4 py-3 text-sm text-gray-200 transition hover:border-gray-600 hover:text-white'
@@ -523,9 +736,9 @@ function Aside({
                         })
                       }
                       className='ml-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400 hover:text-red-300'
-                      >
-                        Supprimer
-                      </button>
+                    >
+                      Supprimer
+                    </button>
                   </div>
                 ))
               )}

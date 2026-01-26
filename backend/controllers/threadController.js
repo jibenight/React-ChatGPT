@@ -152,14 +152,33 @@ exports.deleteThread = async (req, res) => {
 exports.updateThread = async (req, res) => {
   const userId = req.user.id;
   const { threadId } = req.params;
-  const { title } = req.body || {};
+  const { title, projectId } = req.body || {};
+  const hasTitle = typeof title !== 'undefined';
+  const hasProjectId = typeof projectId !== 'undefined';
   const trimmedTitle = typeof title === 'string' ? title.trim() : '';
-  const nextTitle = trimmedTitle.length > 0 ? trimmedTitle : null;
+  const nextTitle = hasTitle
+    ? trimmedTitle.length > 0
+      ? trimmedTitle
+      : null
+    : undefined;
+  let nextProjectId;
+  if (hasProjectId) {
+    if (projectId === null || projectId === '') {
+      nextProjectId = null;
+    } else {
+      const parsed = Number(projectId);
+      nextProjectId = Number.isNaN(parsed) ? null : parsed;
+    }
+  }
 
   try {
+    if (!hasTitle && !hasProjectId) {
+      return res.status(400).json({ error: 'Nothing to update' });
+    }
+
     const thread = await new Promise((resolve, reject) => {
       db.get(
-        'SELECT id FROM threads WHERE id = ? AND user_id = ?',
+        'SELECT id, title, project_id FROM threads WHERE id = ? AND user_id = ?',
         [threadId, userId],
         (err, row) => {
           if (err) reject(err);
@@ -172,12 +191,15 @@ exports.updateThread = async (req, res) => {
       return res.status(404).json({ error: 'Thread not found' });
     }
 
+    const updatedTitle = hasTitle ? nextTitle : thread.title;
+    const updatedProjectId = hasProjectId ? nextProjectId : thread.project_id;
+
     await new Promise((resolve, reject) => {
       db.run(
         `UPDATE threads
-         SET title = ?, updated_at = CURRENT_TIMESTAMP
+         SET title = ?, project_id = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND user_id = ?`,
-        [nextTitle, threadId, userId],
+        [updatedTitle, updatedProjectId, threadId, userId],
         err => {
           if (err) reject(err);
           else resolve();
@@ -185,7 +207,11 @@ exports.updateThread = async (req, res) => {
       );
     });
 
-    res.status(200).json({ id: threadId, title: nextTitle });
+    res.status(200).json({
+      id: threadId,
+      title: updatedTitle,
+      project_id: updatedProjectId,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

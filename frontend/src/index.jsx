@@ -7,14 +7,30 @@ import ResetPasswordRequest from './features/auth/ResetPasswordRequest';
 import ResetPassword from './features/auth/ResetPassword';
 import Register from './features/auth/Register';
 import Projects from './features/projects/Projects';
-import './css/index.css';
+import './css/App.css';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import { UserProvider } from './UserContext';
 
+const applyInitialTheme = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+    const isDark = stored ? stored === 'dark' : prefersDark;
+    document.documentElement.classList.toggle('dark', Boolean(isDark));
+  } catch {
+    // If localStorage is unavailable, fall back to light.
+    document.documentElement.classList.remove('dark');
+  }
+};
+
+applyInitialTheme();
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <UserProvider>
+  <UserProvider>
+    <TooltipProvider>
       <Router>
         <Routes>
           <Route path='/' element={<Home />} />
@@ -25,14 +41,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             element={<ResetPasswordRequest />}
           />
           <Route path='/reset-password' element={<ResetPassword />} />
-        <Route path='/chat' element={<PrivateRoute />}>
-          <Route index element={<App />} />
-        </Route>
-        <Route path='/projects' element={<PrivateRoute />}>
-          <Route index element={<Projects />} />
-        </Route>
-      </Routes>
+          <Route path='/chat' element={<PrivateRoute />}>
+            <Route index element={<App />} />
+          </Route>
+          <Route path='/projects' element={<PrivateRoute />}>
+            <Route index element={<Projects />} />
+          </Route>
+        </Routes>
       </Router>
-    </UserProvider>
-  </React.StrictMode>,
+    </TooltipProvider>
+  </UserProvider>,
 );

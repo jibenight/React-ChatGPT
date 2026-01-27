@@ -41,6 +41,10 @@ function Aside({
   const [editingThreadId, setEditingThreadId] = useState(null);
   const [editingThreadTitle, setEditingThreadTitle] = useState('');
   const [showThreadManager, setShowThreadManager] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    return document.documentElement.classList.contains('dark');
+  });
   const providerAvatar = selectedOption?.avatar || chatGPT;
   const activeProject = projects.find(
     project => project.id === selectedProjectId,
@@ -68,6 +72,16 @@ function Aside({
     if (!selectedOption) return;
     localStorage.setItem('selected_provider', JSON.stringify(selectedOption));
   }, [selectedOption]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', isDark);
+    try {
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [isDark]);
 
   const fetchProjects = async () => {
     const token = localStorage.getItem('token');
@@ -340,6 +354,35 @@ function Aside({
               Sans projet
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className='px-4 pt-2'>
+        <div className='flex items-center justify-between rounded-2xl border border-gray-700/60 bg-gray-900/40 p-3'>
+          <div>
+            <p className='text-[10px] uppercase tracking-[0.2em] text-gray-500'>
+              Thème
+            </p>
+            <p className='text-sm font-semibold text-gray-100'>
+              {isDark ? 'Sombre' : 'Clair'}
+            </p>
+          </div>
+          <button
+            type='button'
+            onClick={() => setIsDark(current => !current)}
+            aria-pressed={isDark}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full border transition ${
+              isDark
+                ? 'border-teal-400/40 bg-teal-500/25'
+                : 'border-gray-700 bg-gray-800/80'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition ${
+                isDark ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
         </div>
       </div>
 

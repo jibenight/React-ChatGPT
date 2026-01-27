@@ -40,39 +40,43 @@ function LogOut({ setProfil, profil }) {
 
   // pour afficher ou masquer le Profil
   const toggleProfil = () => {
-    setProfil(!profil);
+    setProfil(prev => !prev);
   };
 
   return (
     <div className='flex justify-evenly w-full'>
-      <div className='flex flex-col items-center'>
-        <div className='flex items-center justify-center rounded-full bg-white h-12 w-12'>
-          <button onClick={toggleProfil}>
-            <img
-              src={images.profilSrc}
-              alt='Icône de profil'
-              className='h-9 w-9 rounded-full'
-              onMouseOver={() => handleMouseOver('profilSrc')}
-              onMouseOut={() => handleMouseOut('profilSrc')}
-            />
-          </button>
-        </div>
-        <p className='mr-2 text-white italic text-lg'>Profil</p>
-      </div>
-      <div className='flex flex-col items-center'>
-        <div className='flex items-center justify-center rounded-full bg-white h-12 w-12'>
-          <button onClick={handleLogout}>
-            <img
-              src={images.logoutSrc}
-              alt='Icône de déconnexion'
-              className='h-8 w-8'
-              onMouseOver={() => handleMouseOver('logoutSrc')}
-              onMouseOut={() => handleMouseOut('logoutSrc')}
-            />
-          </button>
-        </div>
-        <p className='mr-2 text-white italic text-lg'>Déconnexion</p>
-      </div>
+      <button
+        type='button'
+        onClick={toggleProfil}
+        className='flex flex-col items-center'
+      >
+        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white'>
+          <img
+            src={images.profilSrc}
+            alt='Icône de profil'
+            className='h-9 w-9 rounded-full'
+            onMouseOver={() => handleMouseOver('profilSrc')}
+            onMouseOut={() => handleMouseOut('profilSrc')}
+          />
+        </span>
+        <span className='mr-2 text-lg italic text-white'>Profil</span>
+      </button>
+      <button
+        type='button'
+        onClick={handleLogout}
+        className='flex flex-col items-center'
+      >
+        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white'>
+          <img
+            src={images.logoutSrc}
+            alt='Icône de déconnexion'
+            className='h-8 w-8'
+            onMouseOver={() => handleMouseOver('logoutSrc')}
+            onMouseOut={() => handleMouseOut('logoutSrc')}
+          />
+        </span>
+        <span className='mr-2 text-lg italic text-white'>Déconnexion</span>
+      </button>
     </div>
   );
 }

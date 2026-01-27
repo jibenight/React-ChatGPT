@@ -153,11 +153,11 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
         >
           {({ open }) => (
             <>
-              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200'>
+              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-slate-200'>
                 Choisir le fournisseur
               </Listbox.Label>
               <div className='relative mt-2'>
-                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6'>
+                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700'>
                   <span className='flex items-center'>
                     <video
                       src={selectedProvider.avatar}
@@ -187,13 +187,15 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                   leaveFrom='opacity-100'
                   leaveTo='opacity-0'
                 >
-                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm'>
+                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-slate-900 dark:ring-slate-800/70'>
                     {providers.map(option => (
                       <Listbox.Option
                         key={option.id}
                         className={({ active }) =>
                           classNames(
-                            active ? 'bg-teal-500 text-white' : 'text-gray-900',
+                            active
+                              ? 'bg-teal-500 text-white'
+                              : 'text-gray-900 dark:text-slate-100',
                             'relative cursor-default select-none py-2 pl-3 pr-9',
                           )
                         }
@@ -222,7 +224,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                             </div>
 
                             {selected ? (
-                              <span className='text-teal-600 absolute inset-y-0 right-0 flex items-center pr-4'>
+                              <span className='text-teal-600 absolute inset-y-0 right-0 flex items-center pr-4 dark:text-teal-300'>
                                 <CheckIcon
                                   className='h-5 w-5'
                                   aria-hidden='true'
@@ -239,7 +241,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
             </>
           )}
         </Listbox>
-        <p className='text-white mt-2 text-sm'>
+        <p className='text-white mt-2 text-sm dark:text-slate-200'>
           {selectedProvider.description}
         </p>
       </div>
@@ -248,11 +250,11 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
         <Listbox value={selectedModel} onChange={setSelectedModel}>
           {({ open }) => (
             <>
-              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200'>
+              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-slate-200'>
                 Choisir le modèle
               </Listbox.Label>
               <div className='relative mt-2'>
-                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6'>
+                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700'>
                   <span className='flex items-center'>
                     <span className='ml-1 block truncate'>
                       {selectedModel.label}
@@ -273,13 +275,15 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                   leaveFrom='opacity-100'
                   leaveTo='opacity-0'
                 >
-                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm'>
+                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-slate-900 dark:ring-slate-800/70'>
                     {modelsForProvider.map(model => (
                       <Listbox.Option
                         key={model.id}
                         className={({ active }) =>
                           classNames(
-                            active ? 'bg-teal-500 text-white' : 'text-gray-900',
+                            active
+                              ? 'bg-teal-500 text-white'
+                              : 'text-gray-900 dark:text-slate-100',
                             'relative cursor-default select-none py-2 pl-3 pr-9',
                           )
                         }
@@ -299,7 +303,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                             </div>
 
                             {selected ? (
-                              <span className='text-teal-600 absolute inset-y-0 right-0 flex items-center pr-4'>
+                              <span className='text-teal-600 absolute inset-y-0 right-0 flex items-center pr-4 dark:text-teal-300'>
                                 <CheckIcon
                                   className='h-5 w-5'
                                   aria-hidden='true'

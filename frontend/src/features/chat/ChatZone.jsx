@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import ChatInput from './ChatInput';
-import ChatText from './ChatText';
+import { AssistantRuntimeProvider, useExternalStoreRuntime } from '@assistant-ui/react';
+import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '../../UserContext';
 import { API_BASE } from '../../apiConfig';
+import { Thread } from '@/components/assistant-ui/thread';
 
 function ChatZone({
   selectedOption,
@@ -13,10 +14,26 @@ function ChatZone({
   onThreadChange,
 }) {
   const { userData } = useUser();
+  const abortRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const normalizeContent = content => {
+    if (typeof content === 'string') return content;
+    if (content === null || content === undefined) return '';
+    try {
+      return JSON.stringify(content);
+    } catch {
+      return String(content);
+    }
+  };
+
+  const normalizeRole = role => {
+    if (role === 'user' || role === 'assistant' || role === 'system') return role;
+    return 'assistant';
+  };
 
   useEffect(() => {
     if (!threadId) {
@@ -32,8 +49,10 @@ function ChatZone({
       })
       .then(response => {
         const history = (response.data || []).map(item => ({
-          role: item.role,
-          content: item.content,
+          id: item.id ? String(item.id) : uuidv4(),
+          role: normalizeRole(item.role),
+          content: normalizeContent(item.content),
+          createdAt: item.created_at ? new Date(item.created_at) : new Date(),
         }));
         setMessages(history);
         setError('');
@@ -47,7 +66,18 @@ function ChatZone({
       .finally(() => setLoadingHistory(false));
   }, [threadId]);
 
-  const handleSend = async text => {
+  const extractText = message => {
+    if (!message?.content) return '';
+    if (typeof message.content === 'string') return message.content;
+    if (!Array.isArray(message.content)) return '';
+    return message.content
+      .filter(part => part?.type === 'text' && typeof part.text === 'string')
+      .map(part => part.text)
+      .join('\n');
+  };
+
+  const handleSend = useCallback(async appendMessage => {
+    const text = extractText(appendMessage);
     if (!text.trim()) return;
     if (!userData?.id && !userData?.userId) {
       setError('Utilisateur non connecté');
@@ -59,12 +89,19 @@ function ChatZone({
     const model = selectedOption?.model;
     const activeThreadId = threadId || sessionId;
 
-    const newMessages = [...messages, { role: 'user', content: text }];
-    setMessages(newMessages);
+    const userMessage = {
+      id: uuidv4(),
+      role: 'user',
+      content: text,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, userMessage]);
     setLoading(true);
     setError('');
 
     try {
+      const controller = new AbortController();
+      abortRef.current = controller;
       const response = await axios.post(`${API_BASE}/api/chat/message`, {
         userId,
         sessionId,
@@ -73,20 +110,31 @@ function ChatZone({
         message: text,
         provider,
         model,
-      });
+      }, { signal: controller.signal });
       const reply = response.data.reply || 'Aucune réponse';
-      setMessages([...newMessages, { role: 'assistant', content: reply }]);
+      const assistantMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: reply,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, assistantMessage]);
       if (response.data.threadId && response.data.threadId !== threadId) {
         onThreadChange?.(response.data.threadId);
       }
     } catch (err) {
+      if (err?.name === 'CanceledError') {
+        setError('Génération annulée.');
+      } else {
       setError(
         err.response?.data?.error || 'Erreur lors de la requête de chat',
       );
+      }
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
-  };
+  }, [projectId, onThreadChange, selectedOption, sessionId, threadId, userData]);
 
   const activeModelLabel =
     selectedOption?.name ||
@@ -99,26 +147,48 @@ function ChatZone({
     setError('');
   };
 
+  const runtime = useExternalStoreRuntime(
+    useMemo(() => ({
+      messages,
+      isRunning: loading,
+      isLoading: loadingHistory,
+      isDisabled: !userData?.id && !userData?.userId,
+      convertMessage: message => ({
+        id: message.id,
+        createdAt: message.createdAt,
+        role: message.role,
+        content: normalizeContent(message.content),
+      }),
+      setMessages,
+      onNew: handleSend,
+      onCancel: () => {
+        abortRef.current?.abort();
+      },
+    }), [handleSend, loading, loadingHistory, messages, userData]),
+  );
+
   return (
-    <div className='relative flex h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-gray-100 via-white to-gray-50'>
-      <header className='sticky top-0 z-10 border-b border-gray-200/70 bg-white/80 backdrop-blur'>
+    <div className='relative flex h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-gray-100 via-white to-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900'>
+      <header className='sticky top-0 z-10 border-b border-gray-200/70 bg-white/80 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/80'>
         <div className='mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3'>
           <div className='space-y-1'>
-            <p className='text-[11px] uppercase tracking-[0.2em] text-gray-400'>
+            <p className='text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-slate-400'>
               Conversation
             </p>
-            <h2 className='text-lg font-semibold text-gray-800'>Chat</h2>
+            <h2 className='text-lg font-semibold text-gray-800 dark:text-slate-100'>
+              Chat
+            </h2>
           </div>
           <div className='flex items-center gap-2'>
             <button
               type='button'
               onClick={handleClear}
               disabled={messages.length === 0}
-              className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60'
+              className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100'
             >
               Effacer la conversation
             </button>
-            <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm'>
+            <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'>
               <span className='h-2 w-2 rounded-full bg-teal-400' />
               <span className='truncate max-w-[170px] sm:max-w-[240px]'>
                 {activeModelLabel}
@@ -128,12 +198,19 @@ function ChatZone({
         </div>
       </header>
 
-      <ChatText
-        messages={messages}
-        error={error}
-        loading={loading || loadingHistory}
-      />
-      <ChatInput onSend={handleSend} loading={loading} />
+      {error && (
+        <div className='mx-auto w-full max-w-4xl px-4 pt-3'>
+          <div className='rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'>
+            {error}
+          </div>
+        </div>
+      )}
+
+      <div className='flex-1 min-h-0'>
+        <AssistantRuntimeProvider runtime={runtime}>
+          <Thread />
+        </AssistantRuntimeProvider>
+      </div>
     </div>
   );
 }

@@ -38,22 +38,22 @@ const ResetPassword = () => {
   };
 
   return (
-    <section className='py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen'>
+    <section className='py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen dark:bg-slate-950'>
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>
             <img src={chatGPT} alt='Gif animé robot' />
           </div>
-          <h2 className='mb-4 text-6xl md:text-7xl text-center font-bold font-heading tracking-px-n leading-tight'>
+          <h2 className='mb-4 text-6xl md:text-7xl text-center font-bold font-heading tracking-px-n leading-tight text-gray-900 dark:text-slate-100'>
             Nouveau mot de passe
           </h2>
-          <p className='mb-12 font-medium text-lg text-gray-600 leading-normal'>
+          <p className='mb-12 font-medium text-lg text-gray-600 leading-normal dark:text-slate-300'>
             Entrez votre nouveau mot de passe.
           </p>
           <form onSubmit={handleSubmit(onSubmit)}>
             <label className='block mb-5'>
               <input
-                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
+                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:border-slate-700 dark:focus:ring-teal-400/30'
                 id='resetPasswordInput'
                 type='password'
                 placeholder='Nouveau mot de passe'
@@ -64,13 +64,13 @@ const ResetPassword = () => {
                 autoComplete='new-password'
               />
               {errors.password && errors.password.type === 'pattern' && (
-                <span className='text-red-500 text-sm'>
+                <span className='text-red-500 text-sm dark:text-red-300'>
                   Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.
                 </span>
               )}
             </label>
             <button
-              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
+              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30'
               type='submit'
             >
               Réinitialiser le mot de passe

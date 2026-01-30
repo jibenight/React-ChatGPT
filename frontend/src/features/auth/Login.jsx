@@ -62,28 +62,28 @@ const Login = ({ isModal }) => {
   };
 
   return (
-    <section
-      className={
-        isModal
-          ? 'py-8 bg-white'
-          : 'py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen'
-      }
-    >
+      <section
+        className={
+          isModal
+            ? 'py-8 bg-white dark:bg-slate-950'
+            : 'py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen dark:bg-slate-950'
+        }
+      >
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>
             <img src={chatGPT} alt='Gif annimé robot' />
           </div>
-          <h2 className='mb-4 text-6xl md:text-7xl text-center font-bold font-heading tracking-px-n leading-tight'>
+          <h2 className='mb-4 text-6xl md:text-7xl text-center font-bold font-heading tracking-px-n leading-tight text-gray-900 dark:text-slate-100'>
             Bon retour
           </h2>
-          <p className='mb-12 font-medium text-lg text-gray-600 leading-normal'>
+          <p className='mb-12 font-medium text-lg text-gray-600 leading-normal dark:text-slate-300'>
             Connectez-vous pour retrouver vos conversations et vos projets.
           </p>
           <form onSubmit={handleSubmit(onSubmit)}>
             <label className='block mb-5'>
               <input
-                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
+                className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:border-slate-700 dark:focus:ring-teal-400/30'
                 id='signInInput2-1'
                 type='text'
                 placeholder='Adresse e-mail'
@@ -94,14 +94,14 @@ const Login = ({ isModal }) => {
             <label className='relative block mb-5'>
               <div className='absolute right-4 top-1/2 transform -translate-y-1/2'>
                 <Link
-                  className='text-sm text-teal-600 hover:text-teal-700 font-medium'
+                  className='text-sm text-teal-600 hover:text-teal-700 font-medium dark:text-teal-300 dark:hover:text-teal-200'
                   to='/reset-password-request'
                 >
                   Mot de passe oublié ?
                 </Link>
               </div>
               <input
-                className='px-4 pr-36 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200'
+                className='px-4 pr-36 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:border-slate-700 dark:focus:ring-teal-400/30'
                 id='signInInput2-2'
                 type='password'
                 placeholder='Mot de passe'
@@ -110,13 +110,13 @@ const Login = ({ isModal }) => {
               />
             </label>
             <button
-              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200'
+              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30'
               type='submit'
             >
               Se connecter
             </button>
             {errorMessage && (
-              <p className='text-red-500 mb-5'>{errorMessage}</p>
+              <p className='text-red-500 mb-5 dark:text-red-300'>{errorMessage}</p>
             )}
           </form>
         </div>

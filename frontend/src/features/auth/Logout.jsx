@@ -50,7 +50,7 @@ function LogOut({ setProfil, profil }) {
         onClick={toggleProfil}
         className='flex flex-col items-center'
       >
-        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white'>
+        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800'>
           <img
             src={images.profilSrc}
             alt='Icône de profil'
@@ -66,7 +66,7 @@ function LogOut({ setProfil, profil }) {
         onClick={handleLogout}
         className='flex flex-col items-center'
       >
-        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white'>
+        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800'>
           <img
             src={images.logoutSrc}
             alt='Icône de déconnexion'

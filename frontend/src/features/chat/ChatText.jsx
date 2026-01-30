@@ -43,7 +43,7 @@ function ChatText({ messages = [], error, loading }) {
               }`}
             >
               {isAssistant && (
-                <div className='mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200'>
+                <div className='mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200 dark:bg-slate-900 dark:ring-slate-700'>
                   <img
                     src={imgSrc}
                     alt=''
@@ -56,14 +56,14 @@ function ChatText({ messages = [], error, loading }) {
               <div
                 className={`max-w-[80%] rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-sm ${
                   isAssistant
-                    ? 'bg-white text-gray-700 ring-1 ring-gray-200'
+                    ? 'bg-white text-gray-700 ring-1 ring-gray-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700'
                     : 'bg-teal-500 text-white'
                 }`}
               >
                 <p className='whitespace-pre-wrap'>{msg.content}</p>
               </div>
               {!isAssistant && (
-                <div className='mt-1 hidden h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-700 sm:flex'>
+                <div className='mt-1 hidden h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-700 sm:flex dark:bg-teal-500/20 dark:text-teal-200'>
                   Vous
                 </div>
               )}
@@ -73,7 +73,7 @@ function ChatText({ messages = [], error, loading }) {
 
         {loading && (
           <div className='flex items-start gap-3'>
-            <div className='mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200'>
+            <div className='mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200 dark:bg-slate-900 dark:ring-slate-700'>
               <img
                 src={imgSrc}
                 alt=''
@@ -82,14 +82,14 @@ function ChatText({ messages = [], error, loading }) {
                 onMouseOut={handleMouseOut}
               />
             </div>
-            <div className='max-w-[70%] rounded-2xl bg-white px-5 py-4 text-sm text-gray-500 shadow-sm ring-1 ring-gray-200'>
+            <div className='max-w-[70%] rounded-2xl bg-white px-5 py-4 text-sm text-gray-500 shadow-sm ring-1 ring-gray-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700'>
               <span className='animate-pulse'>Réflexion en cours…</span>
             </div>
           </div>
         )}
 
         {error && (
-          <div className='rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600'>
+          <div className='rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200'>
             {error}
           </div>
         )}

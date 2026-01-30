@@ -12,16 +12,16 @@ function Home() {
   const isAuthenticated = !!localStorage.getItem('token');
 
   return (
-    <div className='min-h-screen bg-gray-50 flex flex-col font-sans'>
+    <div className='min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans dark:bg-slate-950 dark:text-slate-100'>
       {/* Navigation */}
-      <nav className='bg-white shadow-sm sticky top-0 z-50'>
+      <nav className='bg-white shadow-sm sticky top-0 z-50 dark:bg-slate-950/90 dark:shadow-none dark:border-b dark:border-slate-800'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='flex justify-between h-16 items-center'>
             <div className='flex-shrink-0 flex items-center gap-2'>
               <div className='h-8 w-8 bg-teal-400 rounded-full flex items-center justify-center shadow-sm'>
                 <span className='text-white font-bold text-sm'>IA</span>
               </div>
-              <h1 className='text-2xl font-bold text-gray-800 tracking-tight'>
+              <h1 className='text-2xl font-bold text-gray-800 tracking-tight dark:text-slate-100'>
                 ChatBot
               </h1>
             </div>
@@ -37,13 +37,13 @@ function Home() {
                 <>
                   <button
                     onClick={() => setModalOpen('login')}
-                    className='text-gray-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium transition duration-200 bg-transparent border-none cursor-pointer'
+                    className='text-gray-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium transition duration-200 bg-transparent border-none cursor-pointer dark:text-slate-300 dark:hover:text-teal-300'
                   >
                     Connexion
                   </button>
                   <button
                     onClick={() => setModalOpen('register')}
-                    className='bg-teal-400 hover:bg-teal-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-md transition duration-200 ease-in-out transform hover:scale-105 focus:ring focus:ring-teal-200 border-none cursor-pointer'
+                    className='bg-teal-400 hover:bg-teal-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-md transition duration-200 ease-in-out transform hover:scale-105 focus:ring focus:ring-teal-200 border-none cursor-pointer dark:focus:ring-teal-400/30'
                   >
                     Inscription
                   </button>
@@ -55,7 +55,7 @@ function Home() {
       </nav>
 
       {/* Hero Section */}
-      <div className='relative min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white overflow-hidden'>
+      <div className='relative min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white overflow-hidden dark:from-slate-950 dark:to-slate-900'>
         <MatrixBackground />
         <div className='relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center'>
           <img
@@ -63,13 +63,13 @@ function Home() {
             alt='Animation de code'
             className='mx-auto w-48 mb-8'
           />
-          <h2 className='text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl mb-6'>
+          <h2 className='text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl mb-6 dark:text-slate-100'>
             <span className='block'>Discutez avec</span>
             <span className='p-2 block text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-teal-600'>
               l'intelligence artificielle
             </span>
           </h2>
-          <p className='mt-4 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl leading-relaxed'>
+          <p className='mt-4 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl leading-relaxed dark:text-slate-300'>
             Accédez aux modèles d'IA les plus performants (OpenAI, Gemini,
             Claude, Mistral) via une interface unique, sécurisée et conviviale.
           </p>
@@ -78,7 +78,7 @@ function Home() {
               <div className='rounded-md shadow'>
                 <Link
                   to='/chat'
-                  className='w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white bg-teal-400 hover:bg-teal-500 md:py-4 md:text-xl transition duration-200 ease-in-out shadow-lg focus:ring focus:ring-teal-200'
+                  className='w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white bg-teal-400 hover:bg-teal-500 md:py-4 md:text-xl transition duration-200 ease-in-out shadow-lg focus:ring focus:ring-teal-200 dark:focus:ring-teal-400/30'
                 >
                   Reprendre la conversation
                 </Link>
@@ -87,7 +87,7 @@ function Home() {
               <div className='rounded-md shadow'>
                 <button
                   onClick={() => setModalOpen('register')}
-                  className='w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white bg-teal-400 hover:bg-teal-500 md:py-4 md:text-xl transition duration-200 ease-in-out shadow-lg focus:ring focus:ring-teal-200 cursor-pointer'
+                  className='w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white bg-teal-400 hover:bg-teal-500 md:py-4 md:text-xl transition duration-200 ease-in-out shadow-lg focus:ring focus:ring-teal-200 cursor-pointer dark:focus:ring-teal-400/30'
                 >
                   Commencer gratuitement
                 </button>
@@ -98,16 +98,16 @@ function Home() {
       </div>
 
       {/* Features Grid */}
-      <div className='bg-white py-24 border-t border-gray-100'>
+      <div className='bg-white py-24 border-t border-gray-100 dark:bg-slate-950 dark:border-slate-800'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='lg:text-center mb-16'>
-            <p className='text-base text-teal-600 font-semibold tracking-wide uppercase'>
+            <p className='text-base text-teal-600 font-semibold tracking-wide uppercase dark:text-teal-300'>
               Fonctionnalités
             </p>
-            <h3 className='mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl'>
+            <h3 className='mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl dark:text-slate-100'>
               Une plateforme, plusieurs intelligences
             </h3>
-            <p className='mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto'>
+            <p className='mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto dark:text-slate-300'>
               Optimisez votre productivité en choisissant le bon outil pour
               chaque tâche.
             </p>
@@ -202,11 +202,11 @@ function Home() {
                     <div className='absolute flex items-center justify-center h-12 w-12 rounded-xl bg-teal-400 text-white shadow-lg'>
                       {feature.icon}
                     </div>
-                    <p className='ml-16 text-xl leading-6 font-bold text-gray-900'>
+                    <p className='ml-16 text-xl leading-6 font-bold text-gray-900 dark:text-slate-100'>
                       {feature.name}
                     </p>
                   </dt>
-                  <dd className='mt-2 ml-16 text-base text-gray-500 leading-relaxed'>
+                  <dd className='mt-2 ml-16 text-base text-gray-500 leading-relaxed dark:text-slate-300'>
                     {feature.description}
                   </dd>
                 </div>

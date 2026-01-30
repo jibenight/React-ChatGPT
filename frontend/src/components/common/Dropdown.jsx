@@ -10,10 +10,10 @@ export default function Dropdown() {
   return (
     <Menu as='div' className='relative inline-block text-center p-2 w-full'>
       <div>
-        <Menu.Button className='inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50'>
+        <Menu.Button className='inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700 dark:hover:bg-slate-800'>
           Options
           <ChevronDownIcon
-            className='-mr-1 h-5 w-5 text-gray-400'
+            className='-mr-1 h-5 w-5 text-gray-400 dark:text-slate-400'
             aria-hidden='true'
           />
         </Menu.Button>
@@ -28,14 +28,16 @@ export default function Dropdown() {
         leaveFrom='transform opacity-100 scale-100'
         leaveTo='transform opacity-0 scale-95'
       >
-        <Menu.Items className='absolute left-1/2 transform -translate-x-1/2 z-10 mt-2 w-4/5 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none'>
+        <Menu.Items className='absolute left-1/2 transform -translate-x-1/2 z-10 mt-2 w-4/5 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-slate-900 dark:ring-slate-700'>
           <div className='py-1'>
             <Menu.Item>
               {({ active }) => (
                 <button
                   type='button'
                   className={classNames(
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100'
+                      : 'text-gray-700 dark:text-slate-300',
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
@@ -48,7 +50,9 @@ export default function Dropdown() {
                 <button
                   type='button'
                   className={classNames(
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100'
+                      : 'text-gray-700 dark:text-slate-300',
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
@@ -61,7 +65,9 @@ export default function Dropdown() {
                 <button
                   type='button'
                   className={classNames(
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100'
+                      : 'text-gray-700 dark:text-slate-300',
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
@@ -75,7 +81,9 @@ export default function Dropdown() {
                   <button
                     type='submit'
                     className={classNames(
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                    active
+                      ? 'bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100'
+                      : 'text-gray-700 dark:text-slate-300',
                       'block w-full px-4 py-2 text-left text-sm'
                     )}
                   >

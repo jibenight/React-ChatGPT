@@ -18,12 +18,16 @@ const MatrixBackground = () => {
     }
 
     const draw = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const trailColor = isDark
+        ? 'rgba(15, 23, 42, 0.35)'
+        : 'rgba(249, 250, 251, 0.2)';
+      const glyphColor = isDark ? '#22d3ee' : '#2dd4bf';
       // Effet de traînée : on redessine un fond semi-transparent à chaque frame
-      // Couleur gray-50 (#f9fafb) avec faible opacité pour fondre avec le thème
-      ctx.fillStyle = 'rgba(249, 250, 251, 0.2)';
+      ctx.fillStyle = trailColor;
       ctx.fillRect(0, 0, width, height);
 
-      ctx.fillStyle = '#2dd4bf'; // Couleur teal-400 du thème
+      ctx.fillStyle = glyphColor;
       ctx.font = '15px monospace';
 
       for (let i = 0; i < drops.length; i++) {

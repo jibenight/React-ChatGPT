@@ -30,8 +30,8 @@ const morgan = require('morgan');
 // création de l'application express
 const app = express();
 app.use(cors());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: '15mb' }));
+app.use(express.json({ limit: '15mb' }));
 //app.use(express.static(path.join(__dirname, '/dist')));
 app.use(morgan('tiny'));
 

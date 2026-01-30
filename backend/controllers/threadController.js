@@ -111,7 +111,7 @@ exports.getThreadMessages = async (req, res) => {
     }
     const rows = await new Promise((resolve, reject) => {
       db.all(
-        `SELECT id, role, content, provider, model, created_at
+        `SELECT id, role, content, attachments, provider, model, created_at
          FROM messages
          WHERE thread_id = ?
          ORDER BY id ASC
@@ -123,7 +123,22 @@ exports.getThreadMessages = async (req, res) => {
         },
       );
     });
-    res.status(200).json(rows);
+    const withAttachments = rows.map(row => {
+      let parsedAttachments = [];
+      if (row.attachments) {
+        try {
+          const parsed = JSON.parse(row.attachments);
+          parsedAttachments = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          parsedAttachments = [];
+        }
+      }
+      return {
+        ...row,
+        attachments: parsedAttachments,
+      };
+    });
+    res.status(200).json(withAttachments);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

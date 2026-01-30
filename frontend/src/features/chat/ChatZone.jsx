@@ -20,6 +20,22 @@ function ChatZone({
   const [error, setError] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  const fileToDataUrl = file =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const getAttachmentType = file => {
+    if (file.type?.startsWith('image/')) return 'image';
+    if (file.type?.includes('pdf') || file.type?.startsWith('text/')) {
+      return 'document';
+    }
+    return 'file';
+  };
+
   const normalizeContent = content => {
     if (typeof content === 'string') return content;
     if (content === null || content === undefined) return '';
@@ -34,6 +50,16 @@ function ChatZone({
     if (role === 'user' || role === 'assistant' || role === 'system') return role;
     return 'assistant';
   };
+
+  const mapStoredAttachments = attachments =>
+    (attachments || []).map(att => ({
+      id: att.id || uuidv4(),
+      type: att.type || 'image',
+      name: att.name || 'Attachment',
+      contentType: att.mimeType || 'application/octet-stream',
+      status: { type: 'complete' },
+      content: [],
+    }));
 
   useEffect(() => {
     if (!threadId) {
@@ -52,6 +78,7 @@ function ChatZone({
           id: item.id ? String(item.id) : uuidv4(),
           role: normalizeRole(item.role),
           content: normalizeContent(item.content),
+          attachments: mapStoredAttachments(item.attachments),
           createdAt: item.created_at ? new Date(item.created_at) : new Date(),
         }));
         setMessages(history);
@@ -78,7 +105,8 @@ function ChatZone({
 
   const handleSend = useCallback(async appendMessage => {
     const text = extractText(appendMessage);
-    if (!text.trim()) return;
+    const attachments = appendMessage?.attachments ?? [];
+    if (!text.trim() && attachments.length === 0) return;
     if (!userData?.id && !userData?.userId) {
       setError('Utilisateur non connecté');
       return;
@@ -93,6 +121,7 @@ function ChatZone({
       id: uuidv4(),
       role: 'user',
       content: text,
+      attachments,
       createdAt: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
@@ -100,6 +129,29 @@ function ChatZone({
     setError('');
 
     try {
+      const attachmentPayload = [];
+      for (const attachment of attachments) {
+        if (attachment.type !== 'image') continue;
+        let dataUrl = null;
+        if (Array.isArray(attachment.content)) {
+          const imagePart = attachment.content.find(
+            part => part?.type === 'image' && typeof part.image === 'string',
+          );
+          dataUrl = imagePart?.image || null;
+        }
+        if (!dataUrl && attachment.file) {
+          const result = await fileToDataUrl(attachment.file);
+          dataUrl = typeof result === 'string' ? result : null;
+        }
+        if (!dataUrl) continue;
+        attachmentPayload.push({
+          id: attachment.id,
+          name: attachment.name,
+          mimeType: attachment.contentType,
+          dataUrl,
+        });
+      }
+
       const controller = new AbortController();
       abortRef.current = controller;
       const response = await axios.post(`${API_BASE}/api/chat/message`, {
@@ -110,6 +162,7 @@ function ChatZone({
         message: text,
         provider,
         model,
+        attachments: attachmentPayload,
       }, { signal: controller.signal });
       const reply = response.data.reply || 'Aucune réponse';
       const assistantMessage = {
@@ -142,6 +195,35 @@ function ChatZone({
       selectedOption?.model || 'gpt-4o'
     }`;
 
+  const attachmentAdapter = useMemo(() => ({
+    accept: 'image/*',
+    async add({ file }) {
+      return {
+        id: uuidv4(),
+        type: getAttachmentType(file),
+        name: file.name,
+        contentType: file.type || 'application/octet-stream',
+        file,
+        status: { type: 'requires-action', reason: 'composer-send' },
+      };
+    },
+    async remove() {},
+    async send(attachment) {
+      let content = [];
+      if (attachment.type === 'image') {
+        const dataUrl = await fileToDataUrl(attachment.file);
+        if (typeof dataUrl === 'string') {
+          content = [{ type: 'image', image: dataUrl, filename: attachment.name }];
+        }
+      }
+      return {
+        ...attachment,
+        status: { type: 'complete' },
+        content,
+      };
+    },
+  }), []);
+
   const handleClear = () => {
     setMessages([]);
     setError('');
@@ -158,13 +240,17 @@ function ChatZone({
         createdAt: message.createdAt,
         role: message.role,
         content: normalizeContent(message.content),
+        attachments: message.attachments ?? [],
       }),
       setMessages,
       onNew: handleSend,
       onCancel: () => {
         abortRef.current?.abort();
       },
-    }), [handleSend, loading, loadingHistory, messages, userData]),
+      adapters: {
+        attachments: attachmentAdapter,
+      },
+    }), [attachmentAdapter, handleSend, loading, loadingHistory, messages, userData]),
   );
 
   return (

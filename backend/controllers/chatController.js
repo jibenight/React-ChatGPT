@@ -4,10 +4,92 @@ const Anthropic = require('@anthropic-ai/sdk');
 const MistralClient = require('@mistralai/mistralai');
 const db = require('../models/database');
 const cryptoJS = require('crypto-js');
+const { Blob } = require('buffer');
+
+const parseAttachments = value => {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const parseDataUrl = dataUrl => {
+  if (typeof dataUrl !== 'string') return null;
+  const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
+  if (!match) return null;
+  return { mimeType: match[1], base64: match[2] };
+};
+
+const detectAttachmentType = mimeType => {
+  if (mimeType && mimeType.startsWith('image/')) return 'image';
+  if (mimeType && mimeType.includes('pdf')) return 'document';
+  if (mimeType && mimeType.startsWith('text/')) return 'document';
+  return 'file';
+};
+
+const uploadGeminiAttachments = async (genAI, attachments) => {
+  const results = [];
+  for (const attachment of attachments) {
+    if (!attachment) continue;
+    if (attachment.fileUri) {
+      results.push({
+        id: attachment.id,
+        name: attachment.name || null,
+        mimeType: attachment.mimeType || null,
+        type: attachment.type || detectAttachmentType(attachment.mimeType),
+        fileUri: attachment.fileUri,
+      });
+      continue;
+    }
+
+    const parsed = parseDataUrl(attachment.dataUrl);
+    if (!parsed?.base64) continue;
+    const mimeType = attachment.mimeType || parsed.mimeType;
+    const buffer = Buffer.from(parsed.base64, 'base64');
+    const blob = new Blob([buffer], { type: mimeType });
+    const file = await genAI.files.upload({
+      file: blob,
+      config: {
+        mimeType,
+        displayName: attachment.name || undefined,
+      },
+    });
+
+    const resolvedFileUri =
+      file.uri ||
+      (file.name && file.name.startsWith('files/')
+        ? `https://generativelanguage.googleapis.com/${file.name}`
+        : file.name) ||
+      null;
+
+    results.push({
+      id: attachment.id,
+      name: attachment.name || file.displayName || file.name || null,
+      mimeType: file.mimeType || mimeType || null,
+      type: detectAttachmentType(file.mimeType || mimeType),
+      fileUri: resolvedFileUri,
+      sizeBytes: file.sizeBytes || null,
+    });
+  }
+
+  return results.filter(item => item.fileUri);
+};
 
 exports.sendMessage = async (req, res) => {
-  const { userId, sessionId, threadId, message, provider, model, projectId } =
-    req.body;
+  const {
+    userId,
+    sessionId,
+    threadId,
+    message,
+    provider,
+    model,
+    projectId,
+    attachments,
+  } = req.body;
+  const incomingAttachments = Array.isArray(attachments) ? attachments : [];
   const targetProvider = provider || 'openai';
   const defaultModels = {
     openai: 'gpt-4o',
@@ -18,7 +100,7 @@ exports.sendMessage = async (req, res) => {
   const targetModel = model || defaultModels[targetProvider];
   const activeThreadId = threadId || sessionId;
 
-  if (!userId || !activeThreadId || !message) {
+  if (!userId || !activeThreadId || (!message && incomingAttachments.length === 0)) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -61,8 +143,26 @@ exports.sendMessage = async (req, res) => {
       );
     });
 
+    let storedAttachments = [];
+    if (incomingAttachments.length > 0) {
+      if (targetProvider !== 'gemini') {
+        return res
+          .status(400)
+          .json({ error: 'Attachments are only supported for Gemini' });
+      }
+      const genAI = new GoogleGenAI({ apiKey });
+      storedAttachments = await uploadGeminiAttachments(
+        genAI,
+        incomingAttachments,
+      );
+    }
+
     if (!threadRow) {
-      const title = message.slice(0, 60);
+      const titleSource =
+        message && message.trim()
+          ? message
+          : storedAttachments[0]?.name || 'Nouvelle conversation';
+      const title = titleSource.slice(0, 60);
       await new Promise((resolve, reject) => {
         db.run(
           `INSERT INTO threads (id, user_id, project_id, title, last_message_at)
@@ -91,9 +191,18 @@ exports.sendMessage = async (req, res) => {
 
     await new Promise((resolve, reject) => {
       db.run(
-        `INSERT INTO messages (thread_id, role, content, provider, model)
-         VALUES (?, ?, ?, ?, ?)`,
-        [activeThreadId, 'user', message, targetProvider, targetModel],
+        `INSERT INTO messages (thread_id, role, content, attachments, provider, model)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          activeThreadId,
+          'user',
+          message || '',
+          storedAttachments.length > 0
+            ? JSON.stringify(storedAttachments)
+            : null,
+          targetProvider,
+          targetModel,
+        ],
         err => {
           if (err) reject(err);
           else resolve();
@@ -139,7 +248,7 @@ exports.sendMessage = async (req, res) => {
 
     const historyRows = await new Promise((resolve, reject) => {
       db.all(
-        `SELECT role, content
+        `SELECT role, content, attachments
          FROM messages
          WHERE thread_id = ?
          ORDER BY id DESC
@@ -154,6 +263,7 @@ exports.sendMessage = async (req, res) => {
     const history = historyRows.reverse().map(row => ({
       role: row.role,
       content: row.content,
+      attachments: parseAttachments(row.attachments),
     }));
 
     let reply = '';
@@ -179,19 +289,44 @@ exports.sendMessage = async (req, res) => {
       }
     } else if (targetProvider === 'gemini') {
       const genAI = new GoogleGenAI({ apiKey });
-      const historyText = history
-        .map(entry =>
-          entry.role === 'assistant'
-            ? `Assistant: ${entry.content}`
-            : `User: ${entry.content}`,
-        )
-        .join('\n');
-      const combinedPrompt = [systemPrompt, historyText]
-        .filter(Boolean)
-        .join('\n\n');
+      const contents = [];
+      if (systemPrompt) {
+        contents.push({
+          role: 'user',
+          parts: [{ text: systemPrompt }],
+        });
+      }
+      history.forEach(entry => {
+        const parts = [];
+        if (entry.content) {
+          parts.push({ text: entry.content });
+        }
+        if (entry.role === 'user' && Array.isArray(entry.attachments)) {
+          entry.attachments.forEach(att => {
+            if (!att?.fileUri) return;
+            const fileUri =
+              typeof att.fileUri === 'string' &&
+              att.fileUri.startsWith('files/')
+                ? `https://generativelanguage.googleapis.com/${att.fileUri}`
+                : att.fileUri;
+            parts.push({
+              fileData: {
+                fileUri,
+                mimeType: att.mimeType || undefined,
+              },
+            });
+          });
+        }
+        if (parts.length === 0) return;
+        contents.push({
+          role: entry.role === 'assistant' ? 'model' : 'user',
+          parts,
+        });
+      });
+
       const response = await genAI.models.generateContent({
         model: targetModel,
-        contents: combinedPrompt,
+        contents,
       });
       reply = response.text || '';
     } else if (targetProvider === 'claude') {

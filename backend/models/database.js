@@ -103,6 +103,7 @@ const createMessagesTableQuery = `
     thread_id TEXT NOT NULL,
     role TEXT NOT NULL,
     content TEXT NOT NULL,
+    attachments TEXT,
     provider TEXT,
     model TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -218,6 +219,20 @@ db.serialize(() => {
     }
     if (!hasContextData) {
       db.run("ALTER TABLE projects ADD COLUMN context_data TEXT;", alterErr => {
+        if (alterErr) console.error(alterErr.message);
+      });
+    }
+  });
+
+  // migration légère messages (attachments)
+  db.all('PRAGMA table_info(messages);', (err, columns) => {
+    if (err) {
+      console.error(err.message);
+      return;
+    }
+    const hasAttachments = columns.some(col => col.name === 'attachments');
+    if (!hasAttachments) {
+      db.run('ALTER TABLE messages ADD COLUMN attachments TEXT;', alterErr => {
         if (alterErr) console.error(alterErr.message);
       });
     }

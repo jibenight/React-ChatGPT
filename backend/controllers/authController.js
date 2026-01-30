@@ -9,15 +9,30 @@ require('dotenv').config();
 const secretKey = process.env.SECRET_KEY;
 
 // Création du transporter Nodemailer
+const smtpPort = Number(process.env.SMTP_PORT) || 465;
+const smtpSecure =
+  process.env.SMTP_SECURE !== undefined
+    ? process.env.SMTP_SECURE === 'true'
+    : smtpPort === 465;
 const transporter = nodemailer.createTransport({
-  host: 'mail.jean-nguyen.dev',
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || 'mail.jean-nguyen.dev',
+  port: smtpPort,
+  secure: smtpSecure,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.PASSWORD,
   },
 });
+
+if (process.env.SMTP_DEBUG === 'true') {
+  transporter.verify(err => {
+    if (err) {
+      console.error('SMTP verify failed:', err.message);
+    } else {
+      console.log('SMTP server is ready to take messages');
+    }
+  });
+}
 
 exports.register = async (req, res) => {
   console.log(req.body);
@@ -116,16 +131,47 @@ exports.resetPasswordRequest = (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+        const appUrl =
+          process.env.APP_URL ||
+          req.get('origin') ||
+          'http://localhost:5173';
+        const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
         const mailOptions = {
-          from: process.env.EMAIL_USER,
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          replyTo: process.env.REPLY_TO || process.env.EMAIL_USER,
           to: email,
           subject: 'Password Reset Request',
           text: `Click here to reset your password: ${resetLink}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+              <h2 style="margin: 0 0 12px;">Password Reset Request</h2>
+              <p style="margin: 0 0 12px;">You requested to reset your password. Click the button below to continue:</p>
+              <p style="margin: 16px 0;">
+                <a href="${resetLink}" style="display: inline-block; padding: 12px 18px; background: #14b8a6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                  Reset Password
+                </a>
+              </p>
+              <p style="margin: 0 0 12px;">If the button does not work, copy and paste this link into your browser:</p>
+              <p style="margin: 0; word-break: break-all; color: #0f766e;">
+                ${resetLink}
+              </p>
+              <p style="margin: 16px 0 0; color: #64748b; font-size: 12px;">
+                This link expires in 1 hour. If you did not request a password reset, you can ignore this email.
+              </p>
+            </div>
+          `,
         };
         transporter.sendMail(mailOptions, (err, info) => {
           if (err) {
             return res.status(500).json({ error: err.message });
+          }
+          if (process.env.SMTP_DEBUG === 'true') {
+            console.log('SMTP messageId:', info.messageId);
+            console.log('SMTP accepted:', info.accepted);
+            console.log('SMTP rejected:', info.rejected);
+            if (info.response) {
+              console.log('SMTP response:', info.response);
+            }
           }
           res.status(200).json({ message: 'Reset email sent' });
         });

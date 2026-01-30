@@ -3,6 +3,7 @@ import chatGPT from '../../assets/chatGPT.gif';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import React from 'react';
+import { useState } from 'react';
 import { API_BASE } from '../../apiConfig';
 
 const ResetPasswordRequest = () => {
@@ -11,25 +12,31 @@ const ResetPasswordRequest = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
+  const [status, setStatus] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = data => {
+  const onSubmit = async data => {
     const { email } = data;
-    axios
-      .post(`${API_BASE}/reset-password-request`, {
+    setStatus(null);
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(`${API_BASE}/reset-password-request`, {
         email,
-      })
-      .then(response => {
-        if (response.status === 200) {
-          // Gérer la réponse réussie ici, par exemple :
-          alert('E-mail de réinitialisation envoyé.');
-        }
-      })
-      .catch(error => {
-        if (error.response && error.response.status === 404) {
-          // Gérer les erreurs ici, par exemple :
-          alert('E-mail non trouvé.');
-        }
       });
+      if (response.status === 200) {
+        setStatus({ type: 'success', message: 'E-mail de réinitialisation envoyé.' });
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setStatus({ type: 'error', message: 'E-mail non trouvé.' });
+      } else if (error.response?.data?.error) {
+        setStatus({ type: 'error', message: error.response.data.error });
+      } else {
+        setStatus({ type: 'error', message: "Impossible d'envoyer l'e-mail. Réessayez." });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -58,11 +65,30 @@ const ResetPasswordRequest = () => {
               />
             </label>
             <button
-              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30'
+              className='mb-6 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30 disabled:cursor-not-allowed disabled:opacity-60'
               type='submit'
+              disabled={isSubmitting}
             >
-              Envoyer le lien de réinitialisation
+              {isSubmitting
+                ? 'Envoi en cours...'
+                : 'Envoyer le lien de réinitialisation'}
             </button>
+            {errors.email && (
+              <p className='mb-4 text-sm text-red-500 dark:text-red-300'>
+                L'adresse e-mail est requise.
+              </p>
+            )}
+            {status && (
+              <p
+                className={`text-sm ${
+                  status.type === 'success'
+                    ? 'text-emerald-600 dark:text-emerald-300'
+                    : 'text-red-500 dark:text-red-300'
+                }`}
+              >
+                {status.message}
+              </p>
+            )}
           </form>
         </div>
       </div>

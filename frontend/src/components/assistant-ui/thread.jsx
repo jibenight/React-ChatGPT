@@ -18,7 +18,9 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
 } from "@assistant-ui/react";
-import { useEffect, useState } from "react";
+import { useAuiState } from "@assistant-ui/store";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -35,6 +37,7 @@ import {
 
 export const Thread = ({ draftKey, initialDraft }) => {
   const [draftValue, setDraftValue] = useState(initialDraft || "");
+  const viewportRef = useRef(null);
 
   useEffect(() => {
     setDraftValue(initialDraft || "");
@@ -68,12 +71,14 @@ export const Thread = ({ draftKey, initialDraft }) => {
       }}>
       <ThreadPrimitive.Viewport
         turnAnchor="top"
+        ref={viewportRef}
         className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth px-4 pt-4">
         <AuiIf condition={({ thread }) => thread.isEmpty}>
           <ThreadWelcome />
         </AuiIf>
 
-        <ThreadPrimitive.Messages
+        <VirtualizedMessages
+          viewportRef={viewportRef}
           components={{
             UserMessage,
             EditComposer,
@@ -87,6 +92,37 @@ export const Thread = ({ draftKey, initialDraft }) => {
          </ThreadPrimitive.ViewportFooter>
        </ThreadPrimitive.Viewport>
      </ThreadPrimitive.Root>
+  );
+};
+
+const VirtualizedMessages = ({ components, viewportRef }) => {
+  const messagesLength = useAuiState(({ thread }) => thread.messages.length);
+  const virtualizer = useVirtualizer({
+    count: messagesLength,
+    getScrollElement: () => viewportRef.current,
+    estimateSize: () => 120,
+    overscan: 6,
+  });
+
+  if (messagesLength === 0) return null;
+
+  return (
+    <div
+      className="relative w-full"
+      style={{ height: virtualizer.getTotalSize() }}>
+      {virtualizer.getVirtualItems().map(item => (
+        <div
+          key={item.key}
+          ref={virtualizer.measureElement}
+          data-index={item.index}
+          className="absolute left-0 top-0 w-full"
+          style={{ transform: `translateY(${item.start}px)` }}>
+          <ThreadPrimitive.MessageByIndex
+            index={item.index}
+            components={components} />
+        </div>
+      ))}
+    </div>
   );
 };
 

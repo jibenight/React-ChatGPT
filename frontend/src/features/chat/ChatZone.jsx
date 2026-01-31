@@ -531,12 +531,33 @@ function ChatZone({
       <div
         className={`mx-auto w-full max-w-4xl px-4 pt-3 sm:hidden transition-all duration-200 ${
           showMobileSearch
-            ? 'max-h-[220px] opacity-100'
+            ? 'max-h-[260px] opacity-100'
             : 'pointer-events-none max-h-0 opacity-0'
         }`}
       >
         <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/80'>
+          <div className='mb-3 flex items-center justify-between'>
+            <div className='text-xs font-semibold text-gray-600 dark:text-slate-300'>
+              Recherche
+            </div>
+            <button
+              type='button'
+              onClick={() => setShowMobileSearch(false)}
+              className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+            >
+              Fermer
+            </button>
+          </div>
           {renderSearchControls(mobileSearchInputRef, 'w-full')}
+          <div className='mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400'>
+            {searchQuery
+              ? `${searchMatchesCount} résultat${
+                  searchMatchesCount > 1 ? 's' : ''
+                } · ${activeMatchIndex + 1}/${
+                  searchMatchesCount || 0
+                } affiché`
+              : 'Entrez un mot-clé pour rechercher dans la conversation.'}
+          </div>
         </div>
       </div>
 

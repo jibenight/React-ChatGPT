@@ -487,7 +487,7 @@ function ChatZone({
               onClick={() => setShowMobileSearch(prev => !prev)}
               className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100 sm:hidden'
             >
-              {showMobileSearch ? 'Fermer' : 'Rechercher'}
+              {showMobileSearch ? 'Fermer' : 'Recherche'}
             </button>
             <div className='hidden sm:flex'>
               {renderSearchControls(searchInputRef, '')}
@@ -528,11 +528,17 @@ function ChatZone({
         </div>
       )}
 
-      {showMobileSearch && (
-        <div className='mx-auto w-full max-w-4xl px-4 pt-3 sm:hidden'>
+      <div
+        className={`mx-auto w-full max-w-4xl px-4 pt-3 sm:hidden transition-all duration-200 ${
+          showMobileSearch
+            ? 'max-h-[220px] opacity-100'
+            : 'pointer-events-none max-h-0 opacity-0'
+        }`}
+      >
+        <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/80'>
           {renderSearchControls(mobileSearchInputRef, 'w-full')}
         </div>
-      )}
+      </div>
 
       <div className='flex-1 min-h-0'>
         <AssistantRuntimeProvider runtime={runtime}>

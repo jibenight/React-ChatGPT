@@ -1,9 +1,10 @@
 import './css/App.css';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import Aside from './components/layout/Aside';
 import ChatZone from './features/chat/ChatZone';
 import Profil from './features/profile/Profile';
+import Projects from './features/projects/Projects';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { API_BASE } from './apiConfig';
@@ -20,6 +21,8 @@ function App() {
     return stored === 'project';
   });
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const showProjects = location.pathname.startsWith('/projects');
 
   useEffect(() => {
     localStorage.setItem('project_mode', projectMode ? 'project' : 'solo');
@@ -115,13 +118,17 @@ function App() {
         setSelectedThreadId={setSelectedThreadId}
       />
       <div className={profil ? 'hidden' : 'flex-1 min-h-0'}>
-        <ChatZone
-          selectedOption={selectedOption}
-          sessionId={sessionId}
-          threadId={selectedThreadId}
-          projectId={selectedProjectId}
-          onThreadChange={setSelectedThreadId}
-        />
+        {showProjects ? (
+          <Projects />
+        ) : (
+          <ChatZone
+            selectedOption={selectedOption}
+            sessionId={sessionId}
+            threadId={selectedThreadId}
+            projectId={selectedProjectId}
+            onThreadChange={setSelectedThreadId}
+          />
+        )}
       </div>
       <div className={profil ? 'flex-1 min-h-0' : 'hidden'}>
         <Profil />

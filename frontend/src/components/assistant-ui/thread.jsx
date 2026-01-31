@@ -35,7 +35,7 @@ import {
   SquareIcon,
 } from "lucide-react";
 
-export const Thread = ({ draftKey, initialDraft, searchQuery }) => {
+export const Thread = ({ draftKey, initialDraft, searchQuery, scrollToIndex }) => {
   const [draftValue, setDraftValue] = useState(initialDraft || "");
   const viewportRef = useRef(null);
 
@@ -79,6 +79,7 @@ export const Thread = ({ draftKey, initialDraft, searchQuery }) => {
 
         <VirtualizedMessages
           viewportRef={viewportRef}
+          scrollToIndex={scrollToIndex}
           components={{
             UserMessage: () => <UserMessage searchQuery={searchQuery} />,
             EditComposer,
@@ -95,7 +96,7 @@ export const Thread = ({ draftKey, initialDraft, searchQuery }) => {
   );
 };
 
-const VirtualizedMessages = ({ components, viewportRef }) => {
+const VirtualizedMessages = ({ components, viewportRef, scrollToIndex }) => {
   const messagesLength = useAuiState(({ thread }) => thread.messages.length);
   const virtualizer = useVirtualizer({
     count: messagesLength,
@@ -103,6 +104,12 @@ const VirtualizedMessages = ({ components, viewportRef }) => {
     estimateSize: () => 120,
     overscan: 6,
   });
+
+  useEffect(() => {
+    if (scrollToIndex === null || scrollToIndex === undefined) return;
+    if (scrollToIndex < 0 || scrollToIndex >= messagesLength) return;
+    virtualizer.scrollToIndex(scrollToIndex, { align: "center" });
+  }, [messagesLength, scrollToIndex, virtualizer]);
 
   if (messagesLength === 0) return null;
 

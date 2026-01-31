@@ -21,6 +21,7 @@ function ChatZone({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [lastFailedRequest, setLastFailedRequest] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeMatchIndex, setActiveMatchIndex] = useState(0);
 
   const draftKey = useMemo(() => {
     const activeUserId = userData?.id || userData?.userId;
@@ -290,15 +291,45 @@ function ChatZone({
       selectedOption?.model || 'gpt-4o'
     }`;
 
-  const searchMatchesCount = useMemo(() => {
+  const searchMatches = useMemo(() => {
     if (!searchQuery.trim()) return 0;
     const query = searchQuery.toLowerCase();
-    return messages.reduce((count, message) => {
+    return messages.reduce((indices, message, index) => {
       const text = normalizeContent(message.content).toLowerCase();
-      if (text.includes(query)) return count + 1;
-      return count;
-    }, 0);
+      if (text.includes(query)) indices.push(index);
+      return indices;
+    }, []);
   }, [messages, searchQuery]);
+
+  const searchMatchesCount = searchMatches.length;
+  const activeMessageIndex =
+    searchMatchesCount > 0 && activeMatchIndex >= 0
+      ? searchMatches[Math.min(activeMatchIndex, searchMatchesCount - 1)]
+      : null;
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setActiveMatchIndex(0);
+      return;
+    }
+    if (searchMatchesCount === 0) {
+      setActiveMatchIndex(0);
+      return;
+    }
+    setActiveMatchIndex(prev => Math.min(prev, searchMatchesCount - 1));
+  }, [searchMatchesCount, searchQuery]);
+
+  const handleNextMatch = () => {
+    if (!searchMatchesCount) return;
+    setActiveMatchIndex(prev => (prev + 1) % searchMatchesCount);
+  };
+
+  const handlePrevMatch = () => {
+    if (!searchMatchesCount) return;
+    setActiveMatchIndex(prev =>
+      prev - 1 < 0 ? searchMatchesCount - 1 : prev - 1,
+    );
+  };
 
   const attachmentAdapter = useMemo(() => ({
     accept: 'image/*',
@@ -393,6 +424,29 @@ function ChatZone({
                   {searchMatchesCount} trouvé{searchMatchesCount > 1 ? 's' : ''}
                 </span>
               )}
+              {searchQuery && searchMatchesCount > 0 && (
+                <span className='flex items-center gap-1 text-[10px] text-gray-500 dark:text-slate-400'>
+                  {activeMatchIndex + 1}/{searchMatchesCount}
+                </span>
+              )}
+              {searchQuery && searchMatchesCount > 0 && (
+                <div className='flex items-center gap-1'>
+                  <button
+                    type='button'
+                    onClick={handlePrevMatch}
+                    className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+                  >
+                    Précédent
+                  </button>
+                  <button
+                    type='button'
+                    onClick={handleNextMatch}
+                    className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+                  >
+                    Suivant
+                  </button>
+                </div>
+              )}
             </div>
             <button
               type='button'
@@ -436,6 +490,7 @@ function ChatZone({
             draftKey={draftKey}
             initialDraft={initialDraft}
             searchQuery={searchQuery}
+            scrollToIndex={activeMessageIndex}
           />
         </AssistantRuntimeProvider>
       </div>

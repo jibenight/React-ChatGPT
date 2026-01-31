@@ -44,23 +44,23 @@ const sendVerificationEmail = (req, email, token) => {
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     replyTo: process.env.REPLY_TO || process.env.EMAIL_USER,
     to: email,
-    subject: 'Verify your email',
-    text: `Click here to verify your email: ${verifyLink}`,
+    subject: 'Vérifiez votre adresse e-mail',
+    text: `Cliquez ici pour vérifier votre adresse e-mail : ${verifyLink}`,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
-        <h2 style="margin: 0 0 12px;">Verify your email</h2>
-        <p style="margin: 0 0 12px;">Thanks for creating an account. Please verify your email address to activate your account.</p>
+        <h2 style="margin: 0 0 12px;">Vérifiez votre adresse e-mail</h2>
+        <p style="margin: 0 0 12px;">Merci pour votre inscription. Veuillez vérifier votre adresse e-mail pour activer votre compte.</p>
         <p style="margin: 16px 0;">
           <a href="${verifyLink}" style="display: inline-block; padding: 12px 18px; background: #14b8a6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">
-            Verify Email
+            Vérifier mon e-mail
           </a>
         </p>
-        <p style="margin: 0 0 12px;">If the button does not work, copy and paste this link into your browser:</p>
+        <p style="margin: 0 0 12px;">Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :</p>
         <p style="margin: 0; word-break: break-all; color: #0f766e;">
           ${verifyLink}
         </p>
         <p style="margin: 16px 0 0; color: #64748b; font-size: 12px;">
-          This link expires in 24 hours. If you did not request this, you can ignore this email.
+          Ce lien expire dans 24 heures. Si vous n’êtes pas à l’origine de cette demande, vous pouvez ignorer cet e-mail.
         </p>
       </div>
     `,
@@ -200,23 +200,23 @@ exports.resetPasswordRequest = (req, res) => {
           from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
           replyTo: process.env.REPLY_TO || process.env.EMAIL_USER,
           to: email,
-          subject: 'Password Reset Request',
-          text: `Click here to reset your password: ${resetLink}`,
+          subject: 'Réinitialisation du mot de passe',
+          text: `Cliquez ici pour réinitialiser votre mot de passe : ${resetLink}`,
           html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
-              <h2 style="margin: 0 0 12px;">Password Reset Request</h2>
-              <p style="margin: 0 0 12px;">You requested to reset your password. Click the button below to continue:</p>
+              <h2 style="margin: 0 0 12px;">Réinitialisation du mot de passe</h2>
+              <p style="margin: 0 0 12px;">Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour continuer :</p>
               <p style="margin: 16px 0;">
                 <a href="${resetLink}" style="display: inline-block; padding: 12px 18px; background: #14b8a6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  Reset Password
+                  Réinitialiser le mot de passe
                 </a>
               </p>
-              <p style="margin: 0 0 12px;">If the button does not work, copy and paste this link into your browser:</p>
+              <p style="margin: 0 0 12px;">Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :</p>
               <p style="margin: 0; word-break: break-all; color: #0f766e;">
                 ${resetLink}
               </p>
               <p style="margin: 16px 0 0; color: #64748b; font-size: 12px;">
-                This link expires in 1 hour. If you did not request a password reset, you can ignore this email.
+                Ce lien expire dans 1 heure. Si vous n’êtes pas à l’origine de cette demande, vous pouvez ignorer cet e-mail.
               </p>
             </div>
           `,

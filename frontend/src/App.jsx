@@ -101,7 +101,7 @@ function App() {
   }, [searchParams]);
 
   return (
-    <main className='flex h-screen'>
+    <main className='flex h-screen overflow-hidden'>
       <Aside
         setProfil={setProfil}
         profil={profil}

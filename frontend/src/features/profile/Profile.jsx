@@ -224,7 +224,7 @@ function Profil() {
     .join('');
 
   return (
-    <div className='relative min-h-screen flex-1 overflow-y-auto bg-linear-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100'>
+    <div className='relative h-screen flex-1 overflow-y-auto bg-linear-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100'>
       <div className='mx-auto w-full max-w-6xl px-4 py-10'>
         <div className='mb-8 rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-xs backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 dark:shadow-none'>
           <div className='flex flex-col gap-6 md:flex-row md:items-center md:justify-between'>

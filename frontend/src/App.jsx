@@ -114,7 +114,7 @@ function App() {
         selectedThreadId={selectedThreadId}
         setSelectedThreadId={setSelectedThreadId}
       />
-      <div className={profil ? 'hidden' : 'flex-1'}>
+      <div className={profil ? 'hidden' : 'flex-1 min-h-0'}>
         <ChatZone
           selectedOption={selectedOption}
           sessionId={sessionId}
@@ -123,7 +123,7 @@ function App() {
           onThreadChange={setSelectedThreadId}
         />
       </div>
-      <div className={profil ? 'flex-1' : 'hidden'}>
+      <div className={profil ? 'flex-1 min-h-0' : 'hidden'}>
         <Profil />
       </div>
     </main>

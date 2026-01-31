@@ -19,6 +19,7 @@ const Login = ({ isModal }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const onSubmit = data => {
     const { email, password } = data;
@@ -79,22 +80,33 @@ const Login = ({ isModal }) => {
       setInfoMessage('');
       return;
     }
+    if (resendCooldown > 0) return;
     setIsResending(true);
     setErrorMessage('');
     setInfoMessage('');
     try {
       await axios.post(`${API_BASE}/verify-email-request`, { email });
-      setInfoMessage("E-mail de vérification renvoyé.");
+      setInfoMessage(
+        "Si un compte existe pour cet e-mail, un lien de vérification a été renvoyé.",
+      );
+      setResendCooldown(60);
     } catch (resendError) {
-      if (resendError.response?.status === 404) {
-        setErrorMessage('E-mail introuvable.');
-      } else {
-        setErrorMessage("Impossible d'envoyer l'e-mail.");
-      }
+      setInfoMessage(
+        "Si un compte existe pour cet e-mail, un lien de vérification a été renvoyé.",
+      );
+      setResendCooldown(60);
     } finally {
       setIsResending(false);
     }
   };
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = setInterval(() => {
+      setResendCooldown(value => Math.max(0, value - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   return (
       <section
@@ -173,11 +185,13 @@ const Login = ({ isModal }) => {
                 type='button'
                 className='w-full rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200 dark:hover:bg-teal-500/20 disabled:cursor-not-allowed disabled:opacity-60'
                 onClick={handleResendVerification}
-                disabled={isResending}
+                disabled={isResending || resendCooldown > 0}
               >
                 {isResending
                   ? 'Envoi en cours...'
-                  : "Renvoyer l'e-mail de vérification"}
+                  : resendCooldown > 0
+                    ? `Renvoyer dans ${resendCooldown}s`
+                    : "Renvoyer l'e-mail de vérification"}
               </button>
             )}
           </form>

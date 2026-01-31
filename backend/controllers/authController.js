@@ -85,6 +85,21 @@ const sendVerificationEmail = (req, email, token) => {
   return transporter.sendMail(mailOptions);
 };
 
+const cleanupExpiredTokens = () => {
+  db.run(
+    'DELETE FROM password_resets WHERE expires_at <= DATETIME("now")',
+    cleanupErr => {
+      if (cleanupErr) console.error(cleanupErr.message);
+    },
+  );
+  db.run(
+    'DELETE FROM email_verifications WHERE expires_at <= DATETIME("now")',
+    cleanupErr => {
+      if (cleanupErr) console.error(cleanupErr.message);
+    },
+  );
+};
+
 exports.register = async (req, res) => {
   console.log(req.body);
   const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
@@ -120,6 +135,7 @@ exports.register = async (req, res) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    cleanupExpiredTokens();
     db.run(
       'INSERT INTO users (username, email, password, email_verified) VALUES (?,?,?,?)',
       [username, email, hashedPassword, 0],
@@ -194,12 +210,13 @@ exports.login = (req, res) => {
 
 exports.resetPasswordRequest = (req, res) => {
   const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
+  cleanupExpiredTokens();
   db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     if (!row) {
-      return res.status(404).json({ error: 'email not found' });
+      return res.status(200).json({ message: 'Reset email sent' });
     }
 
     const resetToken = uuidv4();
@@ -307,15 +324,16 @@ exports.resendVerification = (req, res) => {
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
   }
+  cleanupExpiredTokens();
   db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     if (!row) {
-      return res.status(404).json({ error: 'email not found' });
+      return res.status(200).json({ message: 'Verification email sent' });
     }
     if (row.email_verified) {
-      return res.status(200).json({ message: 'Email already verified' });
+      return res.status(200).json({ message: 'Verification email sent' });
     }
 
     const verifyToken = uuidv4();
@@ -351,6 +369,7 @@ exports.verifyEmail = (req, res) => {
   if (!token) {
     return res.status(400).json({ error: 'Token is required' });
   }
+  cleanupExpiredTokens();
   db.get(
     'SELECT * FROM email_verifications WHERE token = ? AND expires_at > DATETIME("now")',
     [token],

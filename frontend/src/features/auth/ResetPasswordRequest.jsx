@@ -20,20 +20,20 @@ const ResetPasswordRequest = () => {
     setStatus(null);
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${API_BASE}/reset-password-request`, {
+      await axios.post(`${API_BASE}/reset-password-request`, {
         email,
       });
-      if (response.status === 200) {
-        setStatus({ type: 'success', message: 'E-mail de réinitialisation envoyé.' });
-      }
+      setStatus({
+        type: 'success',
+        message:
+          "Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé.",
+      });
     } catch (error) {
-      if (error.response && error.response.status === 404) {
-        setStatus({ type: 'error', message: 'E-mail non trouvé.' });
-      } else if (error.response?.data?.error) {
-        setStatus({ type: 'error', message: error.response.data.error });
-      } else {
-        setStatus({ type: 'error', message: "Impossible d'envoyer l'e-mail. Réessayez." });
-      }
+      setStatus({
+        type: 'success',
+        message:
+          "Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé.",
+      });
     } finally {
       setIsSubmitting(false);
     }

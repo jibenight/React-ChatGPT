@@ -331,6 +331,20 @@ function ChatZone({
     );
   };
 
+  useEffect(() => {
+    if (!searchQuery || !searchQuery.trim()) return undefined;
+    const handleKeyDown = event => {
+      if (event.key !== 'Enter') return;
+      if (event.shiftKey) {
+        handlePrevMatch();
+      } else {
+        handleNextMatch();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNextMatch, handlePrevMatch, searchQuery]);
+
   const attachmentAdapter = useMemo(() => ({
     accept: 'image/*',
     async add({ file }) {

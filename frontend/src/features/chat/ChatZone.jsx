@@ -22,6 +22,7 @@ function ChatZone({
   const [lastFailedRequest, setLastFailedRequest] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+  const searchInputRef = useRef(null);
 
   const draftKey = useMemo(() => {
     const activeUserId = userData?.id || userData?.userId;
@@ -332,8 +333,16 @@ function ChatZone({
   };
 
   useEffect(() => {
-    if (!searchQuery || !searchQuery.trim()) return undefined;
     const handleKeyDown = event => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
+        if (searchInputRef.current) {
+          event.preventDefault();
+          searchInputRef.current.focus();
+          searchInputRef.current.select();
+        }
+        return;
+      }
+      if (!searchQuery || !searchQuery.trim()) return;
       if (event.key !== 'Enter') return;
       if (event.shiftKey) {
         handlePrevMatch();
@@ -419,6 +428,7 @@ function ChatZone({
             <div className='hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:flex'>
               <input
                 type='search'
+                ref={searchInputRef}
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
                 placeholder='Rechercher…'

@@ -23,6 +23,8 @@ function ChatZone({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const searchInputRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const draftKey = useMemo(() => {
     const activeUserId = userData?.id || userData?.userId;
@@ -354,6 +356,61 @@ function ChatZone({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNextMatch, handlePrevMatch, searchQuery]);
 
+  useEffect(() => {
+    if (!showMobileSearch) return;
+    mobileSearchInputRef.current?.focus();
+  }, [showMobileSearch]);
+
+  const renderSearchControls = (inputRef, sizeClass) => (
+    <div className={`flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 ${sizeClass}`}>
+      <input
+        type='search'
+        ref={inputRef}
+        value={searchQuery}
+        onChange={event => setSearchQuery(event.target.value)}
+        placeholder='Rechercher…'
+        className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-slate-200 dark:placeholder:text-slate-500'
+      />
+      {searchQuery && (
+        <button
+          type='button'
+          className='text-gray-400 transition hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
+          onClick={() => setSearchQuery('')}
+        >
+          Effacer
+        </button>
+      )}
+      {searchQuery && (
+        <span className='rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 dark:bg-teal-500/10 dark:text-teal-200'>
+          {searchMatchesCount} trouvé{searchMatchesCount > 1 ? 's' : ''}
+        </span>
+      )}
+      {searchQuery && searchMatchesCount > 0 && (
+        <span className='flex items-center gap-1 text-[10px] text-gray-500 dark:text-slate-400'>
+          {activeMatchIndex + 1}/{searchMatchesCount}
+        </span>
+      )}
+      {searchQuery && searchMatchesCount > 0 && (
+        <div className='flex items-center gap-1'>
+          <button
+            type='button'
+            onClick={handlePrevMatch}
+            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+          >
+            Précédent
+          </button>
+          <button
+            type='button'
+            onClick={handleNextMatch}
+            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+          >
+            Suivant
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   const attachmentAdapter = useMemo(() => ({
     accept: 'image/*',
     async add({ file }) {
@@ -425,52 +482,15 @@ function ChatZone({
             </h2>
           </div>
           <div className='flex items-center gap-2'>
-            <div className='hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:flex'>
-              <input
-                type='search'
-                ref={searchInputRef}
-                value={searchQuery}
-                onChange={event => setSearchQuery(event.target.value)}
-                placeholder='Rechercher…'
-                className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-slate-200 dark:placeholder:text-slate-500'
-              />
-              {searchQuery && (
-                <button
-                  type='button'
-                  className='text-gray-400 transition hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
-                  onClick={() => setSearchQuery('')}
-                >
-                  Effacer
-                </button>
-              )}
-              {searchQuery && (
-                <span className='rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 dark:bg-teal-500/10 dark:text-teal-200'>
-                  {searchMatchesCount} trouvé{searchMatchesCount > 1 ? 's' : ''}
-                </span>
-              )}
-              {searchQuery && searchMatchesCount > 0 && (
-                <span className='flex items-center gap-1 text-[10px] text-gray-500 dark:text-slate-400'>
-                  {activeMatchIndex + 1}/{searchMatchesCount}
-                </span>
-              )}
-              {searchQuery && searchMatchesCount > 0 && (
-                <div className='flex items-center gap-1'>
-                  <button
-                    type='button'
-                    onClick={handlePrevMatch}
-                    className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
-                  >
-                    Précédent
-                  </button>
-                  <button
-                    type='button'
-                    onClick={handleNextMatch}
-                    className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
-                  >
-                    Suivant
-                  </button>
-                </div>
-              )}
+            <button
+              type='button'
+              onClick={() => setShowMobileSearch(prev => !prev)}
+              className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100 sm:hidden'
+            >
+              {showMobileSearch ? 'Fermer' : 'Rechercher'}
+            </button>
+            <div className='hidden sm:flex'>
+              {renderSearchControls(searchInputRef, '')}
             </div>
             <button
               type='button'
@@ -505,6 +525,12 @@ function ChatZone({
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {showMobileSearch && (
+        <div className='mx-auto w-full max-w-4xl px-4 pt-3 sm:hidden'>
+          {renderSearchControls(mobileSearchInputRef, 'w-full')}
         </div>
       )}
 

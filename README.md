@@ -10,6 +10,25 @@ Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec front React + 
 ## Documentation utilisateur
 - Guide utilisateur : `docs/guide-utilisateur.md`
 
+## Mode dev (sans connexion)
+
+Ce mode est reserve au developpement local. Il permet d'acceder aux routes protegees sans authentification.
+
+### Frontend
+```
+VITE_DEV_BYPASS_AUTH=true
+```
+
+### Backend
+```
+DEV_BYPASS_AUTH=true
+```
+
+Fonctionnement :
+- un utilisateur de dev est genere automatiquement
+- les routes protegees acceptent les requetes sans JWT
+- un badge "DEV MODE" apparait dans l'interface
+
 ## Prérequis
 - Node.js 18+
 - npm

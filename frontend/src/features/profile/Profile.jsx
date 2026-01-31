@@ -5,6 +5,9 @@ import axios from 'axios';
 import { API_BASE } from '../../apiConfig';
 
 function Profil() {
+  const DEV_BYPASS_AUTH =
+    import.meta.env.DEV &&
+    String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
   const { userData, setUserData } = useUser();
   const [profilData, setprofilData] = useState(true);
   const [apiStatus, setApiStatus] = useState({
@@ -243,6 +246,11 @@ function Profil() {
               </div>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
+              {DEV_BYPASS_AUTH && (
+                <span className='rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
+                  Dev mode
+                </span>
+              )}
               {apiProviders.map(provider => {
                 const enabled = apiStatus[provider.key];
                 return (

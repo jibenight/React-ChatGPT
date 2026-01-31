@@ -13,6 +13,9 @@ function ChatZone({
   projectId,
   onThreadChange,
 }) {
+  const DEV_BYPASS_AUTH =
+    import.meta.env.DEV &&
+    String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
   const { userData } = useUser();
   const abortRef = useRef(null);
   const [messages, setMessages] = useState([]);
@@ -482,6 +485,11 @@ function ChatZone({
             </h2>
           </div>
           <div className='flex items-center gap-2'>
+            {DEV_BYPASS_AUTH && (
+              <span className='rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
+                Dev mode
+              </span>
+            )}
             <button
               type='button'
               onClick={() => setShowMobileSearch(prev => !prev)}

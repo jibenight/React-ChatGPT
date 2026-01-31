@@ -4,6 +4,9 @@ import { API_BASE } from '../../apiConfig';
 import { Link, useNavigate } from 'react-router-dom';
 
 function Projects() {
+  const DEV_BYPASS_AUTH =
+    import.meta.env.DEV &&
+    String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -221,6 +224,11 @@ function Projects() {
               Gérer les instructions et le contexte de chaque projet.
             </p>
           </div>
+          {DEV_BYPASS_AUTH && (
+            <span className='w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
+              Dev mode
+            </span>
+          )}
         </div>
 
         {status && (

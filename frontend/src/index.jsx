@@ -7,6 +7,7 @@ import ResetPasswordRequest from './features/auth/ResetPasswordRequest';
 import ResetPassword from './features/auth/ResetPassword';
 import Register from './features/auth/Register';
 import VerifyEmail from './features/auth/VerifyEmail';
+import UserGuide from './features/info/UserGuide';
 import Projects from './features/projects/Projects';
 import './css/App.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -43,6 +44,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           />
           <Route path='/reset-password' element={<ResetPassword />} />
           <Route path='/verify-email' element={<VerifyEmail />} />
+          <Route path='/guide' element={<UserGuide />} />
           <Route path='/chat' element={<PrivateRoute />}>
             <Route index element={<App />} />
           </Route>

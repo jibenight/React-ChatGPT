@@ -26,6 +26,12 @@ function Home() {
               </h1>
             </div>
             <div className='flex space-x-4 items-center'>
+              <Link
+                to='/guide'
+                className='text-gray-600 hover:text-teal-600 px-3 py-2 rounded-md text-sm font-medium transition duration-200 dark:text-slate-300 dark:hover:text-teal-300'
+              >
+                Guide
+              </Link>
               {isAuthenticated ? (
                 <Link
                   to='/chat'

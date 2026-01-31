@@ -7,6 +7,9 @@ Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec front React + 
 - **Front-end** (`frontend/`) : app React + Vite, pages d’auth, composants UI, contexte utilisateur.
 - **Base de données** (`database/ChatData.db`) : créée automatiquement au démarrage du back.
 
+## Documentation utilisateur
+- Guide utilisateur : `docs/guide-utilisateur.md`
+
 ## Prérequis
 - Node.js 18+
 - npm

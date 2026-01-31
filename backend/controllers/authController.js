@@ -14,6 +14,14 @@ const smtpSecure =
   process.env.SMTP_SECURE !== undefined
     ? process.env.SMTP_SECURE === 'true'
     : smtpPort === 465;
+const dkimPrivateKey = process.env.DKIM_PRIVATE_KEY;
+const dkimDomain = process.env.DKIM_DOMAIN;
+const dkimSelector = process.env.DKIM_SELECTOR || 'default';
+
+if (dkimPrivateKey && !dkimDomain) {
+  console.warn('DKIM_DOMAIN is missing while DKIM_PRIVATE_KEY is set.');
+}
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'mail.jean-nguyen.dev',
   port: smtpPort,
@@ -22,6 +30,15 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.PASSWORD,
   },
+  ...(dkimPrivateKey && dkimDomain
+    ? {
+        dkim: {
+          domainName: dkimDomain,
+          keySelector: dkimSelector,
+          privateKey: dkimPrivateKey.replace(/\\n/g, '\n'),
+        },
+      }
+    : {}),
 });
 
 if (process.env.SMTP_DEBUG === 'true') {
@@ -358,7 +375,28 @@ exports.verifyEmail = (req, res) => {
               if (deleteErr) {
                 return res.status(500).json({ error: deleteErr.message });
               }
-              res.status(200).json({ message: 'Email verified successfully' });
+              db.get(
+                'SELECT id, username, email FROM users WHERE email = ?',
+                [row.email],
+                (userErr, userRow) => {
+                  if (userErr) {
+                    return res.status(500).json({ error: userErr.message });
+                  }
+                  if (!userRow) {
+                    return res.status(404).json({ error: 'User not found' });
+                  }
+                  const authToken = jwt.sign({ id: userRow.id }, secretKey, {
+                    expiresIn: '7d',
+                  });
+                  res.status(200).json({
+                    message: 'Email verified successfully',
+                    token: authToken,
+                    userId: userRow.id,
+                    username: userRow.username,
+                    email: userRow.email,
+                  });
+                },
+              );
             },
           );
         },

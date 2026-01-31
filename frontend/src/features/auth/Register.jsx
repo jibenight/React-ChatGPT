@@ -80,10 +80,20 @@ const Register = ({ isModal, onSwitchToLogin }) => {
     <section
       className={
         isModal
-          ? 'py-8 bg-white dark:bg-slate-950'
-          : 'py-16 xl:pb-56 bg-white overflow-hidden dark:bg-slate-950'
+          ? 'relative py-8 bg-white dark:bg-slate-950'
+          : 'relative py-16 xl:pb-56 bg-white overflow-hidden dark:bg-slate-950'
       }
     >
+      {!isModal && (
+        <div className='absolute left-6 top-6'>
+          <NavLink
+            to='/'
+            className='inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-600 shadow-sm transition hover:border-teal-200 hover:text-teal-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-200'
+          >
+            Retour accueil
+          </NavLink>
+        </div>
+      )}
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>

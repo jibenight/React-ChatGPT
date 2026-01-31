@@ -40,7 +40,15 @@ const ResetPasswordRequest = () => {
   };
 
   return (
-    <section className='py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen dark:bg-slate-950'>
+    <section className='relative py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen dark:bg-slate-950'>
+      <div className='absolute left-6 top-6'>
+        <a
+          href='/'
+          className='inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-600 shadow-sm transition hover:border-teal-200 hover:text-teal-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-teal-500/40 dark:hover:text-teal-200'
+        >
+          Retour accueil
+        </a>
+      </div>
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
           <div className='inline-block w-32'>

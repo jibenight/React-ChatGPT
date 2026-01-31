@@ -30,9 +30,23 @@ Créer un fichier `.env` pour chaque partie :
 ```
 SECRET_KEY=...           # JWT
 ENCRYPTION_KEY=...       # Chiffre les clés API en base
-EMAIL_USER=...           # Compte d'envoi d'email (reset MDP)
-PASSWORD=...             # Mot de passe ou app password
 PORT=3000                # (optionnel) Port du back
+APP_URL=http://localhost:5173
+
+# SMTP (délivrabilité)
+SMTP_HOST=...            # Ex: jean-nguyen.dev
+SMTP_PORT=465
+SMTP_SECURE=true
+EMAIL_USER=...           # Compte d'envoi d'email
+PASSWORD=...             # Mot de passe ou app password
+EMAIL_FROM="ChatBot <noreply@jean-nguyen.dev>"
+REPLY_TO=noreply@jean-nguyen.dev
+SMTP_DEBUG=false
+
+# DKIM (optionnel)
+DKIM_DOMAIN=jean-nguyen.dev
+DKIM_SELECTOR=default
+DKIM_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 
 `frontend/.env` :
@@ -64,7 +78,7 @@ Ouvrir l’URL affichée par Vite (ex. http://localhost:5173). Le front appelle 
 ## Débogage courant
 - Erreur `MODULE_NOT_FOUND @google/generative-ai` ou similaires : exécuter `npm install` (dépendances ajoutées : `@google/generative-ai`, `@anthropic-ai/sdk`, `@mistralai/mistralai`).
 - Port utilisé : ajuster `PORT` et `VITE_API_URL` si 3000 est pris.
-- L’URL de reset mot de passe est codée en dur côté back (`http://localhost:5173`).
+- L’URL de reset/vérification est basée sur `APP_URL` (ou l’`Origin` de la requête si absent).
 
 ## Licence
 MIT.

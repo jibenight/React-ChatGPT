@@ -19,6 +19,24 @@ function ChatZone({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [lastFailedRequest, setLastFailedRequest] = useState(null);
+
+  const draftKey = useMemo(() => {
+    const activeUserId = userData?.id || userData?.userId;
+    if (!activeUserId) return null;
+    const scopeId = threadId || sessionId;
+    const scopeProject = projectId ?? 'none';
+    return `chat_draft:${activeUserId}:${scopeId}:${scopeProject}`;
+  }, [projectId, sessionId, threadId, userData]);
+
+  const initialDraft = useMemo(() => {
+    if (!draftKey || typeof window === 'undefined') return '';
+    try {
+      return localStorage.getItem(draftKey) || '';
+    } catch {
+      return '';
+    }
+  }, [draftKey]);
 
   const fileToDataUrl = file =>
     new Promise((resolve, reject) => {
@@ -117,6 +135,17 @@ function ChatZone({
     const model = selectedOption?.model;
     const activeThreadId = threadId || sessionId;
 
+    if (draftKey && typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        // ignore storage errors
+      }
+      window.dispatchEvent(
+        new CustomEvent('chat-draft-clear', { detail: { key: draftKey } }),
+      );
+    }
+
     const userMessage = {
       id: uuidv4(),
       role: 'user',
@@ -127,6 +156,7 @@ function ChatZone({
     setMessages(prev => [...prev, userMessage]);
     setLoading(true);
     setError('');
+    setLastFailedRequest(null);
 
     try {
       const attachmentPayload = [];
@@ -154,7 +184,7 @@ function ChatZone({
 
       const controller = new AbortController();
       abortRef.current = controller;
-      const response = await axios.post(`${API_BASE}/api/chat/message`, {
+      const requestPayload = {
         userId,
         sessionId,
         threadId: activeThreadId,
@@ -163,7 +193,12 @@ function ChatZone({
         provider,
         model,
         attachments: attachmentPayload,
-      }, { signal: controller.signal });
+      };
+      const response = await axios.post(
+        `${API_BASE}/api/chat/message`,
+        requestPayload,
+        { signal: controller.signal },
+      );
       const reply = response.data.reply || 'Aucune réponse';
       const assistantMessage = {
         id: uuidv4(),
@@ -183,11 +218,70 @@ function ChatZone({
         err.response?.data?.error || 'Erreur lors de la requête de chat',
       );
       }
+      setLastFailedRequest({
+        payload: {
+          userId,
+          sessionId,
+          threadId: activeThreadId,
+          projectId,
+          message: text,
+          provider,
+          model,
+          attachments: attachmentPayload,
+        },
+        threadId: activeThreadId,
+      });
     } finally {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [projectId, onThreadChange, selectedOption, sessionId, threadId, userData]);
+  }, [projectId, onThreadChange, selectedOption, sessionId, threadId, userData, draftKey]);
+
+  const handleRetryLast = useCallback(async () => {
+    if (!lastFailedRequest) return;
+    if (lastFailedRequest.threadId !== (threadId || sessionId)) {
+      setError('La conversation a changé. Relancez le message.');
+      return;
+    }
+    if (!userData?.id && !userData?.userId) {
+      setError('Utilisateur non connecté');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const response = await axios.post(
+        `${API_BASE}/api/chat/message`,
+        lastFailedRequest.payload,
+        { signal: controller.signal },
+      );
+      const reply = response.data.reply || 'Aucune réponse';
+      const assistantMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: reply,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      if (response.data.threadId && response.data.threadId !== threadId) {
+        onThreadChange?.(response.data.threadId);
+      }
+      setLastFailedRequest(null);
+    } catch (err) {
+      if (err?.name === 'CanceledError') {
+        setError('Génération annulée.');
+      } else {
+        setError(
+          err.response?.data?.error || 'Erreur lors de la requête de chat',
+        );
+      }
+    } finally {
+      setLoading(false);
+      abortRef.current = null;
+    }
+  }, [lastFailedRequest, onThreadChange, sessionId, threadId, userData]);
 
   const activeModelLabel =
     selectedOption?.name ||
@@ -286,15 +380,25 @@ function ChatZone({
 
       {error && (
         <div className='mx-auto w-full max-w-4xl px-4 pt-3'>
-          <div className='rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'>
-            {error}
+          <div className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'>
+            <span>{error}</span>
+            {lastFailedRequest && (
+              <button
+                type='button'
+                onClick={handleRetryLast}
+                className='rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/50'
+                disabled={loading}
+              >
+                {loading ? 'Nouvelle tentative...' : 'Réessayer'}
+              </button>
+            )}
           </div>
         </div>
       )}
 
       <div className='flex-1 min-h-0'>
         <AssistantRuntimeProvider runtime={runtime}>
-          <Thread />
+          <Thread draftKey={draftKey} initialDraft={initialDraft} />
         </AssistantRuntimeProvider>
       </div>
     </div>

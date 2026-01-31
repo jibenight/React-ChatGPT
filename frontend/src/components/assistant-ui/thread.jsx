@@ -18,6 +18,7 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
 } from "@assistant-ui/react";
+import { useEffect, useState } from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -32,7 +33,33 @@ import {
   SquareIcon,
 } from "lucide-react";
 
-export const Thread = () => {
+export const Thread = ({ draftKey, initialDraft }) => {
+  const [draftValue, setDraftValue] = useState(initialDraft || "");
+
+  useEffect(() => {
+    setDraftValue(initialDraft || "");
+  }, [initialDraft, draftKey]);
+
+  useEffect(() => {
+    if (!draftKey || typeof window === "undefined") return undefined;
+    try {
+      localStorage.setItem(draftKey, draftValue || "");
+    } catch {
+      // ignore storage errors
+    }
+    return undefined;
+  }, [draftKey, draftValue]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const handler = event => {
+      if (event?.detail?.key !== draftKey) return;
+      setDraftValue("");
+    };
+    window.addEventListener("chat-draft-clear", handler);
+    return () => window.removeEventListener("chat-draft-clear", handler);
+  }, [draftKey]);
+
   return (
     <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
@@ -56,10 +83,10 @@ export const Thread = () => {
         <ThreadPrimitive.ViewportFooter
           className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl pb-4 md:pb-6">
           <ThreadScrollToBottom />
-          <Composer />
-        </ThreadPrimitive.ViewportFooter>
-      </ThreadPrimitive.Viewport>
-    </ThreadPrimitive.Root>
+           <Composer draftValue={draftValue} onDraftChange={setDraftValue} />
+         </ThreadPrimitive.ViewportFooter>
+       </ThreadPrimitive.Viewport>
+     </ThreadPrimitive.Root>
   );
 };
 
@@ -137,7 +164,7 @@ const ThreadSuggestions = () => {
   );
 };
 
-const Composer = () => {
+const Composer = ({ draftValue, onDraftChange }) => {
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
       <ComposerPrimitive.AttachmentDropzone
@@ -148,6 +175,8 @@ const Composer = () => {
           className="aui-composer-input mb-1 max-h-32 min-h-14 w-full resize-none bg-transparent px-4 pt-2 pb-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
           rows={1}
           autoFocus
+          value={draftValue}
+          onChange={event => onDraftChange?.(event.target.value)}
           aria-label="Message input" />
         <ComposerAction />
       </ComposerPrimitive.AttachmentDropzone>

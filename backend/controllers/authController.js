@@ -3,6 +3,7 @@ const saltRounds = 10;
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const db = require('../models/database');
 require('dotenv').config();
 
@@ -85,6 +86,24 @@ const sendVerificationEmail = (req, email, token) => {
   return transporter.sendMail(mailOptions);
 };
 
+const emailFingerprint = email => {
+  if (!email) return 'unknown';
+  try {
+    return crypto.createHash('sha256').update(email).digest('hex').slice(0, 12);
+  } catch {
+    return 'unknown';
+  }
+};
+
+const logAuthEvent = (event, payload = {}) => {
+  const safePayload = {
+    ...payload,
+    email: undefined,
+    emailFingerprint: payload.email ? emailFingerprint(payload.email) : undefined,
+  };
+  console.warn(`[auth] ${event}`, safePayload);
+};
+
 const cleanupExpiredTokens = () => {
   db.run(
     'DELETE FROM password_resets WHERE expires_at <= DATETIME("now")',
@@ -125,11 +144,13 @@ exports.register = async (req, res) => {
     });
     if (emailExists) {
       console.log('email issue');
+      logAuthEvent('register_email_exists', { email });
       return res.status(400).json({ error: 'exists' });
     }
     // Vérification du mot de passe
     if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(password)) {
       console.log('password issue');
+      logAuthEvent('register_password_invalid', { email });
       return res.status(400).json({
         error: 'characters',
       });
@@ -160,12 +181,17 @@ exports.register = async (req, res) => {
                 }
                 try {
                   await sendVerificationEmail(req, email, resetToken);
+                  logAuthEvent('register_verification_sent', { email });
                   res.status(201).json({
                     message: 'User registered successfully',
                     userId: this.lastID,
                     emailVerificationRequired: true,
                   });
                 } catch (mailErr) {
+                  logAuthEvent('register_verification_failed', {
+                    email,
+                    reason: mailErr.message,
+                  });
                   res.status(500).json({ error: mailErr.message });
                 }
               },
@@ -186,11 +212,13 @@ exports.login = (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     if (!row) {
+      logAuthEvent('login_email_not_found', { email });
       return res.status(404).json({ error: 'email not found' });
     }
     const match = await bcrypt.compare(password, row.password);
     if (match) {
       if (!row.email_verified) {
+        logAuthEvent('login_email_not_verified', { email });
         return res.status(403).json({ error: 'email_not_verified' });
       }
       const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '7d' });
@@ -203,6 +231,7 @@ exports.login = (req, res) => {
         email_verified: row.email_verified,
       });
     } else {
+      logAuthEvent('login_password_invalid', { email });
       res.status(401).json({ error: 'Incorrect password' });
     }
   });
@@ -216,6 +245,7 @@ exports.resetPasswordRequest = (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     if (!row) {
+      logAuthEvent('reset_request_no_account', { email });
       return res.status(200).json({ message: 'Reset email sent' });
     }
 
@@ -257,6 +287,10 @@ exports.resetPasswordRequest = (req, res) => {
         };
         transporter.sendMail(mailOptions, (err, info) => {
           if (err) {
+            logAuthEvent('reset_email_failed', {
+              email,
+              reason: err.message,
+            });
             return res.status(500).json({ error: err.message });
           }
           if (process.env.SMTP_DEBUG === 'true') {
@@ -267,6 +301,7 @@ exports.resetPasswordRequest = (req, res) => {
               console.log('SMTP response:', info.response);
             }
           }
+          logAuthEvent('reset_email_sent', { email });
           res.status(200).json({ message: 'Reset email sent' });
         });
       },
@@ -293,6 +328,7 @@ exports.resetPassword = (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       if (!row) {
+        logAuthEvent('verify_token_invalid', { tokenPresent: true });
         return res.status(404).json({ error: 'Invalid or expired token' });
       }
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
@@ -330,9 +366,11 @@ exports.resendVerification = (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     if (!row) {
+      logAuthEvent('verify_resend_no_account', { email });
       return res.status(200).json({ message: 'Verification email sent' });
     }
     if (row.email_verified) {
+      logAuthEvent('verify_resend_already_verified', { email });
       return res.status(200).json({ message: 'Verification email sent' });
     }
 
@@ -353,8 +391,13 @@ exports.resendVerification = (req, res) => {
             }
             try {
               await sendVerificationEmail(req, email, verifyToken);
+              logAuthEvent('verify_resend_sent', { email });
               res.status(200).json({ message: 'Verification email sent' });
             } catch (mailErr) {
+              logAuthEvent('verify_resend_failed', {
+                email,
+                reason: mailErr.message,
+              });
               res.status(500).json({ error: mailErr.message });
             }
           },
@@ -401,15 +444,17 @@ exports.verifyEmail = (req, res) => {
                   if (userErr) {
                     return res.status(500).json({ error: userErr.message });
                   }
-                  if (!userRow) {
-                    return res.status(404).json({ error: 'User not found' });
-                  }
-                  const authToken = jwt.sign({ id: userRow.id }, secretKey, {
-                    expiresIn: '7d',
-                  });
-                  res.status(200).json({
-                    message: 'Email verified successfully',
-                    token: authToken,
+              if (!userRow) {
+                logAuthEvent('verify_user_missing', { email: row.email });
+                return res.status(404).json({ error: 'User not found' });
+              }
+              const authToken = jwt.sign({ id: userRow.id }, secretKey, {
+                expiresIn: '7d',
+              });
+              logAuthEvent('verify_success', { email: userRow.email });
+              res.status(200).json({
+                message: 'Email verified successfully',
+                token: authToken,
                     userId: userRow.id,
                     username: userRow.username,
                     email: userRow.email,

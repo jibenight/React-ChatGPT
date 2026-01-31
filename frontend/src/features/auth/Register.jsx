@@ -15,6 +15,7 @@ const Register = ({ isModal, onSwitchToLogin }) => {
   const [verificationEmail, setVerificationEmail] = useState('');
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -27,9 +28,17 @@ const Register = ({ isModal, onSwitchToLogin }) => {
     reset,
     formState: { errors },
   } = useForm({ mode: 'onChange' });
+  const passwordValue = watch('password') || '';
+  const passwordRules = {
+    length: passwordValue.length >= 8,
+    upper: /[A-Z]/.test(passwordValue),
+    lower: /[a-z]/.test(passwordValue),
+    digit: /\d/.test(passwordValue),
+  };
 
   const onSubmit = data => {
     const { name, email, password } = data;
+    setIsSubmitting(true);
     axios
       .post(`${API_BASE}/register`, {
         username: name,
@@ -54,6 +63,9 @@ const Register = ({ isModal, onSwitchToLogin }) => {
         } else {
           setErrorMessage('Une erreur est survenue');
         }
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -212,6 +224,25 @@ const Register = ({ isModal, onSwitchToLogin }) => {
               Le mot de passe doit contenir au moins 8 caractères, une
               majuscule et un chiffre
             </p>
+            <div className='mb-5 rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'>
+              <p className='mb-2 font-semibold text-gray-700 dark:text-slate-200'>
+                Exigences mot de passe
+              </p>
+              <ul className='space-y-1'>
+                <li className={passwordRules.length ? 'text-emerald-600 dark:text-emerald-300' : ''}>
+                  8 caractères minimum
+                </li>
+                <li className={passwordRules.upper ? 'text-emerald-600 dark:text-emerald-300' : ''}>
+                  Une majuscule
+                </li>
+                <li className={passwordRules.lower ? 'text-emerald-600 dark:text-emerald-300' : ''}>
+                  Une minuscule
+                </li>
+                <li className={passwordRules.digit ? 'text-emerald-600 dark:text-emerald-300' : ''}>
+                  Un chiffre
+                </li>
+              </ul>
+            </div>
             {errors.password && (
               <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {errors.password.message}
@@ -256,10 +287,11 @@ const Register = ({ isModal, onSwitchToLogin }) => {
             )}
 
             <button
-              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30'
+              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-300 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30 disabled:cursor-not-allowed disabled:opacity-60'
               type='submit'
+              disabled={isSubmitting}
             >
-              Créer un compte
+              {isSubmitting ? 'Création en cours...' : 'Créer un compte'}
             </button>
             <p className='font-medium text-gray-700 dark:text-slate-300'>
               <span>Déjà un compte ? </span>

@@ -20,9 +20,11 @@ const Login = ({ isModal }) => {
   const [infoMessage, setInfoMessage] = useState('');
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = data => {
     const { email, password } = data;
+    setIsSubmitting(true);
     axios
       .post(`${API_BASE}/login`, {
         email,
@@ -70,6 +72,9 @@ const Login = ({ isModal }) => {
           setErrorMessage('Une erreur est survenue.');
           setInfoMessage('');
         }
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -185,10 +190,11 @@ const Login = ({ isModal }) => {
               </p>
             )}
             <button
-              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30'
+              className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30 disabled:cursor-not-allowed disabled:opacity-60'
               type='submit'
+              disabled={isSubmitting}
             >
-              Se connecter
+              {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
             </button>
             {errorMessage && (
               <p className='text-red-500 mb-3 dark:text-red-300'>{errorMessage}</p>

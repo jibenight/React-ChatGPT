@@ -17,6 +17,8 @@ const Login = ({ isModal }) => {
   } = useForm();
   const { userData, setUserData } = useUser();
   const [errorMessage, setErrorMessage] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
+  const [isResending, setIsResending] = useState(false);
 
   const onSubmit = data => {
     const { email, password } = data;
@@ -39,26 +41,59 @@ const Login = ({ isModal }) => {
             email: email,
           });
           setErrorMessage('');
+          setInfoMessage('');
           navigate('/chat');
         }
       })
       .catch(error => {
         if (!error.response) {
           setErrorMessage('Serveur injoignable. Vérifie que le serveur tourne.');
+          setInfoMessage('');
           return;
         }
         const status = error.response.status;
         const apiError = error.response.data?.error;
         if (status === 404) {
           setErrorMessage('E-mail introuvable.');
+          setInfoMessage('');
         } else if (status === 401) {
           setErrorMessage('Mot de passe incorrect.');
+          setInfoMessage('');
+        } else if (status === 403 && apiError === 'email_not_verified') {
+          setErrorMessage('Email non vérifié. Vérifie ta boîte de réception.');
+          setInfoMessage("Tu peux renvoyer l'e-mail de vérification.");
         } else if (apiError) {
           setErrorMessage(apiError);
+          setInfoMessage('');
         } else {
           setErrorMessage('Une erreur est survenue.');
+          setInfoMessage('');
         }
       });
+  };
+
+  const handleResendVerification = async () => {
+    const email = watch('email');
+    if (!email) {
+      setErrorMessage("Renseigne ton e-mail pour renvoyer la vérification.");
+      setInfoMessage('');
+      return;
+    }
+    setIsResending(true);
+    setErrorMessage('');
+    setInfoMessage('');
+    try {
+      await axios.post(`${API_BASE}/verify-email-request`, { email });
+      setInfoMessage("E-mail de vérification renvoyé.");
+    } catch (resendError) {
+      if (resendError.response?.status === 404) {
+        setErrorMessage('E-mail introuvable.');
+      } else {
+        setErrorMessage("Impossible d'envoyer l'e-mail.");
+      }
+    } finally {
+      setIsResending(false);
+    }
   };
 
   return (
@@ -116,7 +151,24 @@ const Login = ({ isModal }) => {
               Se connecter
             </button>
             {errorMessage && (
-              <p className='text-red-500 mb-5 dark:text-red-300'>{errorMessage}</p>
+              <p className='text-red-500 mb-3 dark:text-red-300'>{errorMessage}</p>
+            )}
+            {infoMessage && (
+              <p className='text-emerald-600 mb-4 dark:text-emerald-300'>
+                {infoMessage}
+              </p>
+            )}
+            {errorMessage.includes('Email non vérifié') && (
+              <button
+                type='button'
+                className='w-full rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200 dark:hover:bg-teal-500/20 disabled:cursor-not-allowed disabled:opacity-60'
+                onClick={handleResendVerification}
+                disabled={isResending}
+              >
+                {isResending
+                  ? 'Envoi en cours...'
+                  : "Renvoyer l'e-mail de vérification"}
+              </button>
             )}
           </form>
         </div>

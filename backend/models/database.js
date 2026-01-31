@@ -28,7 +28,8 @@ const createUsersTableQuery = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    email_verified INTEGER DEFAULT 0
   );
   `;
 
@@ -59,6 +60,16 @@ const createChatHistoryTableQuery = `
 // requete de création de la table password_resets
 const createPasswordResetsTableQuery = `
   CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    token TEXT NOT NULL,
+    expires_at DATETIME NOT NULL
+  );
+  `;
+
+// requete de création de la table email_verifications
+const createEmailVerificationsTableQuery = `
+  CREATE TABLE IF NOT EXISTS email_verifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL,
     token TEXT NOT NULL,
@@ -177,6 +188,15 @@ db.serialize(() => {
     }
   });
 
+  // création de la table email_verifications
+  db.run(createEmailVerificationsTableQuery, err => {
+    if (err) {
+      console.error(err.message);
+    } else {
+      console.log('5.1) Table "email_verifications" created or already exists => OK.');
+    }
+  });
+
   // création de la table projects
   db.run(createProjectsTableQuery, err => {
     if (err) {
@@ -233,6 +253,20 @@ db.serialize(() => {
     const hasAttachments = columns.some(col => col.name === 'attachments');
     if (!hasAttachments) {
       db.run('ALTER TABLE messages ADD COLUMN attachments TEXT;', alterErr => {
+        if (alterErr) console.error(alterErr.message);
+      });
+    }
+  });
+
+  // migration légère users (email_verified)
+  db.all('PRAGMA table_info(users);', (err, columns) => {
+    if (err) {
+      console.error(err.message);
+      return;
+    }
+    const hasEmailVerified = columns.some(col => col.name === 'email_verified');
+    if (!hasEmailVerified) {
+      db.run('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0;', alterErr => {
         if (alterErr) console.error(alterErr.message);
       });
     }

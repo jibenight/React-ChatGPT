@@ -12,6 +12,8 @@ const Register = ({ isModal, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [isResending, setIsResending] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -34,8 +36,11 @@ const Register = ({ isModal, onSwitchToLogin }) => {
         password,
       })
       .then(response => {
-        setSuccessMessage('Compte créé avec succès');
+        setSuccessMessage(
+          "Compte créé. Vérifiez votre e-mail pour activer votre compte.",
+        );
         setErrorMessage('');
+        setVerificationEmail(email);
         reset();
       })
       .catch(error => {
@@ -49,6 +54,26 @@ const Register = ({ isModal, onSwitchToLogin }) => {
           setErrorMessage('Une erreur est survenue');
         }
       });
+  };
+
+  const handleResendVerification = async () => {
+    if (!verificationEmail) return;
+    setIsResending(true);
+    setErrorMessage('');
+    try {
+      await axios.post(`${API_BASE}/verify-email-request`, {
+        email: verificationEmail,
+      });
+      setSuccessMessage("E-mail de vérification renvoyé.");
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setErrorMessage('E-mail introuvable.');
+      } else {
+        setErrorMessage("Impossible d'envoyer l'e-mail.");
+      }
+    } finally {
+      setIsResending(false);
+    }
   };
 
   return (
@@ -151,10 +176,29 @@ const Register = ({ isModal, onSwitchToLogin }) => {
               </p>
             )}
 
+            {errorMessage && (
+              <p className='text-red-500 mb-5 dark:text-red-300'>
+                {errorMessage}
+              </p>
+            )}
+
             {successMessage && (
               <p className='text-green-500 mb-5 dark:text-emerald-300'>
                 {successMessage}
               </p>
+            )}
+
+            {verificationEmail && (
+              <button
+                type='button'
+                className='mb-6 w-full rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200 dark:hover:bg-teal-500/20 disabled:cursor-not-allowed disabled:opacity-60'
+                onClick={handleResendVerification}
+                disabled={isResending}
+              >
+                {isResending
+                  ? 'Envoi en cours...'
+                  : "Renvoyer l'e-mail de vérification"}
+              </button>
             )}
 
             <button

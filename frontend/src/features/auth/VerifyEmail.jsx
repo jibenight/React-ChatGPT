@@ -1,0 +1,70 @@
+import '../../css/App.css';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
+import chatGPT from '../../assets/chatGPT.gif';
+import { API_BASE } from '../../apiConfig';
+
+const VerifyEmail = () => {
+  const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState({ type: 'loading', message: 'Vérification en cours...' });
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (!token) {
+      setStatus({ type: 'error', message: 'Lien de vérification invalide.' });
+      return;
+    }
+
+    const verify = async () => {
+      try {
+        await axios.get(`${API_BASE}/verify-email`, {
+          params: { token },
+        });
+        setStatus({ type: 'success', message: 'Email vérifié. Vous pouvez vous connecter.' });
+      } catch (error) {
+        if (error.response?.status === 404) {
+          setStatus({ type: 'error', message: 'Lien expiré ou invalide.' });
+        } else {
+          setStatus({ type: 'error', message: "Impossible de vérifier l'email." });
+        }
+      }
+    };
+
+    verify();
+  }, [searchParams]);
+
+  return (
+    <section className='py-16 xl:pb-56 bg-white overflow-hidden h-screen w-screen dark:bg-slate-950'>
+      <div className='container px-4 mx-auto'>
+        <div className='text-center max-w-md mx-auto'>
+          <div className='inline-block w-32'>
+            <img src={chatGPT} alt='Gif animé robot' />
+          </div>
+          <h2 className='mb-4 text-5xl md:text-6xl text-center font-bold font-heading tracking-px-n leading-tight text-gray-900 dark:text-slate-100'>
+            Vérification email
+          </h2>
+          <p
+            className={`mb-6 text-lg font-medium ${
+              status.type === 'success'
+                ? 'text-emerald-600 dark:text-emerald-300'
+                : status.type === 'error'
+                  ? 'text-red-500 dark:text-red-300'
+                  : 'text-gray-600 dark:text-slate-300'
+            }`}
+          >
+            {status.message}
+          </p>
+          <Link
+            to='/login'
+            className='inline-flex items-center justify-center rounded-xl bg-teal-500 px-6 py-3 text-white font-semibold shadow-md transition hover:bg-teal-600'
+          >
+            Aller à la connexion
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default VerifyEmail;

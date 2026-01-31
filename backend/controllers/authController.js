@@ -34,6 +34,40 @@ if (process.env.SMTP_DEBUG === 'true') {
   });
 }
 
+const getAppUrl = req =>
+  process.env.APP_URL || req.get('origin') || 'http://localhost:5173';
+
+const sendVerificationEmail = (req, email, token) => {
+  const appUrl = getAppUrl(req);
+  const verifyLink = `${appUrl}/verify-email?token=${token}`;
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    replyTo: process.env.REPLY_TO || process.env.EMAIL_USER,
+    to: email,
+    subject: 'Verify your email',
+    text: `Click here to verify your email: ${verifyLink}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <h2 style="margin: 0 0 12px;">Verify your email</h2>
+        <p style="margin: 0 0 12px;">Thanks for creating an account. Please verify your email address to activate your account.</p>
+        <p style="margin: 16px 0;">
+          <a href="${verifyLink}" style="display: inline-block; padding: 12px 18px; background: #14b8a6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">
+            Verify Email
+          </a>
+        </p>
+        <p style="margin: 0 0 12px;">If the button does not work, copy and paste this link into your browser:</p>
+        <p style="margin: 0; word-break: break-all; color: #0f766e;">
+          ${verifyLink}
+        </p>
+        <p style="margin: 16px 0 0; color: #64748b; font-size: 12px;">
+          This link expires in 24 hours. If you did not request this, you can ignore this email.
+        </p>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
 exports.register = async (req, res) => {
   console.log(req.body);
   const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
@@ -70,16 +104,41 @@ exports.register = async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     db.run(
-      'INSERT INTO users (username, email, password) VALUES (?,?,?)',
-      [username, email, hashedPassword],
+      'INSERT INTO users (username, email, password, email_verified) VALUES (?,?,?,?)',
+      [username, email, hashedPassword, 0],
       function (err) {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
-        res.status(201).json({
-          message: 'User registered successfully',
-          userId: this.lastID,
-        });
+        const resetToken = uuidv4();
+        db.run(
+          'DELETE FROM email_verifications WHERE email = ?',
+          [email],
+          deleteErr => {
+            if (deleteErr) {
+              return res.status(500).json({ error: deleteErr.message });
+            }
+            db.run(
+              'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, DATETIME("now", "+24 hour"))',
+              [email, resetToken],
+              async insertErr => {
+                if (insertErr) {
+                  return res.status(500).json({ error: insertErr.message });
+                }
+                try {
+                  await sendVerificationEmail(req, email, resetToken);
+                  res.status(201).json({
+                    message: 'User registered successfully',
+                    userId: this.lastID,
+                    emailVerificationRequired: true,
+                  });
+                } catch (mailErr) {
+                  res.status(500).json({ error: mailErr.message });
+                }
+              },
+            );
+          },
+        );
       },
     );
   });
@@ -98,6 +157,9 @@ exports.login = (req, res) => {
     }
     const match = await bcrypt.compare(password, row.password);
     if (match) {
+      if (!row.email_verified) {
+        return res.status(403).json({ error: 'email_not_verified' });
+      }
       const token = jwt.sign({ id: row.id }, secretKey, { expiresIn: '7d' });
       res.status(200).json({
         message: 'Login successful',
@@ -105,6 +167,7 @@ exports.login = (req, res) => {
         token,
         username: row.username,
         email: row.email,
+        email_verified: row.email_verified,
       });
     } else {
       res.status(401).json({ error: 'Incorrect password' });
@@ -131,10 +194,7 @@ exports.resetPasswordRequest = (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        const appUrl =
-          process.env.APP_URL ||
-          req.get('origin') ||
-          'http://localhost:5173';
+        const appUrl = getAppUrl(req);
         const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
         const mailOptions = {
           from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
@@ -217,6 +277,88 @@ exports.resetPassword = (req, res) => {
                 return res.status(500).json({ error: err.message });
               }
               res.status(200).json({ message: 'Password reset successfully' });
+            },
+          );
+        },
+      );
+    },
+  );
+};
+
+exports.resendVerification = (req, res) => {
+  const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'email not found' });
+    }
+    if (row.email_verified) {
+      return res.status(200).json({ message: 'Email already verified' });
+    }
+
+    const verifyToken = uuidv4();
+    db.run(
+      'DELETE FROM email_verifications WHERE email = ?',
+      [email],
+      deleteErr => {
+        if (deleteErr) {
+          return res.status(500).json({ error: deleteErr.message });
+        }
+        db.run(
+          'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, DATETIME("now", "+24 hour"))',
+          [email, verifyToken],
+          async insertErr => {
+            if (insertErr) {
+              return res.status(500).json({ error: insertErr.message });
+            }
+            try {
+              await sendVerificationEmail(req, email, verifyToken);
+              res.status(200).json({ message: 'Verification email sent' });
+            } catch (mailErr) {
+              res.status(500).json({ error: mailErr.message });
+            }
+          },
+        );
+      },
+    );
+  });
+};
+
+exports.verifyEmail = (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    return res.status(400).json({ error: 'Token is required' });
+  }
+  db.get(
+    'SELECT * FROM email_verifications WHERE token = ? AND expires_at > DATETIME("now")',
+    [token],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!row) {
+        return res.status(404).json({ error: 'Invalid or expired token' });
+      }
+      db.run(
+        'UPDATE users SET email_verified = 1 WHERE email = ?',
+        [row.email],
+        updateErr => {
+          if (updateErr) {
+            return res.status(500).json({ error: updateErr.message });
+          }
+          db.run(
+            'DELETE FROM email_verifications WHERE token = ?',
+            [token],
+            deleteErr => {
+              if (deleteErr) {
+                return res.status(500).json({ error: deleteErr.message });
+              }
+              res.status(200).json({ message: 'Email verified successfully' });
             },
           );
         },

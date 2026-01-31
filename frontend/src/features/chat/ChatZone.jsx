@@ -20,6 +20,7 @@ function ChatZone({
   const [error, setError] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [lastFailedRequest, setLastFailedRequest] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const draftKey = useMemo(() => {
     const activeUserId = userData?.id || userData?.userId;
@@ -289,6 +290,16 @@ function ChatZone({
       selectedOption?.model || 'gpt-4o'
     }`;
 
+  const searchMatchesCount = useMemo(() => {
+    if (!searchQuery.trim()) return 0;
+    const query = searchQuery.toLowerCase();
+    return messages.reduce((count, message) => {
+      const text = normalizeContent(message.content).toLowerCase();
+      if (text.includes(query)) return count + 1;
+      return count;
+    }, 0);
+  }, [messages, searchQuery]);
+
   const attachmentAdapter = useMemo(() => ({
     accept: 'image/*',
     async add({ file }) {
@@ -360,6 +371,29 @@ function ChatZone({
             </h2>
           </div>
           <div className='flex items-center gap-2'>
+            <div className='hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:flex'>
+              <input
+                type='search'
+                value={searchQuery}
+                onChange={event => setSearchQuery(event.target.value)}
+                placeholder='Rechercher…'
+                className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-slate-200 dark:placeholder:text-slate-500'
+              />
+              {searchQuery && (
+                <button
+                  type='button'
+                  className='text-gray-400 transition hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
+                  onClick={() => setSearchQuery('')}
+                >
+                  Effacer
+                </button>
+              )}
+              {searchQuery && (
+                <span className='rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 dark:bg-teal-500/10 dark:text-teal-200'>
+                  {searchMatchesCount} trouvé{searchMatchesCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
             <button
               type='button'
               onClick={handleClear}
@@ -398,7 +432,11 @@ function ChatZone({
 
       <div className='flex-1 min-h-0'>
         <AssistantRuntimeProvider runtime={runtime}>
-          <Thread draftKey={draftKey} initialDraft={initialDraft} />
+          <Thread
+            draftKey={draftKey}
+            initialDraft={initialDraft}
+            searchQuery={searchQuery}
+          />
         </AssistantRuntimeProvider>
       </div>
     </div>

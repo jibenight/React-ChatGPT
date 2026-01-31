@@ -20,7 +20,7 @@ import {
 } from "@assistant-ui/react";
 import { useAuiState } from "@assistant-ui/store";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -35,7 +35,7 @@ import {
   SquareIcon,
 } from "lucide-react";
 
-export const Thread = ({ draftKey, initialDraft }) => {
+export const Thread = ({ draftKey, initialDraft, searchQuery }) => {
   const [draftValue, setDraftValue] = useState(initialDraft || "");
   const viewportRef = useRef(null);
 
@@ -80,9 +80,9 @@ export const Thread = ({ draftKey, initialDraft }) => {
         <VirtualizedMessages
           viewportRef={viewportRef}
           components={{
-            UserMessage,
+            UserMessage: () => <UserMessage searchQuery={searchQuery} />,
             EditComposer,
-            AssistantMessage,
+            AssistantMessage: () => <AssistantMessage searchQuery={searchQuery} />,
           }} />
 
         <ThreadPrimitive.ViewportFooter
@@ -266,10 +266,30 @@ const MessageError = () => {
   );
 };
 
-const AssistantMessage = () => {
+const getMessageText = content => {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter(part => part?.type === "text" && typeof part.text === "string")
+    .map(part => part.text)
+    .join("\n");
+};
+
+const useSearchMatch = searchQuery => {
+  const content = useAuiState(({ message }) => message.content);
+  return useMemo(() => {
+    if (!searchQuery || !searchQuery.trim()) return false;
+    const text = getMessageText(content).toLowerCase();
+    return text.includes(searchQuery.toLowerCase());
+  }, [content, searchQuery]);
+};
+
+const AssistantMessage = ({ searchQuery }) => {
+  const isMatch = useSearchMatch(searchQuery);
   return (
     <MessagePrimitive.Root
-      className="aui-assistant-message-root fade-in slide-in-from-bottom-1 relative mx-auto w-full max-w-(--thread-max-width) animate-in py-3 duration-150"
+      className={`aui-assistant-message-root fade-in slide-in-from-bottom-1 relative mx-auto w-full max-w-(--thread-max-width) animate-in py-3 duration-150 ${
+        isMatch ? "ring-2 ring-teal-400/40 rounded-2xl" : ""
+      }`}
       data-role="assistant">
       <div
         className="aui-assistant-message-content wrap-break-word px-2 text-foreground leading-relaxed">
@@ -333,10 +353,13 @@ const AssistantActionBar = () => {
   );
 };
 
-const UserMessage = () => {
+const UserMessage = ({ searchQuery }) => {
+  const isMatch = useSearchMatch(searchQuery);
   return (
     <MessagePrimitive.Root
-      className="aui-user-message-root fade-in slide-in-from-bottom-1 mx-auto grid w-full max-w-(--thread-max-width) animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 py-3 duration-150 [&:where(>*)]:col-start-2"
+      className={`aui-user-message-root fade-in slide-in-from-bottom-1 mx-auto grid w-full max-w-(--thread-max-width) animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 py-3 duration-150 [&:where(>*)]:col-start-2 ${
+        isMatch ? "ring-2 ring-teal-400/40 rounded-2xl" : ""
+      }`}
       data-role="user">
       <UserMessageAttachments />
       <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">

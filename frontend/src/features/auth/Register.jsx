@@ -26,7 +26,7 @@ const Register = ({ isModal, onSwitchToLogin }) => {
     watch,
     reset,
     formState: { errors },
-  } = useForm();
+  } = useForm({ mode: 'onChange' });
 
   const onSubmit = data => {
     const { name, email, password } = data;
@@ -122,9 +122,16 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 type='text'
                 placeholder="Nom d'utilisateur"
                 autoComplete='name'
-                {...register('name', { required: true })}
+                {...register('name', {
+                  required: "Le nom d'utilisateur est requis",
+                })}
               />
             </label>
+            {errors.name && (
+              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+                {errors.name.message}
+              </p>
+            )}
             <label className='block mb-5'>
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-300 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:border-slate-700 dark:focus:ring-teal-400/30'
@@ -132,9 +139,20 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 type='text'
                 placeholder='Adresse e-mail'
                 autoComplete='email'
-                {...register('email', { required: true })}
+                {...register('email', {
+                  required: 'Adresse e-mail requise',
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Adresse e-mail invalide',
+                  },
+                })}
               />
             </label>
+            {errors.email && (
+              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+                {errors.email.message}
+              </p>
+            )}
 
             <label className='block mb-5 relative'>
               <input
@@ -143,7 +161,14 @@ const Register = ({ isModal, onSwitchToLogin }) => {
                 type={showPassword ? 'text' : 'password'}
                 placeholder='Créer un mot de passe'
                 autoComplete='new-password'
-                {...register('password', { required: true })}
+                {...register('password', {
+                  required: 'Mot de passe requis',
+                  pattern: {
+                    value: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/,
+                    message:
+                      '8 caractères min., 1 majuscule, 1 minuscule et 1 chiffre',
+                  },
+                })}
               />
               <button
                 type='button'
@@ -187,6 +212,11 @@ const Register = ({ isModal, onSwitchToLogin }) => {
               Le mot de passe doit contenir au moins 8 caractères, une
               majuscule et un chiffre
             </p>
+            {errors.password && (
+              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+                {errors.password.message}
+              </p>
+            )}
             {/* 
             {errorMessage && (
               <p className='text-red-500 mb-5'>{errorMessage}</p>

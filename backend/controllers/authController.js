@@ -423,3 +423,5 @@ exports.verifyEmail = (req, res) => {
     },
   );
 };
+
+exports.cleanupExpiredTokens = cleanupExpiredTokens;

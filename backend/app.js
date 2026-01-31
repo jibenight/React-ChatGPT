@@ -12,6 +12,7 @@ const db = require('./models/database');
 
 // post routes
 const auth = require('./routes/auth');
+const { cleanupExpiredTokens } = require('./controllers/authController');
 
 // api routes user
 const userApi = require('./routes/users-api');
@@ -60,6 +61,12 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
+cleanupExpiredTokens();
+const cleanupIntervalMs = 60 * 60 * 1000;
+const cleanupInterval = setInterval(() => {
+  cleanupExpiredTokens();
+}, cleanupIntervalMs);
+
 // terminated process
 process.on('SIGTERM', () => {
   server.close(() => {
@@ -68,4 +75,5 @@ process.on('SIGTERM', () => {
     db.close();
     console.log('3) Close the database connection => OK.');
   });
+  clearInterval(cleanupInterval);
 });

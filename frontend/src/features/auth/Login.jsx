@@ -14,7 +14,7 @@ const Login = ({ isModal }) => {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({ mode: 'onChange' });
   const { userData, setUserData } = useUser();
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
@@ -144,10 +144,21 @@ const Login = ({ isModal }) => {
                 id='signInInput2-1'
                 type='text'
                 placeholder='Adresse e-mail'
-                {...register('email', { required: true })}
+                {...register('email', {
+                  required: 'Adresse e-mail requise',
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Adresse e-mail invalide',
+                  },
+                })}
                 autoComplete='email'
               />
             </label>
+            {errors.email && (
+              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+                {errors.email.message}
+              </p>
+            )}
             <label className='relative block mb-5'>
               <div className='absolute right-4 top-1/2 transform -translate-y-1/2'>
                 <Link
@@ -162,10 +173,17 @@ const Login = ({ isModal }) => {
                 id='signInInput2-2'
                 type='password'
                 placeholder='Mot de passe'
-                {...register('password', { required: true })}
+                {...register('password', {
+                  required: 'Mot de passe requis',
+                })}
                 autoComplete='current-password'
               />
             </label>
+            {errors.password && (
+              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+                {errors.password.message}
+              </p>
+            )}
             <button
               className='mb-8 py-4 px-9 w-full text-white font-semibold border border-teal-500 rounded-xl shadow-xl focus:ring focus:ring-teal-200 bg-teal-400 hover:bg-teal-500 transition ease-in-out duration-200 dark:focus:ring-teal-400/30'
               type='submit'

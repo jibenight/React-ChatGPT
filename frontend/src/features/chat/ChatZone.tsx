@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import apiClient from '../../apiClient';
+import { API_BASE } from '../../apiConfig';
 import { AssistantRuntimeProvider, useExternalStoreRuntime } from '@assistant-ui/react';
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '../../UserContext';
@@ -29,6 +30,101 @@ function ChatZone({
   const DEV_BYPASS_AUTH =
     import.meta.env.DEV &&
     String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
+
+  const buildStreamHeaders = () => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    };
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    if (DEV_BYPASS_AUTH) {
+      const stored = localStorage.getItem('dev_user');
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          headers['X-Dev-User-Id'] = user.id;
+          headers['X-Dev-User-Name'] = user.username;
+          headers['X-Dev-User-Email'] = user.email;
+        } catch {
+          // ignore invalid storage
+        }
+      }
+    }
+    return headers;
+  };
+
+  const streamChat = async (payload, onDelta, signal) => {
+    const response = await fetch(`${API_BASE}/api/chat/message`, {
+      method: 'POST',
+      headers: buildStreamHeaders(),
+      body: JSON.stringify(payload),
+      signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        throw new Error(data?.error || 'Erreur lors de la requête de chat');
+      } catch {
+        throw new Error(text || 'Erreur lors de la requête de chat');
+      }
+    }
+
+    if (!response.body) {
+      throw new Error('Streaming non supporté par le navigateur');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let finalReply = '';
+    let finalThreadId = null;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() || '';
+
+      for (const part of parts) {
+        const line = part
+          .split('\n')
+          .find(entry => entry.trim().startsWith('data:'));
+        if (!line) continue;
+        const json = line.replace(/^data:\s*/, '').trim();
+        if (!json) continue;
+        let event;
+        try {
+          event = JSON.parse(json);
+        } catch {
+          continue;
+        }
+
+        if (event.type === 'delta' && typeof event.content === 'string') {
+          finalReply += event.content;
+          onDelta?.(event.content);
+        }
+
+        if (event.type === 'error') {
+          throw new Error(event.error || 'Erreur lors du streaming');
+        }
+
+        if (event.type === 'done') {
+          if (typeof event.reply === 'string') {
+            finalReply = event.reply;
+          }
+          finalThreadId = event.threadId || null;
+        }
+      }
+    }
+
+    return { reply: finalReply, threadId: finalThreadId };
+  };
   const { userData } = useUser();
   const abortRef = useRef(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -210,7 +306,6 @@ function ChatZone({
       return;
     }
 
-    const userId = userData.id || userData.userId;
     const provider = selectedOption?.provider || 'openai';
     const model = selectedOption?.model;
     const activeThreadId = threadId || sessionId;
@@ -234,6 +329,16 @@ function ChatZone({
       createdAt: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
+    const assistantId = uuidv4();
+    setMessages(prev => [
+      ...prev,
+      {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        createdAt: new Date(),
+      },
+    ]);
     setLoading(true);
     setError('');
     setLastFailedRequest(null);
@@ -264,33 +369,42 @@ function ChatZone({
 
       const controller = new AbortController();
       abortRef.current = controller;
-      const requestPayload = {
-        userId,
-        sessionId,
-        threadId: activeThreadId,
-        projectId,
-        message: text,
-        provider,
-        model,
-        attachments: attachmentPayload,
-      };
-      const response = await apiClient.post(
-        '/api/chat/message',
-        requestPayload,
-        { signal: controller.signal },
-      );
-      const reply = response.data.reply || 'Aucune réponse';
-      const assistantMessage: ChatMessage = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: reply,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      if (response.data.threadId && response.data.threadId !== threadId) {
-        onThreadChange?.(response.data.threadId);
-      }
+       const requestPayload = {
+         sessionId,
+         threadId: activeThreadId,
+         projectId,
+         message: text,
+         provider,
+         model,
+         attachments: attachmentPayload,
+       };
+       const response = await streamChat(
+         requestPayload,
+         delta => {
+           setMessages(prev =>
+             prev.map(item =>
+               item.id === assistantId
+                 ? { ...item, content: `${item.content || ''}${delta}` }
+                 : item,
+             ),
+           );
+         },
+         controller.signal,
+       );
+       if (response.reply) {
+         setMessages(prev =>
+           prev.map(item =>
+             item.id === assistantId
+               ? { ...item, content: response.reply }
+               : item,
+           ),
+         );
+       }
+       if (response.threadId && response.threadId !== threadId) {
+         onThreadChange?.(response.threadId);
+       }
     } catch (err) {
+      setMessages(prev => prev.filter(item => item.id !== assistantId));
       if (err?.name === 'CanceledError') {
         setError('Génération annulée.');
       } else {
@@ -300,7 +414,6 @@ function ChatZone({
       }
       setLastFailedRequest({
         payload: {
-          userId,
           sessionId,
           threadId: activeThreadId,
           projectId,
@@ -329,27 +442,47 @@ function ChatZone({
     }
     setLoading(true);
     setError('');
+    const assistantId = uuidv4();
     try {
       const controller = new AbortController();
       abortRef.current = controller;
-      const response = await apiClient.post(
-        '/api/chat/message',
+      setMessages(prev => [
+        ...prev,
+        {
+          id: assistantId,
+          role: 'assistant',
+          content: '',
+          createdAt: new Date(),
+        },
+      ]);
+      const response = await streamChat(
         lastFailedRequest.payload,
-        { signal: controller.signal },
+        delta => {
+          setMessages(prev =>
+            prev.map(item =>
+              item.id === assistantId
+                ? { ...item, content: `${item.content || ''}${delta}` }
+                : item,
+            ),
+          );
+        },
+        controller.signal,
       );
-      const reply = response.data.reply || 'Aucune réponse';
-      const assistantMessage: ChatMessage = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: reply,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      if (response.data.threadId && response.data.threadId !== threadId) {
-        onThreadChange?.(response.data.threadId);
+      if (response.reply) {
+        setMessages(prev =>
+          prev.map(item =>
+            item.id === assistantId
+              ? { ...item, content: response.reply }
+              : item,
+          ),
+        );
+      }
+      if (response.threadId && response.threadId !== threadId) {
+        onThreadChange?.(response.threadId);
       }
       setLastFailedRequest(null);
     } catch (err) {
+      setMessages(prev => prev.filter(item => item.id !== assistantId));
       if (err?.name === 'CanceledError') {
         setError('Génération annulée.');
       } else {

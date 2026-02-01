@@ -88,6 +88,70 @@ const uploadGeminiAttachments = async (genAI, attachments) => {
   return results.filter(item => item.fileUri);
 };
 
+const streamOpenAi = async ({
+  openaiApi,
+  model,
+  messages,
+  onDelta = delta => {
+    void delta;
+  },
+  onComplete = () => {},
+  onError = err => {
+    void err;
+  },
+  onStream = stream => {
+    void stream;
+  },
+}) => {
+  const response = await openaiApi.createChatCompletion(
+    {
+      model,
+      messages,
+      stream: true,
+    },
+    { responseType: 'stream' },
+  );
+
+  onStream(response.data);
+
+  return new Promise<void>((resolve, reject) => {
+    response.data.on('data', data => {
+      const lines = data
+        .toString()
+        .split('\n')
+        .filter(line => line.trim().startsWith('data:'));
+      for (const line of lines) {
+        const message = line.replace(/^data:\s*/, '').trim();
+        if (message === '[DONE]') {
+          onComplete?.();
+          resolve();
+          return;
+        }
+        try {
+          const parsed = JSON.parse(message);
+          const delta = parsed.choices?.[0]?.delta?.content;
+          if (delta) {
+            onDelta?.(delta);
+          }
+        } catch (err) {
+          onError?.(err);
+        }
+      }
+    });
+
+    response.data.on('error', err => {
+      onError?.(err);
+      reject(err);
+    });
+
+    response.data.on('end', () => {
+      onComplete?.();
+      resolve();
+    });
+
+  });
+};
+
 exports.sendMessage = async (req, res) => {
   const {
     sessionId,
@@ -313,6 +377,22 @@ exports.sendMessage = async (req, res) => {
       attachments: parseAttachments(row.attachments),
     }));
 
+    const wantsStream =
+      typeof req.headers.accept === 'string' &&
+      req.headers.accept.includes('text/event-stream');
+
+    if (wantsStream) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders?.();
+    }
+
+    const sendEvent = payload => {
+      if (!wantsStream) return;
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
     let reply = '';
     if (targetProvider === 'openai') {
       const configuration = new openai.Configuration({ apiKey });
@@ -320,19 +400,46 @@ exports.sendMessage = async (req, res) => {
       const messages = systemPrompt
         ? [{ role: 'system', content: systemPrompt }, ...history]
         : history;
-      try {
-        const response = await openaiApi.createChatCompletion({
+      if (wantsStream) {
+        let aborted = false;
+        let streamRef = null;
+        res.on('close', () => {
+          aborted = true;
+          if (streamRef) streamRef.destroy();
+        });
+        await streamOpenAi({
+          openaiApi,
           model: targetModel,
           messages,
+          onDelta: delta => {
+            reply += delta;
+            sendEvent({ type: 'delta', content: delta });
+          },
+          onError: err => {
+            sendEvent({ type: 'error', error: err?.message || 'Stream error' });
+          },
+          onStream: stream => {
+            streamRef = stream;
+          },
         });
-        reply = response.data.choices[0].message.content;
-      } catch (e) {
-        const response = await openaiApi.createCompletion({
-          model: 'text-davinci-003',
-          prompt: systemPrompt ? `${systemPrompt}\n\n${message}` : message,
-          max_tokens: 150,
-        });
-        reply = response.data.choices[0].text.trim();
+        if (aborted && streamRef) {
+          streamRef.destroy();
+        }
+      } else {
+        try {
+          const response = await openaiApi.createChatCompletion({
+            model: targetModel,
+            messages,
+          });
+          reply = response.data.choices[0].message.content;
+        } catch (e) {
+          const response = await openaiApi.createCompletion({
+            model: 'text-davinci-003',
+            prompt: systemPrompt ? `${systemPrompt}\n\n${message}` : message,
+            max_tokens: 150,
+          });
+          reply = response.data.choices[0].text.trim();
+        }
       }
     } else if (targetProvider === 'gemini') {
       const genAI = new GoogleGenAI({ apiKey });
@@ -397,6 +504,10 @@ exports.sendMessage = async (req, res) => {
       reply = chatResponse.choices[0].message.content;
     }
 
+    if (wantsStream && reply && targetProvider !== 'openai') {
+      sendEvent({ type: 'delta', content: reply });
+    }
+
     await new Promise<void>((resolve, reject) => {
       db.run(
         `INSERT INTO messages (thread_id, role, content, provider, model)
@@ -422,9 +533,27 @@ exports.sendMessage = async (req, res) => {
       );
     });
 
-    res.json({ reply, threadId: activeThreadId });
+    if (wantsStream) {
+      sendEvent({ type: 'done', reply, threadId: activeThreadId });
+      res.end();
+    } else {
+      res.json({ reply, threadId: activeThreadId });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    if (
+      typeof req.headers.accept === 'string' &&
+      req.headers.accept.includes('text/event-stream')
+    ) {
+      res.write(
+        `data: ${JSON.stringify({
+          type: 'error',
+          error: err.message || 'Stream error',
+        })}\n\n`,
+      );
+      res.end();
+    } else {
+      res.status(500).json({ error: err.message });
+    }
   }
 };

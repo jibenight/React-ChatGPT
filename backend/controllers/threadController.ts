@@ -95,6 +95,9 @@ exports.getThreadMessages = async (req, res) => {
   const userId = req.user.id;
   const { threadId } = req.params;
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
+  const beforeIdRaw = req.query.beforeId;
+  const beforeId = Number(beforeIdRaw);
+  const hasBeforeId = Number.isFinite(beforeId);
   try {
     const thread = await new Promise<any>((resolve, reject) => {
       db.get(
@@ -110,20 +113,25 @@ exports.getThreadMessages = async (req, res) => {
       return res.status(404).json({ error: 'Thread not found' });
     }
     const rows = await new Promise<any[]>((resolve, reject) => {
-      db.all(
-        `SELECT id, role, content, attachments, provider, model, created_at
-         FROM messages
-         WHERE thread_id = ?
-         ORDER BY id ASC
-         LIMIT ?`,
-        [threadId, limit],
-        (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        },
-      );
+      const sql = hasBeforeId
+        ? `SELECT id, role, content, attachments, provider, model, created_at
+           FROM messages
+           WHERE thread_id = ? AND id < ?
+           ORDER BY id DESC
+           LIMIT ?`
+        : `SELECT id, role, content, attachments, provider, model, created_at
+           FROM messages
+           WHERE thread_id = ?
+           ORDER BY id ASC
+           LIMIT ?`;
+      const params = hasBeforeId ? [threadId, beforeId, limit] : [threadId, limit];
+      db.all(sql, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
     });
-    const withAttachments = rows.map(row => {
+    const orderedRows = hasBeforeId ? rows.reverse() : rows;
+    const withAttachments = orderedRows.map(row => {
       let parsedAttachments = [];
       if (row.attachments) {
         try {

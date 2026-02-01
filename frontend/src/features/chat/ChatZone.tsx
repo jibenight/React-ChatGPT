@@ -32,6 +32,9 @@ function ChatZone({
   const { userData } = useUser();
   const abortRef = useRef(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [historyCursor, setHistoryCursor] = useState<number | null>(null);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -101,16 +104,36 @@ function ChatZone({
       content: [],
     }));
 
+  const HISTORY_PAGE_SIZE = 50;
+
+  const resolveHistoryCursor = items => {
+    const rawId = items?.[0]?.id;
+    const numeric = Number(rawId);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
+  const mergeHistory = (prev, next) => {
+    const existing = new Set(prev.map(item => item.id));
+    const filtered = next.filter(item => !existing.has(item.id));
+    return [...filtered, ...prev];
+  };
+
   useEffect(() => {
     if (!threadId) {
       setMessages([]);
+      setHistoryCursor(null);
+      setHasMoreHistory(false);
       return;
     }
     const token = localStorage.getItem('token');
     if (!token) return;
     setLoadingHistory(true);
+    setHistoryCursor(null);
+    setHasMoreHistory(false);
     apiClient
-      .get(`/api/threads/${threadId}/messages`)
+      .get(`/api/threads/${threadId}/messages`, {
+        params: { limit: HISTORY_PAGE_SIZE },
+      })
       .then(response => {
         const history = (response.data || []).map(item => ({
           id: item.id ? String(item.id) : uuidv4(),
@@ -120,6 +143,8 @@ function ChatZone({
           createdAt: item.created_at ? new Date(item.created_at) : new Date(),
         }));
         setMessages(history);
+        setHistoryCursor(resolveHistoryCursor(response.data || []));
+        setHasMoreHistory((response.data || []).length === HISTORY_PAGE_SIZE);
         setError('');
       })
       .catch(err => {
@@ -127,9 +152,44 @@ function ChatZone({
           err.response?.data?.error ||
             'Erreur lors du chargement de la conversation',
         );
+        setHasMoreHistory(false);
       })
       .finally(() => setLoadingHistory(false));
   }, [threadId]);
+
+  const loadMoreHistory = async () => {
+    if (!threadId || !historyCursor || loadingMoreHistory) return;
+    setLoadingMoreHistory(true);
+    try {
+      const response = await apiClient.get(
+        `/api/threads/${threadId}/messages`,
+        {
+          params: { limit: HISTORY_PAGE_SIZE, beforeId: historyCursor },
+        },
+      );
+      const nextHistory = (response.data || []).map(item => ({
+        id: item.id ? String(item.id) : uuidv4(),
+        role: normalizeRole(item.role),
+        content: normalizeContent(item.content),
+        attachments: mapStoredAttachments(item.attachments),
+        createdAt: item.created_at ? new Date(item.created_at) : new Date(),
+      }));
+      if (nextHistory.length === 0) {
+        setHasMoreHistory(false);
+        return;
+      }
+      setMessages(prev => mergeHistory(prev, nextHistory));
+      setHistoryCursor(resolveHistoryCursor(response.data || []));
+      setHasMoreHistory((response.data || []).length === HISTORY_PAGE_SIZE);
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+          'Erreur lors du chargement des messages précédents',
+      );
+    } finally {
+      setLoadingMoreHistory(false);
+    }
+  };
 
   const extractText = message => {
     if (!message?.content) return '';
@@ -587,6 +647,20 @@ function ChatZone({
 
       <div className='flex-1 min-h-0'>
         <AssistantRuntimeProvider runtime={runtime}>
+          {hasMoreHistory && (
+            <div className='mb-3 flex justify-center'>
+              <button
+                type='button'
+                onClick={loadMoreHistory}
+                disabled={loadingMoreHistory}
+                className='rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-sm transition hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+              >
+                {loadingMoreHistory
+                  ? 'Chargement...'
+                  : 'Charger les messages précédents'}
+              </button>
+            </div>
+          )}
           <Thread
             draftKey={draftKey}
             initialDraft={initialDraft}

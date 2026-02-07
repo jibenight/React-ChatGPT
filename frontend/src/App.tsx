@@ -33,8 +33,6 @@ function App() {
     if (!projectMode) return;
     if (selectedProjectId) return;
     let isActive = true;
-    const token = localStorage.getItem('token');
-    if (!token) return;
     const loadLastProjectThread = async () => {
       try {
          const response = await apiClient.get('/api/threads');
@@ -73,8 +71,6 @@ function App() {
 
     if (projectParam === null && !threadParam) {
       let isActive = true;
-      const token = localStorage.getItem('token');
-      if (!token) return undefined;
       const loadLastProjectThread = async () => {
         try {
            const response = await apiClient.get('/api/threads');

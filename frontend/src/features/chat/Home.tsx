@@ -9,7 +9,7 @@ import Modal from '../../components/common/Modal';
 function Home() {
   // Vérification simple de la présence du token pour adapter l'interface
   const [modalOpen, setModalOpen] = useState<string | null>(null); // 'login', 'register' ou null
-  const isAuthenticated = !!localStorage.getItem('token');
+  const isAuthenticated = !!localStorage.getItem('user');
 
   return (
     <div className='min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans dark:bg-slate-950 dark:text-slate-100'>

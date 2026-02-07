@@ -233,6 +233,9 @@ exports.sendMessage = async (req, res) => {
         .json({ error: `API key not found for ${targetProvider}` });
 
     const encryptionKey = process.env.ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      return res.status(500).json({ error: 'Server misconfiguration' });
+    }
     let apiKey;
     try {
       const bytes = cryptoJS.AES.decrypt(result.api_key, encryptionKey);
@@ -548,12 +551,12 @@ exports.sendMessage = async (req, res) => {
       res.write(
         `data: ${JSON.stringify({
           type: 'error',
-          error: err.message || 'Stream error',
+          error: 'Stream error',
         })}\n\n`,
       );
       res.end();
     } else {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   }
 };

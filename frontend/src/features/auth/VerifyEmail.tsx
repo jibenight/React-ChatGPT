@@ -23,14 +23,14 @@ const VerifyEmail = () => {
         const response = await apiClient.get('/verify-email', {
           params: { token },
         });
-        const { token: authToken, userId, username, email } = response.data || {};
-        if (authToken && userId) {
-          localStorage.setItem('token', authToken);
+        const { userId, username, email } = response.data || {};
+        if (userId) {
+          const normalizedUser = { id: userId, userId, username, email };
           localStorage.setItem(
             'user',
-            JSON.stringify({ userId, username, email }),
+            JSON.stringify(normalizedUser),
           );
-          setUserData({ id: userId, username, email });
+          setUserData(normalizedUser);
           setStatus({ type: 'success', message: 'Email vérifié. Connexion en cours...' });
           navigate('/chat');
           return;

@@ -4,14 +4,30 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const db = require('../models/database');
 const secretKey = process.env.SECRET_KEY;
+if (!secretKey) {
+  throw new Error('SECRET_KEY environment variable is required.');
+}
 
 const DEV_BYPASS_AUTH =
   process.env.DEV_BYPASS_AUTH === 'true' &&
   process.env.NODE_ENV !== 'production';
 
+const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || 'auth_token';
+
 const normalizeHeaderValue = value => {
   if (Array.isArray(value)) return value[0];
   return value;
+};
+
+const getCookieToken = cookieHeader => {
+  if (!cookieHeader || typeof cookieHeader !== 'string') return null;
+  const cookies = cookieHeader.split(';');
+  for (const cookie of cookies) {
+    const [name, ...rest] = cookie.trim().split('=');
+    if (name !== AUTH_COOKIE_NAME) continue;
+    return decodeURIComponent(rest.join('='));
+  }
+  return null;
 };
 
 const ensureDevUser = async (email, username) => {
@@ -51,22 +67,22 @@ const isAuthenticated = async (req, res, next) => {
       req.user = { id: user.id, isDev: true };
       return next();
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const bearerToken = authHeader && authHeader.split(' ')[1];
+  const cookieToken = getCookieToken(req.headers.cookie);
+  const token = bearerToken || cookieToken;
 
   if (!token) {
-    console.log('No token provided');
-    return res.status(401).json({ error: 'No token provided' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   jwt.verify(token, secretKey, (err, decoded) => {
     if (err) {
-      console.log('Invalid token', err);
-      return res.status(401).json({ error: 'Invalid token' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     req.user = { id: decoded.id };

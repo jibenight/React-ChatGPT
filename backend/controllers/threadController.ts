@@ -19,7 +19,7 @@ exports.listThreads = async (req, res) => {
     });
     res.status(200).json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -42,7 +42,7 @@ exports.listProjectThreads = async (req, res) => {
     });
     res.status(200).json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -65,7 +65,7 @@ exports.createThread = async (req, res) => {
     });
     res.status(201).json({ id: threadId, title: title || null });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -87,7 +87,7 @@ exports.createThreadRoot = async (req, res) => {
     });
     res.status(201).json({ id: threadId, title: title || null });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -148,7 +148,7 @@ exports.getThreadMessages = async (req, res) => {
     });
     res.status(200).json(withAttachments);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -168,7 +168,7 @@ exports.deleteThread = async (req, res) => {
     });
     res.status(200).json({ message: 'Thread deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -236,6 +236,6 @@ exports.updateThread = async (req, res) => {
       project_id: updatedProjectId,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

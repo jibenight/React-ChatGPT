@@ -17,7 +17,7 @@ exports.getUsers = async (req, res) => {
     });
     res.json(rows);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -33,6 +33,9 @@ exports.updateApiKey = async (req, res) => {
     return res.status(400).json({ error: 'API key is required' });
   }
   const encryptionKey = process.env.ENCRYPTION_KEY;
+  if (!encryptionKey) {
+    return res.status(500).json({ error: 'Server misconfiguration' });
+  }
   const encryptedApiKey = cryptoJS.AES.encrypt(apiKey, encryptionKey).toString();
 
   const query = `
@@ -58,7 +61,7 @@ exports.updateApiKey = async (req, res) => {
     });
     res.status(200).json({ message: 'API Key updated successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -78,7 +81,7 @@ exports.getApiKeys = async (req, res) => {
     const providers = rows.map(row => row.provider);
     res.status(200).json({ providers });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -103,7 +106,7 @@ exports.deleteApiKey = async (req, res) => {
     });
     res.status(200).json({ message: 'API key deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -166,6 +169,6 @@ exports.updateUserData = async (req, res) => {
     console.log(`User data updated successfully for user ID: ${userId}`);
     res.status(200).json({ message: 'User data updated successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -4,9 +4,12 @@ import profilImg from '../../assets/profil.webp';
 import profilAnime from '../../assets/profil.gif';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../apiClient';
+import { useUser } from '../../UserContext';
 
 function LogOut({ setProfil, profil }) {
   const navigate = useNavigate();
+  const { setUserData } = useUser();
   const [images, setImages] = useState({
     logoutSrc: logout,
     profilSrc: profilImg,
@@ -30,11 +33,15 @@ function LogOut({ setProfil, profil }) {
   };
 
   // pour se déconnecter
-  const handleLogout = () => {
-    // Supprimez les informations d'authentification stockées localement
+  const handleLogout = async () => {
+    try {
+      await apiClient.post('/logout');
+    } catch {
+      // Ignore logout network errors and clear local state anyway.
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    // Redirigez l'utilisateur vers la page de connexion
+    setUserData({});
     navigate('/login');
   };
 

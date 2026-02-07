@@ -33,10 +33,7 @@ function Projects() {
   type Status = { type: 'success' | 'error'; text: string } | null;
   const [status, setStatus] = useState<Status>(null);
 
-  const token = localStorage.getItem('token');
-
   const loadProjects = async () => {
-    if (!token) return;
     try {
       const response = await apiClient.get('/api/projects');
       setProjects(response.data || []);
@@ -60,7 +57,7 @@ function Projects() {
   }, [selectedProject]);
 
   const loadThreads = async projectId => {
-    if (!token || !projectId) return;
+    if (!projectId) return;
     setLoadingThreads(true);
     try {
       const response = await apiClient.get(`/api/projects/${projectId}/threads`);
@@ -83,7 +80,7 @@ function Projects() {
   }, [selectedProject]);
 
   const handleCreate = async () => {
-    if (!token || !newProject.name.trim()) return;
+    if (!newProject.name.trim()) return;
     try {
       const response = await apiClient.post('/api/projects', newProject);
       setNewProject({
@@ -108,7 +105,7 @@ function Projects() {
   };
 
   const handleUpdate = async () => {
-    if (!token || !selectedProject) return;
+    if (!selectedProject) return;
     try {
       await apiClient.patch(`/api/projects/${selectedProject.id}`, editProject);
       setStatus({ type: 'success', text: 'Projet mis à jour.' });
@@ -127,7 +124,7 @@ function Projects() {
   };
 
   const handleDelete = async () => {
-    if (!token || !selectedProject) return;
+    if (!selectedProject) return;
     try {
       await apiClient.delete(`/api/projects/${selectedProject.id}`);
       setSelectedProject(null);
@@ -140,7 +137,7 @@ function Projects() {
   };
 
   const handleDeleteThread = async threadId => {
-    if (!token || !selectedProject) return;
+    if (!selectedProject) return;
     try {
       await apiClient.delete(`/api/threads/${threadId}`);
       await loadThreads(selectedProject.id);
@@ -164,7 +161,7 @@ function Projects() {
   };
 
   const handleRenameThread = async threadId => {
-    if (!token || !selectedProject) return;
+    if (!selectedProject) return;
     try {
       await apiClient.patch(`/api/threads/${threadId}`, {
         title: editingThreadTitle,

@@ -83,8 +83,6 @@ function Aside({
   }, [isDark]);
 
   const fetchProjects = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     setLoadingProjects(true);
     try {
       const response = await apiClient.get('/api/projects');
@@ -97,8 +95,6 @@ function Aside({
   };
 
   const fetchThreads = async projectId => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     setLoadingThreads(true);
     try {
       const url = projectId
@@ -133,8 +129,6 @@ function Aside({
   };
 
   const handleCreateProject = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     if (!newProject.name.trim()) return;
     try {
       const response = await apiClient.post('/api/projects', {
@@ -154,8 +148,6 @@ function Aside({
   };
 
   const handleCreateThread = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       const targetProjectId = projectMode ? selectedProjectId : null;
       const url = targetProjectId
@@ -185,8 +177,6 @@ function Aside({
   };
 
   const handleRenameThread = async threadId => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await apiClient.patch(`/api/threads/${threadId}`, {
         title: editingThreadTitle,
@@ -199,8 +189,6 @@ function Aside({
   };
 
   const handleAssignThread = async (threadId, projectId) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await apiClient.patch(`/api/threads/${threadId}`, {
         projectId,
@@ -215,8 +203,6 @@ function Aside({
   };
 
   const handleDeleteThread = async threadId => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       await apiClient.delete(`/api/threads/${threadId}`);
       if (selectedThreadId === threadId) {

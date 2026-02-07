@@ -37,6 +37,9 @@ auth.post('/register', registerLimiter, authController.register);
 // pour la connexion
 auth.post('/login', loginLimiter, authController.login);
 
+// pour la déconnexion
+auth.post('/logout', authController.logout);
+
 // Route pour la demande de réinitialisation
 auth.post('/reset-password-request', passwordLimiter, authController.resetPasswordRequest);
 

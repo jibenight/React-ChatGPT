@@ -37,17 +37,13 @@ const Login = ({ isModal }: LoginProps) => {
       })
       .then(response => {
         if (response.status === 200) {
-          const { token, userId, username, email } = response.data;
-          localStorage.setItem('token', token);
+          const { userId, username, email } = response.data;
+          const normalizedUser = { id: userId, userId, username, email };
           localStorage.setItem(
             'user',
-            JSON.stringify({ userId, username, email }),
+            JSON.stringify(normalizedUser),
           );
-          setUserData({
-            id: userId,
-            username: username,
-            email: email,
-          });
+          setUserData(normalizedUser);
           setErrorMessage('');
           setInfoMessage('');
           navigate('/chat');
@@ -61,11 +57,8 @@ const Login = ({ isModal }: LoginProps) => {
         }
         const status = error.response.status;
         const apiError = error.response.data?.error;
-        if (status === 404) {
-          setErrorMessage('E-mail introuvable.');
-          setInfoMessage('');
-        } else if (status === 401) {
-          setErrorMessage('Mot de passe incorrect.');
+        if (status === 401 && apiError === 'invalid_credentials') {
+          setErrorMessage('Identifiants invalides.');
           setInfoMessage('');
         } else if (status === 403 && apiError === 'email_not_verified') {
           setErrorMessage('Email non vérifié. Vérifie ta boîte de réception.');

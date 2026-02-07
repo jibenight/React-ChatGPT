@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import apiClient from './apiClient';
 
 type UserData = Record<string, any>;
 
@@ -23,9 +24,44 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const userJson = localStorage.getItem('user');
     if (userJson) {
-      const user = JSON.parse(userJson);
-      setUserData(user);
+      try {
+        const user = JSON.parse(userJson);
+        setUserData(user);
+      } catch {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
+  }, []);
+
+  useEffect(() => {
+    const userJson = localStorage.getItem('user');
+    if (!userJson) return;
+    let cancelled = false;
+    apiClient
+      .get('/api/users')
+      .then(response => {
+        if (cancelled) return;
+        const current = response.data?.[0];
+        if (!current) return;
+        const normalized = {
+          id: current.id,
+          userId: current.id,
+          username: current.username,
+          email: current.email,
+        };
+        localStorage.setItem('user', JSON.stringify(normalized));
+        setUserData(normalized);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUserData({});
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

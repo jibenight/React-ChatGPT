@@ -61,6 +61,7 @@ function ChatZone({
       method: 'POST',
       headers: buildStreamHeaders(),
       body: JSON.stringify(payload),
+      credentials: 'include',
       signal,
     });
 
@@ -221,8 +222,6 @@ function ChatZone({
       setHasMoreHistory(false);
       return;
     }
-    const token = localStorage.getItem('token');
-    if (!token) return;
     setLoadingHistory(true);
     setHistoryCursor(null);
     setHasMoreHistory(false);

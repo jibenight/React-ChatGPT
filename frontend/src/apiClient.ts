@@ -7,6 +7,7 @@ const DEV_BYPASS_AUTH =
 
 const apiClient = axios.create({
   baseURL: API_BASE,
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use(config => {

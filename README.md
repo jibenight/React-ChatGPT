@@ -3,12 +3,13 @@
 Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec front React + Vite, back Express/SQLite et chiffrement des clés API côté base.
 
 ## Structure
-- **Back-end** (`backend/`) : serveur Express (`app.js`), DB SQLite (`models/database.js`), routes (`routes/`), contrôleurs (`controllers/`), middlewares.
+- **Back-end** (`backend/`) : serveur Express (`app.ts`), DB SQLite (`models/database.ts`), routes (`routes/`), contrôleurs (`controllers/`), middlewares.
 - **Front-end** (`frontend/`) : app React + Vite, pages d’auth, composants UI, contexte utilisateur.
 - **Base de données** (`database/ChatData.db`) : créée automatiquement au démarrage du back.
 
 ## Documentation utilisateur
 - Guide utilisateur : `docs/guide-utilisateur.md`
+- Déploiement o2switch/cPanel : `docs/deploiement-o2switch-cpanel.md`
 
 ## Mode dev (sans connexion)
 
@@ -54,13 +55,15 @@ SECRET_KEY=...           # JWT
 ENCRYPTION_KEY=...       # Chiffre les clés API en base
 PORT=3000                # (optionnel) Port du back
 APP_URL=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+TRUST_PROXY=1
 
 # SMTP (délivrabilité)
 SMTP_HOST=...            # Ex: jean-nguyen.dev
 SMTP_PORT=465
 SMTP_SECURE=true
 EMAIL_USER=...           # Compte d'envoi d'email
-PASSWORD=...             # Mot de passe ou app password
+SMTP_PASSWORD=...        # Mot de passe ou app password
 EMAIL_FROM="ChatBot <noreply@jean-nguyen.dev>"
 REPLY_TO=noreply@jean-nguyen.dev
 SMTP_DEBUG=false
@@ -100,7 +103,7 @@ Ouvrir l’URL affichée par Vite (ex. http://localhost:5173). Le front appelle 
 ## Débogage courant
 - Erreur `MODULE_NOT_FOUND @google/generative-ai` ou similaires : exécuter `npm install` (dépendances ajoutées : `@google/generative-ai`, `@anthropic-ai/sdk`, `@mistralai/mistralai`).
 - Port utilisé : ajuster `PORT` et `VITE_API_URL` si 3000 est pris.
-- L’URL de reset/vérification est basée sur `APP_URL` (ou l’`Origin` de la requête si absent).
+- L’URL de reset/vérification est basée sur `APP_URL` (obligatoire).
 
 ## Licence
 MIT.

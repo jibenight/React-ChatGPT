@@ -53,8 +53,6 @@ function Profil() {
   };
 
   const fetchApiKeys = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       const response = await apiClient.get('/api/api-keys');
       const providers = response.data?.providers || [];
@@ -88,7 +86,6 @@ function Profil() {
   }, [actionMessage]);
 
   const onSubmit = async data => {
-    console.log(data);
     // Filtrer les clés-valeurs pour lesquelles les valeurs ne sont pas vides
     const updatedData = Object.fromEntries(
       Object.entries(data).filter(([key, value]) => {
@@ -97,14 +94,10 @@ function Profil() {
         return true;
       }),
     );
-    console.log('Submitting data:', updatedData); // Ajoutez cette ligne pour voir les données soumises
-
     if (Object.keys(updatedData).length === 0) {
-      console.log('No data to update');
       return;
     }
     if (data.username || data.password) {
-      const token = localStorage.getItem('token');
       try {
         setIsSaving(true);
         const response = await apiClient.post(
@@ -139,7 +132,6 @@ function Profil() {
       { key: 'mistral_api_key', provider: 'mistral' },
     ];
 
-    const token = localStorage.getItem('token');
     const apiUpdates = apiKeyFields.filter(
       item => data[item.key] && data[item.key].trim(),
     );
@@ -184,8 +176,6 @@ function Profil() {
   };
 
   const handleDeleteApiKey = async provider => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     try {
       setIsDeleting(true);
       await apiClient.delete(`/api/api-keys/${provider}`);

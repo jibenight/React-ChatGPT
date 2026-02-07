@@ -25,7 +25,7 @@ exports.listProjects = async (req, res) => {
     });
     res.status(200).json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -50,7 +50,7 @@ exports.getProject = async (req, res) => {
     }
     res.status(200).json(row);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -83,7 +83,7 @@ exports.createProject = async (req, res) => {
       ...payload,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -112,7 +112,7 @@ exports.updateProject = async (req, res) => {
     });
     res.status(200).json({ message: 'Project updated' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -132,6 +132,6 @@ exports.deleteProject = async (req, res) => {
     });
     res.status(200).json({ message: 'Project deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

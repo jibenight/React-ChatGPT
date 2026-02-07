@@ -51,6 +51,17 @@ Créer un fichier `.env` pour chaque partie :
 
 `backend/.env` :
 ```
+DB_CLIENT=sqlite         # sqlite | postgres
+
+# SQLite (si DB_CLIENT=sqlite)
+SQLITE_DB_PATH=./database/ChatData.db
+
+# PostgreSQL (si DB_CLIENT=postgres)
+# DATABASE_URL=postgresql://user:password@localhost:5432/chatgpt
+# ou variables PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE
+# PGSSL=false
+# PGSSL_REJECT_UNAUTHORIZED=false
+
 SECRET_KEY=...           # JWT
 ENCRYPTION_KEY=...       # Chiffre les clés API en base
 PORT=3000                # (optionnel) Port du back
@@ -91,7 +102,9 @@ npm run start:frontend
 Ouvrir l’URL affichée par Vite (ex. http://localhost:5173). Le front appelle le back via `VITE_API_URL` (par défaut `http://localhost:3000`).
 
 ## Base de données
-- Fichier : `database/ChatData.db` (créé au démarrage si absent).
+- Driver sélectionnable via `DB_CLIENT` : `sqlite` (défaut) ou `postgres`.
+- SQLite : fichier `database/ChatData.db` (créé au démarrage si absent).
+- PostgreSQL : schéma et index créés automatiquement au démarrage.
 - Tables : `users`, `api_keys` (clés chiffrées AES), `chat_history`, `password_resets`.
 - Lecture rapide : `sqlite3 database/ChatData.db` puis `.tables`, `.schema users`, `SELECT * FROM users LIMIT 5;`.
 

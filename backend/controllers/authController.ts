@@ -165,6 +165,11 @@ const emailFingerprint = email => {
   }
 };
 
+const toDbDateTime = (date: Date) =>
+  date.toISOString().slice(0, 19).replace('T', ' ');
+const futureDbDateTime = (hours: number) =>
+  toDbDateTime(new Date(Date.now() + hours * 60 * 60 * 1000));
+
 const logAuthEvent = (event, payload: Record<string, any> = {}) => {
   const safePayload = {
     ...payload,
@@ -176,13 +181,13 @@ const logAuthEvent = (event, payload: Record<string, any> = {}) => {
 
 const cleanupExpiredTokens = () => {
   db.run(
-    'DELETE FROM password_resets WHERE expires_at <= DATETIME("now")',
+    'DELETE FROM password_resets WHERE expires_at <= CURRENT_TIMESTAMP',
     cleanupErr => {
       if (cleanupErr) console.error(cleanupErr.message);
     },
   );
   db.run(
-    'DELETE FROM email_verifications WHERE expires_at <= DATETIME("now")',
+    'DELETE FROM email_verifications WHERE expires_at <= CURRENT_TIMESTAMP',
     cleanupErr => {
       if (cleanupErr) console.error(cleanupErr.message);
     },
@@ -242,8 +247,8 @@ exports.register = async (req, res) => {
               return res.status(500).json({ error: 'Internal server error' });
             }
             db.run(
-              'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, DATETIME("now", "+24 hour"))',
-              [email, resetToken],
+              'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)',
+              [email, resetToken, futureDbDateTime(24)],
               async insertErr => {
                 if (insertErr) {
                   return res.status(500).json({ error: 'Internal server error' });
@@ -320,8 +325,8 @@ exports.resetPasswordRequest = (req, res) => {
 
     const resetToken = uuidv4();
     db.run(
-      'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, DATETIME("now", "+1 hour"))',
-      [email, resetToken],
+      'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)',
+      [email, resetToken, futureDbDateTime(1)],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'Internal server error' });
@@ -390,7 +395,7 @@ exports.resetPassword = (req, res) => {
   }
 
   db.get(
-    'SELECT * FROM password_resets WHERE token = ? AND expires_at > DATETIME("now")',
+    'SELECT * FROM password_resets WHERE token = ? AND expires_at > CURRENT_TIMESTAMP',
     [token],
     async (err, row) => {
       if (err) {
@@ -452,8 +457,8 @@ exports.resendVerification = (req, res) => {
           return res.status(500).json({ error: 'Internal server error' });
         }
         db.run(
-          'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, DATETIME("now", "+24 hour"))',
-          [email, verifyToken],
+          'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)',
+          [email, verifyToken, futureDbDateTime(24)],
           async insertErr => {
             if (insertErr) {
               return res.status(500).json({ error: 'Internal server error' });
@@ -483,7 +488,7 @@ exports.verifyEmail = (req, res) => {
   }
   cleanupExpiredTokens();
   db.get(
-    'SELECT * FROM email_verifications WHERE token = ? AND expires_at > DATETIME("now")',
+    'SELECT * FROM email_verifications WHERE token = ? AND expires_at > CURRENT_TIMESTAMP',
     [token],
     (err, row) => {
       if (err) {

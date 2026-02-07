@@ -39,20 +39,17 @@ exports.updateApiKey = async (req, res) => {
   const encryptedApiKey = cryptoJS.AES.encrypt(apiKey, encryptionKey).toString();
 
   const query = `
-    INSERT OR REPLACE INTO api_keys (id, user_id, provider, api_key)
-    VALUES (
-      (SELECT id FROM api_keys WHERE user_id = ? AND provider = ?),
-      ?,
-      ?,
-      ?
-    );
+    INSERT INTO api_keys (user_id, provider, api_key)
+    VALUES (?, ?, ?)
+    ON CONFLICT (user_id, provider)
+    DO UPDATE SET api_key = excluded.api_key;
   `;
 
   try {
     await new Promise<void>((resolve, reject) => {
       db.run(
         query,
-        [userId, targetProvider, userId, targetProvider, encryptedApiKey],
+        [userId, targetProvider, encryptedApiKey],
         function(err) {
         if (err) reject(err);
         else resolve(this);

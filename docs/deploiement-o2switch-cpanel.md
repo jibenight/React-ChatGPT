@@ -45,6 +45,9 @@ Configurer ces variables dans l’interface cPanel Node.js App (ou dans `.env` c
 NODE_ENV=production
 TRUST_PROXY=1
 
+DB_CLIENT=sqlite
+# SQLITE_DB_PATH=./database/ChatData.db
+
 SECRET_KEY=<jwt-secret-long>
 ENCRYPTION_KEY=<32+ chars>
 
@@ -59,6 +62,16 @@ SMTP_PASSWORD=<smtp-password>
 EMAIL_FROM="ChatBot <noreply@domaine.tld>"
 REPLY_TO=noreply@domaine.tld
 SMTP_DEBUG=false
+```
+
+Si tu choisis PostgreSQL :
+
+```bash
+DB_CLIENT=postgres
+DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<database>
+# ou PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE
+# PGSSL=true
+# PGSSL_REJECT_UNAUTHORIZED=false
 ```
 
 Variables cookies (optionnelles, utiles selon ton setup) :

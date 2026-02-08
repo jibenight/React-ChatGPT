@@ -1,33 +1,29 @@
 import './css/App.css';
 import { useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import Aside from './components/layout/Aside';
 import ChatZone from './features/chat/ChatZone';
 import Profil from './features/profile/Profile';
 import Projects from './features/projects/Projects';
 import { v4 as uuidv4 } from 'uuid';
 import apiClient from './apiClient';
+import { useAppStore } from './stores/appStore';
 
 function App() {
-  const [profil, setProfil] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<any | null>(null);
+  const profil = useAppStore(s => s.profil);
+  const selectedOption = useAppStore(s => s.selectedOption);
+  const projectMode = useAppStore(s => s.projectMode);
+  const setProjectMode = useAppStore(s => s.setProjectMode);
+  const selectedProjectId = useAppStore(s => s.selectedProjectId);
+  const setSelectedProjectId = useAppStore(s => s.setSelectedProjectId);
+  const selectedThreadId = useAppStore(s => s.selectedThreadId);
+  const setSelectedThreadId = useAppStore(s => s.setSelectedThreadId);
+
   const [sessionId] = useState(() => uuidv4());
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-    null,
-  );
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
-  const [projectMode, setProjectMode] = useState(() => {
-    const stored = localStorage.getItem('project_mode');
-    if (!stored) return true;
-    return stored === 'project';
-  });
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const showProjects = location.pathname.startsWith('/projects');
-
-  useEffect(() => {
-    localStorage.setItem('project_mode', projectMode ? 'project' : 'solo');
-  }, [projectMode]);
 
   useEffect(() => {
     if (!projectMode) return;
@@ -46,6 +42,7 @@ function App() {
         }
       } catch (err) {
         console.error(err);
+        toast.error('Impossible de charger la dernière conversation');
       }
     };
     loadLastProjectThread();
@@ -86,6 +83,7 @@ function App() {
           }
         } catch (err) {
           console.error(err);
+          toast.error('Impossible de charger les conversations');
         }
       };
       loadLastProjectThread();
@@ -98,28 +96,13 @@ function App() {
 
   return (
     <main className='flex h-screen overflow-hidden'>
-      <Aside
-        setProfil={setProfil}
-        profil={profil}
-        selectedOption={selectedOption}
-        setSelectedOption={setSelectedOption}
-        projectMode={projectMode}
-        setProjectMode={setProjectMode}
-        selectedProjectId={selectedProjectId}
-        setSelectedProjectId={setSelectedProjectId}
-        selectedThreadId={selectedThreadId}
-        setSelectedThreadId={setSelectedThreadId}
-      />
+      <Aside />
       <div className={profil ? 'hidden' : 'flex-1 min-h-0'}>
         {showProjects ? (
           <Projects />
         ) : (
           <ChatZone
-            selectedOption={selectedOption}
             sessionId={sessionId}
-            threadId={selectedThreadId}
-            projectId={selectedProjectId}
-            onThreadChange={setSelectedThreadId}
           />
         )}
       </div>

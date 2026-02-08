@@ -37,9 +37,6 @@ const PrivateRoute = () => {
     if (!DEV_BYPASS_AUTH) return;
     const user = getOrCreateDevUser();
     localStorage.setItem('user', JSON.stringify(user));
-    if (!localStorage.getItem('token')) {
-      localStorage.setItem('token', 'dev');
-    }
     setUserData(user);
   }, [setUserData]);
 

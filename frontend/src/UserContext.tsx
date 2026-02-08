@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { toast } from 'sonner';
 import apiClient from './apiClient';
 
 type UserData = Record<string, any>;
@@ -55,8 +56,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (cancelled) return;
+        toast.error('Session expirée, veuillez vous reconnecter');
         localStorage.removeItem('user');
-        localStorage.removeItem('token');
         setUserData({});
       });
     return () => {

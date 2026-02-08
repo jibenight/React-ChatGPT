@@ -11,11 +11,7 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
   const headers = (config.headers ?? {}) as Record<string, string>;
-  if (token && !headers.Authorization) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   if (DEV_BYPASS_AUTH) {
     const stored = localStorage.getItem('dev_user');

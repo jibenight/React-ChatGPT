@@ -10,6 +10,7 @@ import VerifyEmail from './features/auth/VerifyEmail';
 import UserGuide from './features/info/UserGuide';
 import './css/App.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import { UserProvider } from './UserContext';
@@ -32,6 +33,7 @@ applyInitialTheme();
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <UserProvider>
     <TooltipProvider>
+      <Toaster />
       <Router>
         <Routes>
           <Route path='/' element={<Home />} />

@@ -5,19 +5,20 @@ import LogOut from '../../features/auth/Logout';
 import chatGPT from '../../assets/chatGPT.mp4';
 import apiClient from '../../apiClient';
 import { Link } from 'react-router-dom';
+import { useAppStore } from '../../stores/appStore';
 
-function Aside({
-  setProfil,
-  profil,
-  selectedOption,
-  setSelectedOption,
-  projectMode,
-  setProjectMode,
-  selectedProjectId,
-  setSelectedProjectId,
-  selectedThreadId,
-  setSelectedThreadId,
-}) {
+function Aside() {
+  const profil = useAppStore(s => s.profil);
+  const setProfil = useAppStore(s => s.setProfil);
+  const selectedOption = useAppStore(s => s.selectedOption);
+  const setSelectedOption = useAppStore(s => s.setSelectedOption);
+  const projectMode = useAppStore(s => s.projectMode);
+  const setProjectMode = useAppStore(s => s.setProjectMode);
+  const selectedProjectId = useAppStore(s => s.selectedProjectId);
+  const setSelectedProjectId = useAppStore(s => s.setSelectedProjectId);
+  const selectedThreadId = useAppStore(s => s.selectedThreadId);
+  const setSelectedThreadId = useAppStore(s => s.setSelectedThreadId);
+
   const { userData } = useUser();
   const hasUserData = userData && userData.username;
   const [showProviderPicker, setShowProviderPicker] = useState(false);

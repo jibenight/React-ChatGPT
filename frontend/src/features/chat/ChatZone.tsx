@@ -5,26 +5,26 @@ import { AssistantRuntimeProvider, useExternalStoreRuntime } from '@assistant-ui
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '../../UserContext';
 import { Thread } from '@/components/assistant-ui/thread';
+import { useAppStore } from '../../stores/appStore';
 
-function ChatZone({
-  selectedOption,
-  sessionId,
-  threadId,
-  projectId,
-  onThreadChange,
-}) {
+function ChatZone({ sessionId }) {
+  const selectedOption = useAppStore(s => s.selectedOption);
+  const threadId = useAppStore(s => s.selectedThreadId);
+  const projectId = useAppStore(s => s.selectedProjectId);
+  const onThreadChange = useAppStore(s => s.setSelectedThreadId);
+
   type ChatRole = 'system' | 'user' | 'assistant';
 
   type ChatMessage = {
     id: string;
     role: ChatRole;
-    content: any;
-    attachments?: any[];
+    content: string;
+    attachments?: Array<{ id: string; type: string; name: string; contentType: string; status: { type: string }; content: unknown[]; file?: File }>;
     createdAt: Date;
   };
 
   type FailedRequest = {
-    payload: any;
+    payload: Record<string, unknown>;
     threadId: string;
   };
   const DEV_BYPASS_AUTH =
@@ -342,7 +342,7 @@ function ChatZone({
     setError('');
     setLastFailedRequest(null);
 
-    const attachmentPayload: any[] = [];
+    const attachmentPayload: Array<{ id: string; name: string; mimeType: string; dataUrl: string }> = [];
     try {
       for (const attachment of attachments) {
         if (attachment.type !== 'image') continue;

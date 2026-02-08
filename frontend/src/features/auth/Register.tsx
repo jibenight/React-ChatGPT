@@ -62,12 +62,15 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
         reset();
       })
       .catch(error => {
-        if (error.response.data.error === 'exists') {
+        const apiError = error.response?.data?.error;
+        if (apiError === 'exists') {
           setErrorMessage('Cet e-mail existe déjà');
-        } else if (error.response.data.error === 'characters') {
+        } else if (apiError === 'characters') {
           setErrorMessage(
             'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre',
           );
+        } else if (!error.response) {
+          setErrorMessage('Serveur injoignable. Vérifie que le serveur tourne.');
         } else {
           setErrorMessage('Une erreur est survenue');
         }
@@ -141,6 +144,9 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
                 id='signUpInput2-1'
                 type='text'
                 placeholder="Nom d'utilisateur"
+                aria-label="Nom d'utilisateur"
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'register-name-error' : undefined}
                 autoComplete='name'
                 {...register('name', {
                   required: "Le nom d'utilisateur est requis",
@@ -148,7 +154,7 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
               />
             </label>
             {errors.name && (
-              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+              <p id='register-name-error' role='alert' className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {typeof nameError === 'string' ? nameError : 'Erreur'}
               </p>
             )}
@@ -158,6 +164,9 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
                 id='signUpInput2-2'
                 type='text'
                 placeholder='Adresse e-mail'
+                aria-label='Adresse e-mail'
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'register-email-error' : undefined}
                 autoComplete='email'
                 {...register('email', {
                   required: 'Adresse e-mail requise',
@@ -169,7 +178,7 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
               />
             </label>
             {errors.email && (
-              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+              <p id='register-email-error' role='alert' className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {typeof emailError === 'string' ? emailError : 'Erreur'}
               </p>
             )}
@@ -180,6 +189,9 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
                 id='signUpInput2-3'
                 type={showPassword ? 'text' : 'password'}
                 placeholder='Créer un mot de passe'
+                aria-label='Mot de passe'
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'register-password-error' : undefined}
                 autoComplete='new-password'
                 {...register('password', {
                   required: 'Mot de passe requis',
@@ -208,6 +220,9 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
                 id='signUpInput2-4'
                 type={showPassword ? 'text' : 'password'}
                 placeholder='Confirmer le mot de passe'
+                aria-label='Confirmer le mot de passe'
+                aria-invalid={!!errors.confirmPassword}
+                aria-describedby={errors.confirmPassword ? 'register-confirm-error' : undefined}
                 autoComplete='new-password'
                 {...register('confirmPassword', {
                   required: true,
@@ -252,7 +267,7 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
               </ul>
             </div>
             {errors.password && (
-              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+              <p id='register-password-error' role='alert' className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {typeof passwordError === 'string' ? passwordError : 'Erreur'}
               </p>
             )}
@@ -262,13 +277,13 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
             )} */}
 
             {errors.confirmPassword && (
-              <p className='text-red-500 mb-5 dark:text-red-300'>
+              <p id='register-confirm-error' role='alert' className='text-red-500 mb-5 dark:text-red-300'>
                 {typeof confirmError === 'string' ? confirmError : 'Erreur'}
               </p>
             )}
 
             {errorMessage && (
-              <p className='text-red-500 mb-5 dark:text-red-300'>
+              <p role='alert' className='text-red-500 mb-5 dark:text-red-300'>
                 {errorMessage}
               </p>
             )}

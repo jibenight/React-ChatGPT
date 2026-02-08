@@ -31,9 +31,9 @@ const chatMessageSchema = z
     sessionId: z.string().optional(),
     threadId: z.string().optional(),
     message: z.string().max(8000).optional(),
-    provider: z.enum(['openai', 'gemini', 'claude', 'mistral']).optional(),
+    provider: z.enum(['openai', 'gemini', 'claude', 'mistral', 'groq']).optional(),
     model: z.string().optional(),
-    projectId: z.union([z.string(), z.number()]).optional(),
+    projectId: z.union([z.string(), z.number()]).nullable().optional(),
     attachments: z.array(attachmentSchema).optional(),
   })
   .refine(data => data.threadId || data.sessionId, {

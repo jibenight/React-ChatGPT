@@ -30,6 +30,46 @@ const detectAttachmentType = mimeType => {
   return 'file';
 };
 
+const formatProviderErrorMessage = raw => {
+  if (typeof raw !== 'string') return null;
+  let message = raw.trim();
+  if (!message) return null;
+
+  if (message.startsWith('{') && message.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(message);
+      const parsedMessage = parsed?.error?.message;
+      if (typeof parsedMessage === 'string' && parsedMessage.trim()) {
+        message = parsedMessage;
+      }
+    } catch {
+      // Keep original message when payload is not valid JSON.
+    }
+  }
+
+  message = message.split('\n').map(part => part.trim()).filter(Boolean).join(' ');
+  if (message.length > 350) {
+    return `${message.slice(0, 347)}...`;
+  }
+  return message;
+};
+
+const resolveChatProviderError = err => {
+  const candidates = [
+    err?.response?.data?.error?.message,
+    err?.response?.data?.error,
+    err?.error?.message,
+    err?.message,
+  ];
+
+  for (const candidate of candidates) {
+    const formatted = formatProviderErrorMessage(candidate);
+    if (formatted) return formatted;
+  }
+
+  return 'Internal server error';
+};
+
 const MAX_MESSAGE_LENGTH = 8000;
 const MAX_ATTACHMENTS = 4;
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
@@ -165,12 +205,13 @@ exports.sendMessage = async (req, res) => {
   const userId = req.user?.id;
   const incomingAttachments = Array.isArray(attachments) ? attachments : [];
   const targetProvider = provider || 'openai';
-  const allowedProviders = new Set(['openai', 'gemini', 'claude', 'mistral']);
+  const allowedProviders = new Set(['openai', 'gemini', 'claude', 'mistral', 'groq']);
   const defaultModels = {
     openai: 'gpt-4o',
     gemini: 'gemini-2.5-pro',
     claude: 'claude-3-5-sonnet-20240620',
     mistral: 'mistral-large-latest',
+    groq: 'llama-3.3-70b-versatile',
   };
   const targetModel = model || defaultModels[targetProvider];
   const activeThreadId = threadId || sessionId;
@@ -370,6 +411,10 @@ exports.sendMessage = async (req, res) => {
       content: row.content,
       attachments: parseAttachments(row.attachments),
     }));
+    const textOnlyHistory = history.map(entry => ({
+      role: entry.role,
+      content: entry.content,
+    }));
 
     const wantsStream =
       typeof req.headers.accept === 'string' &&
@@ -392,8 +437,8 @@ exports.sendMessage = async (req, res) => {
       const configuration = new openai.Configuration({ apiKey });
       const openaiApi = new openai.OpenAIApi(configuration);
       const messages = systemPrompt
-        ? [{ role: 'system', content: systemPrompt }, ...history]
-        : history;
+        ? [{ role: 'system', content: systemPrompt }, ...textOnlyHistory]
+        : textOnlyHistory;
       if (wantsStream) {
         let aborted = false;
         let streamRef = null;
@@ -483,22 +528,73 @@ exports.sendMessage = async (req, res) => {
         model: targetModel,
         max_tokens: 1024,
         system: systemPrompt || undefined,
-        messages: history,
+        messages: textOnlyHistory,
       });
       reply = msg.content[0].text;
     } else if (targetProvider === 'mistral') {
       const client = new MistralClient(apiKey);
       const messages = systemPrompt
-        ? [{ role: 'system', content: systemPrompt }, ...history]
-        : history;
+        ? [{ role: 'system', content: systemPrompt }, ...textOnlyHistory]
+        : textOnlyHistory;
       const chatResponse = await client.chat({
         model: targetModel,
         messages,
       });
       reply = chatResponse.choices[0].message.content;
+    } else if (targetProvider === 'groq') {
+      const messages = systemPrompt
+        ? [{ role: 'system', content: systemPrompt }, ...textOnlyHistory]
+        : textOnlyHistory;
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages,
+          stream: wantsStream,
+        }),
+      });
+
+      if (!groqRes.ok) {
+        const errBody = await groqRes.text();
+        throw new Error(`Groq API error ${groqRes.status}: ${errBody}`);
+      }
+
+      if (wantsStream) {
+        const reader = groqRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data:')) continue;
+            const data = trimmed.replace(/^data:\s*/, '');
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content;
+              if (delta) {
+                reply += delta;
+                sendEvent({ type: 'delta', content: delta });
+              }
+            } catch {}
+          }
+        }
+      } else {
+        const data = await groqRes.json();
+        reply = data.choices[0].message.content;
+      }
     }
 
-    if (wantsStream && reply && targetProvider !== 'openai') {
+    if (wantsStream && reply && targetProvider !== 'openai' && targetProvider !== 'groq') {
       sendEvent({ type: 'delta', content: reply });
     }
 
@@ -534,7 +630,8 @@ exports.sendMessage = async (req, res) => {
       res.json({ reply, threadId: activeThreadId });
     }
   } catch (err) {
-    console.error(err);
+    const errorMessage = resolveChatProviderError(err);
+    console.error('Chat request failed:', errorMessage);
     if (
       typeof req.headers.accept === 'string' &&
       req.headers.accept.includes('text/event-stream')
@@ -542,12 +639,12 @@ exports.sendMessage = async (req, res) => {
       res.write(
         `data: ${JSON.stringify({
           type: 'error',
-          error: 'Stream error',
+          error: errorMessage,
         })}\n\n`,
       );
       res.end();
     } else {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: errorMessage });
     }
   }
 };

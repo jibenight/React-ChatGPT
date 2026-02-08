@@ -49,12 +49,14 @@ const providers = [
     ],
   },
   {
-    id: 'sql-helper',
-    name: 'Assistant SQL',
-    description: 'Assistant SQL (OpenAI)',
+    id: 'groq',
+    name: 'Groq',
+    description: 'Modèles Llama via Groq (gratuit)',
     avatar: sqlTranslate,
-    models: [{ id: 'gpt-4o-mini', label: 'gpt-4o-mini' }],
-    provider: 'openai',
+    models: [
+      { id: 'llama-3.3-70b-versatile', label: 'llama-3.3-70b' },
+      { id: 'llama-3.1-8b-instant', label: 'llama-3.1-8b' },
+    ],
   },
 ];
 

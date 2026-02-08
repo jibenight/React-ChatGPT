@@ -14,6 +14,7 @@ function Profil() {
     gemini: false,
     claude: false,
     mistral: false,
+    groq: false,
   });
   type ActionMessage = { type: 'success' | 'error'; text: string } | null;
   const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
@@ -61,6 +62,7 @@ function Profil() {
         gemini: false,
         claude: false,
         mistral: false,
+        groq: false,
       };
       providers.forEach(provider => {
         if (Object.prototype.hasOwnProperty.call(nextStatus, provider)) {
@@ -130,6 +132,7 @@ function Profil() {
       { key: 'gemini_api_key', provider: 'gemini' },
       { key: 'claude_api_key', provider: 'claude' },
       { key: 'mistral_api_key', provider: 'mistral' },
+      { key: 'groq_api_key', provider: 'groq' },
     ];
 
     const apiUpdates = apiKeyFields.filter(
@@ -200,6 +203,7 @@ function Profil() {
     { key: 'gemini', label: 'Gemini' },
     { key: 'claude', label: 'Claude' },
     { key: 'mistral', label: 'Mistral' },
+    { key: 'groq', label: 'Groq' },
   ];
   const displayName = userData?.username || 'Utilisateur';
   const displayEmail = userData?.email || '—';
@@ -516,6 +520,19 @@ function Profil() {
                           />
                         </div>
                       </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        Clé API Groq
+                        </label>
+                        <div className='mt-2'>
+                          <input
+                            {...register('groq_api_key')}
+                            type='text'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            placeholder='gsk_...'
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -593,6 +610,16 @@ function Profil() {
                 disabled={!apiStatus.mistral || isDeleting}
               >
                 Supprimer la clé Mistral
+              </button>
+              <button
+                className='inline-flex justify-center rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
+                type='button'
+                onClick={() =>
+                  setConfirmDelete({ open: true, provider: 'groq' })
+                }
+                disabled={!apiStatus.groq || isDeleting}
+              >
+                Supprimer la clé Groq
               </button>
             </div>
           </section>

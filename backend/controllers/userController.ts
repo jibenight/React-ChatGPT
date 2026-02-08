@@ -4,7 +4,7 @@ const db = require('../models/database');
 require('dotenv').config();
 
 const saltRounds = 10;
-const allowedProviders = ['openai', 'gemini', 'claude', 'mistral'];
+const allowedProviders = ['openai', 'gemini', 'claude', 'mistral', 'groq'];
 
 exports.getUsers = async (req, res) => {
   const query = 'SELECT * FROM users WHERE id = ?;';

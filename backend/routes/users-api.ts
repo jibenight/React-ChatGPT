@@ -7,7 +7,7 @@ const { z } = require('zod');
 const { validateBody, validateParams } = require('../middlewares/validate');
 
 const updateApiKeySchema = z.object({
-  provider: z.enum(['openai', 'gemini', 'claude', 'mistral']),
+  provider: z.enum(['openai', 'gemini', 'claude', 'mistral', 'groq']),
   apiKey: z.string().min(1).max(500),
 });
 
@@ -16,7 +16,7 @@ const updateUserDataSchema = z.object({
 });
 
 const providerParam = z.object({
-  provider: z.enum(['openai', 'gemini', 'claude', 'mistral']),
+  provider: z.enum(['openai', 'gemini', 'claude', 'mistral', 'groq']),
 });
 
 const userLimiter = rateLimit({

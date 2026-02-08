@@ -126,6 +126,51 @@ function ChatZone({ sessionId }) {
 
     return { reply: finalReply, threadId: finalThreadId };
   };
+
+  const resolveChatError = (
+    err: any,
+    fallback = 'Erreur lors de la requête de chat',
+  ) => {
+    const formatMessage = (value: unknown): string | null => {
+      if (typeof value !== 'string') return null;
+      let message = value.trim();
+      if (!message) return null;
+
+      if (message.startsWith('{') && message.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(message);
+          const parsedMessage = parsed?.error?.message;
+          if (typeof parsedMessage === 'string' && parsedMessage.trim()) {
+            message = parsedMessage;
+          }
+        } catch {
+          // Keep original text when not valid JSON.
+        }
+      }
+
+      message = message
+        .split('\n')
+        .map(part => part.trim())
+        .filter(Boolean)
+        .join(' ');
+
+      const missingKeyMatch = message.match(/API key not found for ([a-z0-9_-]+)/i);
+      if (missingKeyMatch?.[1]) {
+        return `Aucune clé API enregistrée pour ${missingKeyMatch[1]}. Sélectionne un fournisseur configuré dans le panneau de gauche.`;
+      }
+
+      return message.length > 350 ? `${message.slice(0, 347)}...` : message;
+    };
+
+    if (err?.name === 'AbortError' || err?.name === 'CanceledError') {
+      return 'Génération annulée.';
+    }
+    const responseError = formatMessage(err?.response?.data?.error);
+    if (responseError) return responseError;
+    const message = formatMessage(err?.message);
+    if (message) return message;
+    return fallback;
+  };
   const { userData } = useUser();
   const abortRef = useRef(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -404,13 +449,7 @@ function ChatZone({ sessionId }) {
        }
     } catch (err) {
       setMessages(prev => prev.filter(item => item.id !== assistantId));
-      if (err?.name === 'CanceledError') {
-        setError('Génération annulée.');
-      } else {
-      setError(
-        err.response?.data?.error || 'Erreur lors de la requête de chat',
-      );
-      }
+      setError(resolveChatError(err));
       setLastFailedRequest({
         payload: {
           sessionId,
@@ -482,13 +521,7 @@ function ChatZone({ sessionId }) {
       setLastFailedRequest(null);
     } catch (err) {
       setMessages(prev => prev.filter(item => item.id !== assistantId));
-      if (err?.name === 'CanceledError') {
-        setError('Génération annulée.');
-      } else {
-        setError(
-          err.response?.data?.error || 'Erreur lors de la requête de chat',
-        );
-      }
+      setError(resolveChatError(err));
     } finally {
       setLoading(false);
       abortRef.current = null;

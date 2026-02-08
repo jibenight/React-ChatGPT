@@ -324,25 +324,16 @@ exports.sendMessage = async (req, res) => {
       );
     });
 
-    const threadProject = await new Promise<any>((resolve, reject) => {
-      db.get(
-        `SELECT project_id FROM threads WHERE id = ? AND user_id = ?`,
-        [activeThreadId, userId],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        },
-      );
-    });
+    const effectiveProjectId = threadRow?.project_id || projectId || null;
 
     let projectContext = null;
-    if (threadProject?.project_id) {
+    if (effectiveProjectId) {
       projectContext = await new Promise<any>((resolve, reject) => {
         db.get(
           `SELECT instructions, context_data
            FROM projects
            WHERE id = ? AND user_id = ?`,
-          [threadProject.project_id, userId],
+          [effectiveProjectId, userId],
           (err, row) => {
             if (err) reject(err);
             else resolve(row);
@@ -366,7 +357,7 @@ exports.sendMessage = async (req, res) => {
          FROM messages
          WHERE thread_id = ?
          ORDER BY id DESC
-         LIMIT 20`,
+         LIMIT 50`,
         [activeThreadId],
         (err, rows) => {
           if (err) reject(err);

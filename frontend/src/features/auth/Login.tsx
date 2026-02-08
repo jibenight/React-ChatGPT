@@ -147,6 +147,9 @@ const Login = ({ isModal }: LoginProps) => {
                 id='signInInput2-1'
                 type='text'
                 placeholder='Adresse e-mail'
+                aria-label='Adresse e-mail'
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'login-email-error' : undefined}
                 {...register('email', {
                   required: 'Adresse e-mail requise',
                   pattern: {
@@ -158,7 +161,7 @@ const Login = ({ isModal }: LoginProps) => {
               />
             </label>
             {errors.email && (
-              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+              <p id='login-email-error' role='alert' className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {typeof emailError === 'string' ? emailError : 'Erreur'}
               </p>
             )}
@@ -176,6 +179,9 @@ const Login = ({ isModal }: LoginProps) => {
                 id='signInInput2-2'
                 type='password'
                 placeholder='Mot de passe'
+                aria-label='Mot de passe'
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'login-password-error' : undefined}
                 {...register('password', {
                   required: 'Mot de passe requis',
                 })}
@@ -183,7 +189,7 @@ const Login = ({ isModal }: LoginProps) => {
               />
             </label>
             {errors.password && (
-              <p className='text-red-500 mb-4 text-sm dark:text-red-300'>
+              <p id='login-password-error' role='alert' className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {typeof passwordError === 'string' ? passwordError : 'Erreur'}
               </p>
             )}
@@ -195,7 +201,7 @@ const Login = ({ isModal }: LoginProps) => {
               {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
             </button>
             {errorMessage && (
-              <p className='text-red-500 mb-3 dark:text-red-300'>{errorMessage}</p>
+              <p role='alert' className='text-red-500 mb-3 dark:text-red-300'>{errorMessage}</p>
             )}
             {infoMessage && (
               <p className='text-emerald-600 mb-4 dark:text-emerald-300'>

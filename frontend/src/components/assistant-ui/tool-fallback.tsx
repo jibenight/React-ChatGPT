@@ -105,7 +105,7 @@ function ToolFallbackTrigger({
     status?.type === "incomplete" && status.reason === "cancelled";
 
   const Icon = statusIconMap[statusType] ?? AlertCircleIcon;
-  const label = isCancelled ? "Cancelled tool" : "Used tool";
+  const label = isCancelled ? "Outil annulé" : "Outil utilisé";
 
   return (
     <CollapsibleTrigger
@@ -222,7 +222,7 @@ function ToolFallbackResult({
       data-slot="tool-fallback-result"
       className={cn("aui-tool-fallback-result border-t border-dashed px-4 pt-2", className)}
       {...props}>
-      <p className="aui-tool-fallback-result-header font-semibold">Result:</p>
+      <p className="aui-tool-fallback-result-header font-semibold">Résultat :</p>
       <pre className="aui-tool-fallback-result-content whitespace-pre-wrap">
         {typeof result === "string" ? result : JSON.stringify(result, null, 2)}
       </pre>
@@ -251,7 +251,7 @@ function ToolFallbackError({
   if (!errorText) return null;
 
   const isCancelled = status.reason === "cancelled";
-  const headerText = isCancelled ? "Cancelled reason:" : "Error:";
+  const headerText = isCancelled ? "Motif d'annulation :" : "Erreur :";
 
   return (
     <div

@@ -663,6 +663,16 @@ function ChatZone({ sessionId }) {
       selectedOption?.model || 'gpt-4o'
     }`;
 
+  const liveGenerationStatus = useMemo(() => {
+    const running = Object.values(messageUiMetaById)
+      .filter(meta => meta.status === 'thinking' || meta.status === 'streaming')
+      .sort((a, b) => b.startedAt - a.startedAt);
+    if (!running.length) return '';
+    return running[0].status === 'thinking'
+      ? 'Préparation de la réponse en cours.'
+      : 'Réponse en cours de génération.';
+  }, [messageUiMetaById]);
+
   const searchMatches = useMemo<number[]>(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
@@ -738,12 +748,12 @@ function ChatZone({ sessionId }) {
         value={searchQuery}
         onChange={event => setSearchQuery(event.target.value)}
         placeholder='Rechercher…'
-        className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-slate-200 dark:placeholder:text-slate-500'
+        className='min-h-10 w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-slate-200 dark:placeholder:text-slate-500'
       />
       {searchQuery && (
         <button
           type='button'
-          className='text-gray-400 transition hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
+          className='min-h-10 rounded-full px-2 text-gray-400 transition hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
           onClick={() => setSearchQuery('')}
         >
           Effacer
@@ -764,14 +774,14 @@ function ChatZone({ sessionId }) {
           <button
             type='button'
             onClick={handlePrevMatch}
-            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+            className='min-h-10 rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
           >
             Précédent
           </button>
           <button
             type='button'
             onClick={handleNextMatch}
-            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+            className='min-h-10 rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
           >
             Suivant
           </button>
@@ -854,6 +864,9 @@ function ChatZone({ sessionId }) {
 
   return (
     <div className='relative flex h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-gray-100 via-white to-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900'>
+      <p className='sr-only' role='status' aria-live='polite'>
+        {liveGenerationStatus}
+      </p>
       <header className='sticky top-0 z-10 border-b border-gray-200/70 bg-white/80 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/80'>
         <div className='mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3'>
           <div className='space-y-1'>
@@ -867,13 +880,13 @@ function ChatZone({ sessionId }) {
           <div className='flex items-center gap-2'>
             {DEV_BYPASS_AUTH && (
               <span className='rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
-                Dev mode
+                Mode dev
               </span>
             )}
             <button
               type='button'
               onClick={() => setShowMobileSearch(prev => !prev)}
-              className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100 sm:hidden'
+              className='min-h-11 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100 sm:hidden'
             >
               {showMobileSearch ? 'Fermer' : 'Recherche'}
             </button>
@@ -884,7 +897,7 @@ function ChatZone({ sessionId }) {
               type='button'
               onClick={handleClear}
               disabled={messages.length === 0}
-              className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100'
+              className='min-h-11 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100'
             >
               Effacer la conversation
             </button>
@@ -921,7 +934,7 @@ function ChatZone({ sessionId }) {
             <button
               type='button'
               onClick={() => setShowMobileSearch(false)}
-              className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+              className='min-h-10 rounded-full border border-gray-200 bg-white px-3 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
             >
               Fermer
             </button>
@@ -947,7 +960,7 @@ function ChatZone({ sessionId }) {
                 type='button'
                 onClick={loadMoreHistory}
                 disabled={loadingMoreHistory}
-                className='rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-sm transition hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+                className='min-h-11 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-sm transition hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
               >
                 {loadingMoreHistory
                   ? 'Chargement...'

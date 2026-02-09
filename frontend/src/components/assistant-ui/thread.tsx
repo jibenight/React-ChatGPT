@@ -147,9 +147,9 @@ const ThreadScrollToBottom = () => {
   return (
     <ThreadPrimitive.ScrollToBottom asChild>
       <TooltipIconButton
-        tooltip="Scroll to bottom"
+        tooltip="Aller en bas"
         variant="outline"
-        className="aui-thread-scroll-to-bottom absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible dark:bg-background dark:hover:bg-accent">
+        className="aui-thread-scroll-to-bottom absolute -top-12 z-10 size-11 self-center rounded-full disabled:invisible dark:bg-background dark:hover:bg-accent">
         <ArrowDownIcon />
       </TooltipIconButton>
     </ThreadPrimitive.ScrollToBottom>
@@ -166,11 +166,11 @@ const ThreadWelcome = () => {
           className="aui-thread-welcome-message flex size-full flex-col justify-center px-4">
           <h1
             className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in font-semibold text-2xl duration-200">
-            Hello there!
+            Bonjour
           </h1>
           <p
             className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in text-muted-foreground text-xl delay-75 duration-200">
-            How can I help you today?
+            Comment puis-je vous aider aujourd'hui ?
           </p>
         </div>
       </div>
@@ -180,13 +180,13 @@ const ThreadWelcome = () => {
 };
 
 const SUGGESTIONS = [{
-  title: "What's the weather",
-  label: "in San Francisco?",
-  prompt: "What's the weather in San Francisco?",
+  title: "Quelle est la météo",
+  label: "à San Francisco ?",
+  prompt: "Quelle est la météo à San Francisco ?",
 }, {
-  title: "Explain React hooks",
-  label: "like useState and useEffect",
-  prompt: "Explain React hooks like useState and useEffect",
+  title: "Explique les hooks React",
+  label: "comme useState et useEffect",
+  prompt: "Explique les hooks React comme useState et useEffect",
 }];
 
 const ThreadSuggestions = () => {
@@ -224,13 +224,13 @@ const Composer = ({ draftValue, onDraftChange }) => {
         className="aui-composer-attachment-dropzone flex w-full flex-col rounded-2xl border border-input px-1 pt-2 outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20 data-[dragging=true]:border-ring data-[dragging=true]:border-dashed data-[dragging=true]:bg-accent/50">
         <ComposerAttachments />
         <ComposerPrimitive.Input
-          placeholder="Send a message..."
+          placeholder="Écrire un message..."
           className="aui-composer-input mb-1 max-h-32 min-h-14 w-full resize-none bg-transparent px-4 pt-2 pb-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
           rows={1}
           autoFocus
           value={draftValue}
           onChange={event => onDraftChange?.(event.target.value)}
-          aria-label="Message input" />
+          aria-label="Zone de message" />
         <ComposerAction />
       </ComposerPrimitive.AttachmentDropzone>
     </ComposerPrimitive.Root>
@@ -245,13 +245,13 @@ const ComposerAction = () => {
       <AuiIf condition={({ thread }) => !thread.isRunning}>
         <ComposerPrimitive.Send asChild>
           <TooltipIconButton
-            tooltip="Send message"
+            tooltip="Envoyer"
             side="bottom"
             type="submit"
             variant="default"
             size="icon"
-            className="aui-composer-send size-8 rounded-full"
-            aria-label="Send message">
+            className="aui-composer-send size-11 rounded-full"
+            aria-label="Envoyer le message">
             <ArrowUpIcon className="aui-composer-send-icon size-4" />
           </TooltipIconButton>
         </ComposerPrimitive.Send>
@@ -262,8 +262,8 @@ const ComposerAction = () => {
             type="button"
             variant="default"
             size="icon"
-            className="aui-composer-cancel size-8 rounded-full"
-            aria-label="Stop generating">
+            className="aui-composer-cancel size-11 rounded-full"
+            aria-label="Arrêter la génération">
             <SquareIcon className="aui-composer-cancel-icon size-3 fill-current" />
           </Button>
         </ComposerPrimitive.Cancel>
@@ -356,7 +356,7 @@ const AssistantActionBar = () => {
       autohideFloat="single-branch"
       className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm">
       <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton tooltip="Copy">
+        <TooltipIconButton tooltip="Copier">
           <AuiIf condition={({ message }) => message.isCopied}>
             <CheckIcon />
           </AuiIf>
@@ -366,13 +366,13 @@ const AssistantActionBar = () => {
         </TooltipIconButton>
       </ActionBarPrimitive.Copy>
       <ActionBarPrimitive.Reload asChild>
-        <TooltipIconButton tooltip="Refresh">
+        <TooltipIconButton tooltip="Regénérer">
           <RefreshCwIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Reload>
       <ActionBarMorePrimitive.Root>
         <ActionBarMorePrimitive.Trigger asChild>
-          <TooltipIconButton tooltip="More" className="data-[state=open]:bg-accent">
+          <TooltipIconButton tooltip="Plus" className="data-[state=open]:bg-accent">
             <MoreHorizontalIcon />
           </TooltipIconButton>
         </ActionBarMorePrimitive.Trigger>
@@ -384,7 +384,7 @@ const AssistantActionBar = () => {
             <ActionBarMorePrimitive.Item
               className="aui-action-bar-more-item flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
               <DownloadIcon className="size-4" />
-              Export as Markdown
+              Exporter en Markdown
             </ActionBarMorePrimitive.Item>
           </ActionBarPrimitive.ExportMarkdown>
         </ActionBarMorePrimitive.Content>
@@ -425,7 +425,7 @@ const UserActionBar = () => {
       autohide="not-last"
       className="aui-user-action-bar-root flex flex-col items-end">
       <ActionBarPrimitive.Edit asChild>
-        <TooltipIconButton tooltip="Edit" className="aui-user-action-edit p-4">
+        <TooltipIconButton tooltip="Modifier" className="aui-user-action-edit size-11">
           <PencilIcon />
         </TooltipIconButton>
       </ActionBarPrimitive.Edit>
@@ -446,11 +446,11 @@ const EditComposer = () => {
           className="aui-edit-composer-footer mx-3 mb-3 flex items-center gap-2 self-end">
           <ComposerPrimitive.Cancel asChild>
             <Button variant="ghost" size="sm">
-              Cancel
+              Annuler
             </Button>
           </ComposerPrimitive.Cancel>
           <ComposerPrimitive.Send asChild>
-            <Button size="sm">Update</Button>
+            <Button size="sm">Mettre à jour</Button>
           </ComposerPrimitive.Send>
         </div>
       </ComposerPrimitive.Root>
@@ -471,7 +471,7 @@ const BranchPicker = ({
       )}
       {...rest}>
       <BranchPickerPrimitive.Previous asChild>
-        <TooltipIconButton tooltip="Previous">
+        <TooltipIconButton tooltip="Précédent">
           <ChevronLeftIcon />
         </TooltipIconButton>
       </BranchPickerPrimitive.Previous>
@@ -479,7 +479,7 @@ const BranchPicker = ({
         <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
       </span>
       <BranchPickerPrimitive.Next asChild>
-        <TooltipIconButton tooltip="Next">
+        <TooltipIconButton tooltip="Suivant">
           <ChevronRightIcon />
         </TooltipIconButton>
       </BranchPickerPrimitive.Next>

@@ -1,5 +1,5 @@
-"use client";;
-import { useEffect, useState } from "react";
+"use client";
+import { useEffect, useMemo, useState } from "react";
 import { XIcon, PlusIcon, FileText } from "lucide-react";
 import {
   AttachmentPrimitive,
@@ -25,21 +25,16 @@ import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button
 import { cn } from "@/lib/utils";
 
 const useFileSrc = (file: File | null | undefined) => {
-  const [src, setSrc] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (!file) {
-      setSrc(undefined);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setSrc(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
+  const src = useMemo(() => {
+    if (!file) return undefined;
+    return URL.createObjectURL(file);
   }, [file]);
+
+  useEffect(() => () => {
+    if (src) {
+      URL.revokeObjectURL(src);
+    }
+  }, [src]);
 
   return src;
 };
@@ -62,7 +57,7 @@ const AttachmentPreview = ({ src }) => {
   return (
     <img
       src={src}
-      alt="Image Preview"
+      alt="Aperçu de l'image"
       className={cn("block h-auto max-h-[80vh] w-auto max-w-full object-contain", isLoaded
         ? "aui-attachment-preview-image-loaded"
         : "aui-attachment-preview-image-loading invisible")}
@@ -85,7 +80,7 @@ const AttachmentPreviewDialog = ({ children }) => {
       <DialogContent
         className="aui-attachment-preview-dialog-content p-2 sm:max-w-3xl [&>button]:rounded-full [&>button]:bg-foreground/60 [&>button]:p-1 [&>button]:opacity-100 [&>button]:ring-0! [&_svg]:text-background [&>button]:hover:[&_svg]:text-destructive">
         <DialogTitle className="aui-sr-only sr-only">
-          Image Attachment Preview
+          Aperçu de la pièce jointe
         </DialogTitle>
         <div
           className="aui-attachment-preview relative mx-auto flex max-h-[80dvh] w-full items-center justify-center overflow-hidden bg-background">
@@ -104,7 +99,7 @@ const AttachmentThumb = () => {
     <Avatar className="aui-attachment-tile-avatar h-full w-full rounded-none">
       <AvatarImage
         src={src}
-        alt="Attachment preview"
+        alt="Aperçu de la pièce jointe"
         className="aui-attachment-tile-image object-cover" />
       <AvatarFallback delayMs={isImage ? 200 : 0}>
         <FileText
@@ -127,10 +122,11 @@ const AttachmentUI = () => {
       case "document":
         return "Document";
       case "file":
-        return "File";
-      default:
-        const _exhaustiveCheck = type;
-        throw new Error(`Unknown attachment type: ${_exhaustiveCheck}`);
+        return "Fichier";
+      default: {
+        const exhaustiveCheck = type;
+        throw new Error(`Unknown attachment type: ${exhaustiveCheck}`);
+      }
     }
   });
 
@@ -149,7 +145,7 @@ const AttachmentUI = () => {
               )}
               role="button"
               id="attachment-tile"
-              aria-label={`${typeLabel} attachment`}>
+              aria-label={`Pièce jointe ${typeLabel.toLowerCase()}`}>
               <AttachmentThumb />
             </div>
           </TooltipTrigger>
@@ -167,7 +163,7 @@ const AttachmentRemove = () => {
   return (
     <AttachmentPrimitive.Remove asChild>
       <TooltipIconButton
-        tooltip="Remove file"
+        tooltip="Supprimer le fichier"
         className="aui-attachment-tile-remove absolute top-1.5 right-1.5 size-3.5 rounded-full bg-white text-muted-foreground opacity-100 shadow-sm hover:bg-white! dark:bg-slate-900 dark:text-slate-300 dark:shadow-none [&_svg]:text-black dark:[&_svg]:text-slate-100 hover:[&_svg]:text-destructive"
         side="top">
         <XIcon className="aui-attachment-remove-icon size-3 dark:stroke-[2.5px]" />
@@ -198,12 +194,12 @@ export const ComposerAddAttachment = () => {
   return (
     <ComposerPrimitive.AddAttachment asChild>
       <TooltipIconButton
-        tooltip="Add Attachment"
+        tooltip="Ajouter une pièce jointe"
         side="bottom"
         variant="ghost"
         size="icon"
         className="aui-composer-add-attachment size-8.5 rounded-full p-1 font-semibold text-xs hover:bg-muted-foreground/15 dark:border-muted-foreground/15 dark:hover:bg-muted-foreground/30"
-        aria-label="Add Attachment">
+        aria-label="Ajouter une pièce jointe">
         <PlusIcon className="aui-attachment-add-icon size-5 stroke-[1.5px]" />
       </TooltipIconButton>
     </ComposerPrimitive.AddAttachment>

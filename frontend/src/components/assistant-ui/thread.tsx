@@ -3,6 +3,9 @@ import {
   ComposerAttachments,
   UserMessageAttachments,
 } from "@/components/assistant-ui/attachment";
+import { MessageActions } from "@/components/assistant-ui/message-actions";
+import { MessageReceipt } from "@/components/assistant-ui/message-receipt";
+import { MessageStatus } from "@/components/assistant-ui/message-status";
 import { MarkdownText } from "@/components/assistant-ui/markdown-text";
 import { ToolFallback } from "@/components/assistant-ui/tool-fallback";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
@@ -36,13 +39,15 @@ import {
   SquareIcon,
 } from "lucide-react";
 
-export const Thread = ({ draftKey, initialDraft, searchQuery, scrollToIndex }) => {
+export const Thread = ({
+  draftKey,
+  initialDraft,
+  searchQuery,
+  scrollToIndex,
+  onRetryAssistantMessage,
+}) => {
   const [draftValue, setDraftValue] = useState(initialDraft || "");
   const viewportRef = useRef(null);
-
-  useEffect(() => {
-    setDraftValue(initialDraft || "");
-  }, [initialDraft, draftKey]);
 
   useEffect(() => {
     if (!draftKey || typeof window === "undefined") return undefined;
@@ -84,7 +89,11 @@ export const Thread = ({ draftKey, initialDraft, searchQuery, scrollToIndex }) =
           components={{
             UserMessage: () => <UserMessage searchQuery={searchQuery} />,
             EditComposer,
-            AssistantMessage: () => <AssistantMessage searchQuery={searchQuery} />,
+            AssistantMessage: () => (
+              <AssistantMessage
+                searchQuery={searchQuery}
+                onRetryAssistantMessage={onRetryAssistantMessage} />
+            ),
           }} />
 
         <ThreadPrimitive.ViewportFooter
@@ -291,8 +300,16 @@ const useSearchMatch = searchQuery => {
   }, [content, searchQuery]);
 };
 
-const AssistantMessage = ({ searchQuery }) => {
+const AssistantMessage = ({ searchQuery, onRetryAssistantMessage }) => {
   const isMatch = useSearchMatch(searchQuery);
+  const messageId = useAuiState(({ message }) => message.id);
+  const content = useAuiState(({ message }) => message.content);
+  const uiMeta = useAuiState(({ message }) => message.metadata?.ui || null);
+  const retryMeta = useAuiState(({ message }) => message.metadata?.retry || null);
+  const hasText = getMessageText(content).trim().length > 0;
+  const showInlineError =
+    !hasText && (uiMeta?.status === "error" || uiMeta?.status === "cancelled");
+
   return (
     <MessagePrimitive.Root
       className={`aui-assistant-message-root fade-in slide-in-from-bottom-1 relative mx-auto w-full max-w-(--thread-max-width) animate-in py-3 duration-150 ${
@@ -307,6 +324,21 @@ const AssistantMessage = ({ searchQuery }) => {
             tools: { Fallback: ToolFallback },
           }} />
         <MessageError />
+        {showInlineError && (
+          <p
+            className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-xs dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+            {uiMeta?.error || "La génération a été interrompue."}
+          </p>
+        )}
+        <div className="mt-2 ml-0.5 flex flex-wrap items-center gap-2">
+          <MessageStatus meta={uiMeta} />
+          <MessageReceipt meta={uiMeta} />
+        </div>
+        <MessageActions
+          meta={uiMeta}
+          canRetry={Boolean(retryMeta?.canRetry)}
+          isRetrying={Boolean(retryMeta?.isRetrying)}
+          onRetry={() => onRetryAssistantMessage?.(messageId)} />
       </div>
       <div className="aui-assistant-message-footer mt-1 ml-2 flex">
         <BranchPicker />

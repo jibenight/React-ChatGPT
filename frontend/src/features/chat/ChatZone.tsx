@@ -36,6 +36,7 @@ function ChatZone({ sessionId }) {
     threadId: string;
     attempt: number;
   };
+  type FailedRequestByMessageId = Record<string, FailedRequest>;
   const DEV_BYPASS_AUTH =
     import.meta.env.DEV &&
     String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
@@ -189,8 +190,10 @@ function ChatZone({ sessionId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [lastFailedRequest, setLastFailedRequest] =
-    useState<FailedRequest | null>(null);
+  const [failedRequestsByMessageId, setFailedRequestsByMessageId] =
+    useState<FailedRequestByMessageId>({});
+  const [retryingMessageId, setRetryingMessageId] =
+    useState<string | null>(null);
   const [messageUiMetaById, setMessageUiMetaById] =
     useState<AssistantMessageUiMetaById>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -274,6 +277,8 @@ function ChatZone({ sessionId }) {
   useEffect(() => {
     if (!threadId) {
       setMessages([]);
+      setFailedRequestsByMessageId({});
+      setRetryingMessageId(null);
       setMessageUiMetaById({});
       setHistoryCursor(null);
       setHasMoreHistory(false);
@@ -315,6 +320,27 @@ function ChatZone({ sessionId }) {
       syncAssistantMessageUiMeta(prev, messages, fallbackThreadId),
     );
   }, [messages, sessionId, threadId]);
+
+  useEffect(() => {
+    const assistantIds = new Set(
+      messages.filter(message => message.role === 'assistant').map(message => message.id),
+    );
+    setFailedRequestsByMessageId(prev => {
+      let changed = false;
+      const next: FailedRequestByMessageId = {};
+      Object.entries(prev).forEach(([messageId, request]) => {
+        if (!assistantIds.has(messageId)) {
+          changed = true;
+          return;
+        }
+        next[messageId] = request;
+      });
+      return changed ? next : prev;
+    });
+    if (retryingMessageId && !assistantIds.has(retryingMessageId)) {
+      setRetryingMessageId(null);
+    }
+  }, [messages, retryingMessageId]);
 
   const loadMoreHistory = async () => {
     if (!threadId || !historyCursor || loadingMoreHistory) return;
@@ -412,7 +438,6 @@ function ChatZone({ sessionId }) {
     );
     setLoading(true);
     setError('');
-    setLastFailedRequest(null);
 
     const attachmentPayload: Array<{ id: string; name: string; mimeType: string; dataUrl: string }> = [];
     try {
@@ -483,6 +508,12 @@ function ChatZone({ sessionId }) {
           status: 'done',
         }),
       );
+      setFailedRequestsByMessageId(prev => {
+        if (!prev[assistantId]) return prev;
+        const next = { ...prev };
+        delete next[assistantId];
+        return next;
+      });
       if (response.threadId && response.threadId !== threadId) {
         onThreadChange?.(response.threadId);
       }
@@ -490,7 +521,6 @@ function ChatZone({ sessionId }) {
       const resolvedError = resolveChatError(err);
       const isCancelled =
         err?.name === 'AbortError' || err?.name === 'CanceledError';
-      setMessages(prev => prev.filter(item => item.id !== assistantId));
       setMessageUiMetaById(prev =>
         completeAssistantMessageUiMeta(prev, {
           messageId: assistantId,
@@ -498,9 +528,9 @@ function ChatZone({ sessionId }) {
           error: resolvedError,
         }),
       );
-      setError(resolvedError);
-      if (!isCancelled) {
-        setLastFailedRequest({
+      setFailedRequestsByMessageId(prev => ({
+        ...prev,
+        [assistantId]: {
           payload: {
             sessionId,
             threadId: activeThreadId,
@@ -512,17 +542,19 @@ function ChatZone({ sessionId }) {
           },
           threadId: activeThreadId,
           attempt: requestAttempt,
-        });
-      }
+        },
+      }));
+      setError('');
     } finally {
       setLoading(false);
       abortRef.current = null;
     }
   }, [projectId, onThreadChange, selectedOption, sessionId, threadId, userData, draftKey]);
 
-  const handleRetryLast = useCallback(async () => {
-    if (!lastFailedRequest) return;
-    if (lastFailedRequest.threadId !== (threadId || sessionId)) {
+  const handleRetryMessage = useCallback(async (messageId: string) => {
+    const failedRequest = failedRequestsByMessageId[messageId];
+    if (!failedRequest) return;
+    if (failedRequest.threadId !== (threadId || sessionId)) {
       setError('La conversation a changé. Relancez le message.');
       return;
     }
@@ -530,42 +562,47 @@ function ChatZone({ sessionId }) {
       setError('Utilisateur non connecté');
       return;
     }
+
+    const retryAttempt = failedRequest.attempt + 1;
     setLoading(true);
+    setRetryingMessageId(messageId);
     setError('');
-    const assistantId = uuidv4();
-    const retryAttempt = lastFailedRequest.attempt + 1;
+    setMessages(prev =>
+      prev.map(item =>
+        item.id === messageId ? { ...item, content: '' } : item,
+      ),
+    );
+    setMessageUiMetaById(prev =>
+      startAssistantMessageUiMeta(prev, {
+        messageId,
+        threadId: failedRequest.threadId,
+        attempt: retryAttempt,
+        payload: failedRequest.payload,
+      }),
+    );
+    setFailedRequestsByMessageId(prev => ({
+      ...prev,
+      [messageId]: {
+        ...failedRequest,
+        attempt: retryAttempt,
+      },
+    }));
+
     try {
       const controller = new AbortController();
       abortRef.current = controller;
-      setMessages(prev => [
-        ...prev,
-        {
-          id: assistantId,
-          role: 'assistant',
-          content: '',
-          createdAt: new Date(),
-        },
-      ]);
-      setMessageUiMetaById(prev =>
-        startAssistantMessageUiMeta(prev, {
-          messageId: assistantId,
-          threadId: lastFailedRequest.threadId,
-          attempt: retryAttempt,
-          payload: lastFailedRequest.payload,
-        }),
-      );
       const response = await streamChat(
-        lastFailedRequest.payload,
+        failedRequest.payload,
         delta => {
           setMessages(prev =>
             prev.map(item =>
-              item.id === assistantId
+              item.id === messageId
                 ? { ...item, content: `${item.content || ''}${delta}` }
                 : item,
             ),
           );
           setMessageUiMetaById(prev =>
-            markAssistantMessageStreaming(prev, assistantId),
+            markAssistantMessageStreaming(prev, messageId),
           );
         },
         controller.signal,
@@ -573,7 +610,7 @@ function ChatZone({ sessionId }) {
       if (response.reply) {
         setMessages(prev =>
           prev.map(item =>
-            item.id === assistantId
+            item.id === messageId
               ? { ...item, content: response.reply }
               : item,
           ),
@@ -581,38 +618,44 @@ function ChatZone({ sessionId }) {
       }
       setMessageUiMetaById(prev =>
         completeAssistantMessageUiMeta(prev, {
-          messageId: assistantId,
+          messageId,
           status: 'done',
         }),
       );
+      setFailedRequestsByMessageId(prev => {
+        if (!prev[messageId]) return prev;
+        const next = { ...prev };
+        delete next[messageId];
+        return next;
+      });
       if (response.threadId && response.threadId !== threadId) {
         onThreadChange?.(response.threadId);
       }
-      setLastFailedRequest(null);
     } catch (err) {
       const resolvedError = resolveChatError(err);
       const isCancelled =
         err?.name === 'AbortError' || err?.name === 'CanceledError';
-      setMessages(prev => prev.filter(item => item.id !== assistantId));
       setMessageUiMetaById(prev =>
         completeAssistantMessageUiMeta(prev, {
-          messageId: assistantId,
+          messageId,
           status: isCancelled ? 'cancelled' : 'error',
           error: resolvedError,
         }),
       );
-      setError(resolvedError);
-      if (!isCancelled) {
-        setLastFailedRequest({
-          ...lastFailedRequest,
+      setFailedRequestsByMessageId(prev => ({
+        ...prev,
+        [messageId]: {
+          ...failedRequest,
           attempt: retryAttempt,
-        });
-      }
+        },
+      }));
+      setError('');
     } finally {
+      setRetryingMessageId(null);
       setLoading(false);
       abortRef.current = null;
     }
-  }, [lastFailedRequest, onThreadChange, sessionId, threadId, userData]);
+  }, [failedRequestsByMessageId, onThreadChange, sessionId, threadId, userData]);
 
   const activeModelLabel =
     selectedOption?.name ||
@@ -768,6 +811,8 @@ function ChatZone({ sessionId }) {
 
   const handleClear = () => {
     setMessages([]);
+    setFailedRequestsByMessageId({});
+    setRetryingMessageId(null);
     setMessageUiMetaById({});
     setError('');
   };
@@ -790,6 +835,10 @@ function ChatZone({ sessionId }) {
         attachments: message.attachments ?? [],
         metadata: {
           ui: messageUiMetaById[message.id] || null,
+          retry: {
+            canRetry: Boolean(failedRequestsByMessageId[message.id]),
+            isRetrying: retryingMessageId === message.id,
+          },
         },
       }),
       setMessages: setMessagesAdapter,
@@ -800,7 +849,7 @@ function ChatZone({ sessionId }) {
       adapters: {
         attachments: attachmentAdapter,
       },
-    }) as any, [attachmentAdapter, handleSend, loading, loadingHistory, messageUiMetaById, messages, userData]),
+    }) as any, [attachmentAdapter, failedRequestsByMessageId, handleSend, loading, loadingHistory, messageUiMetaById, messages, retryingMessageId, userData]),
   );
 
   return (
@@ -853,16 +902,6 @@ function ChatZone({ sessionId }) {
         <div className='mx-auto w-full max-w-4xl px-4 pt-3'>
           <div className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200'>
             <span>{error}</span>
-            {lastFailedRequest && (
-              <button
-                type='button'
-                onClick={handleRetryLast}
-                className='rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/50'
-                disabled={loading}
-              >
-                {loading ? 'Nouvelle tentative...' : 'Réessayer'}
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -917,10 +956,12 @@ function ChatZone({ sessionId }) {
             </div>
           )}
           <Thread
+            key={draftKey || 'chat-thread'}
             draftKey={draftKey}
             initialDraft={initialDraft}
             searchQuery={searchQuery}
             scrollToIndex={activeMessageIndex}
+            onRetryAssistantMessage={handleRetryMessage}
           />
         </AssistantRuntimeProvider>
       </div>

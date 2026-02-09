@@ -6,6 +6,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '../../UserContext';
 import { Thread } from '@/components/assistant-ui/thread';
 import { useAppStore } from '../../stores/appStore';
+import {
+  completeAssistantMessageUiMeta,
+  markAssistantMessageStreaming,
+  startAssistantMessageUiMeta,
+  syncAssistantMessageUiMeta,
+  updateAssistantMessagePayload,
+  type AssistantMessageUiMetaById,
+} from './chatUxState';
 
 function ChatZone({ sessionId }) {
   const selectedOption = useAppStore(s => s.selectedOption);
@@ -26,6 +34,7 @@ function ChatZone({ sessionId }) {
   type FailedRequest = {
     payload: Record<string, unknown>;
     threadId: string;
+    attempt: number;
   };
   const DEV_BYPASS_AUTH =
     import.meta.env.DEV &&
@@ -182,6 +191,8 @@ function ChatZone({ sessionId }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [lastFailedRequest, setLastFailedRequest] =
     useState<FailedRequest | null>(null);
+  const [messageUiMetaById, setMessageUiMetaById] =
+    useState<AssistantMessageUiMetaById>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const searchInputRef = useRef(null);
@@ -263,6 +274,7 @@ function ChatZone({ sessionId }) {
   useEffect(() => {
     if (!threadId) {
       setMessages([]);
+      setMessageUiMetaById({});
       setHistoryCursor(null);
       setHasMoreHistory(false);
       return;
@@ -296,6 +308,13 @@ function ChatZone({ sessionId }) {
       })
       .finally(() => setLoadingHistory(false));
   }, [threadId]);
+
+  useEffect(() => {
+    const fallbackThreadId = threadId || sessionId;
+    setMessageUiMetaById(prev =>
+      syncAssistantMessageUiMeta(prev, messages, fallbackThreadId),
+    );
+  }, [messages, sessionId, threadId]);
 
   const loadMoreHistory = async () => {
     if (!threadId || !historyCursor || loadingMoreHistory) return;
@@ -353,6 +372,7 @@ function ChatZone({ sessionId }) {
     const provider = selectedOption?.provider || 'openai';
     const model = selectedOption?.model;
     const activeThreadId = threadId || sessionId;
+    const requestAttempt = 1;
 
     if (draftKey && typeof window !== 'undefined') {
       try {
@@ -383,6 +403,13 @@ function ChatZone({ sessionId }) {
         createdAt: new Date(),
       },
     ]);
+    setMessageUiMetaById(prev =>
+      startAssistantMessageUiMeta(prev, {
+        messageId: assistantId,
+        threadId: activeThreadId,
+        attempt: requestAttempt,
+      }),
+    );
     setLoading(true);
     setError('');
     setLastFailedRequest(null);
@@ -413,55 +440,80 @@ function ChatZone({ sessionId }) {
 
       const controller = new AbortController();
       abortRef.current = controller;
-       const requestPayload = {
-         sessionId,
-         threadId: activeThreadId,
-         projectId,
-         message: text,
-         provider,
-         model,
-         attachments: attachmentPayload,
-       };
-       const response = await streamChat(
-         requestPayload,
-         delta => {
-           setMessages(prev =>
-             prev.map(item =>
-               item.id === assistantId
-                 ? { ...item, content: `${item.content || ''}${delta}` }
-                 : item,
-             ),
-           );
-         },
-         controller.signal,
-       );
-       if (response.reply) {
-         setMessages(prev =>
-           prev.map(item =>
-             item.id === assistantId
-               ? { ...item, content: response.reply }
-               : item,
-           ),
-         );
-       }
-       if (response.threadId && response.threadId !== threadId) {
-         onThreadChange?.(response.threadId);
-       }
-    } catch (err) {
-      setMessages(prev => prev.filter(item => item.id !== assistantId));
-      setError(resolveChatError(err));
-      setLastFailedRequest({
-        payload: {
-          sessionId,
-          threadId: activeThreadId,
-          projectId,
-          message: text,
-          provider,
-          model,
-          attachments: attachmentPayload,
-        },
+      const requestPayload = {
+        sessionId,
         threadId: activeThreadId,
-      });
+        projectId,
+        message: text,
+        provider,
+        model,
+        attachments: attachmentPayload,
+      };
+      setMessageUiMetaById(prev =>
+        updateAssistantMessagePayload(prev, assistantId, requestPayload),
+      );
+      const response = await streamChat(
+        requestPayload,
+        delta => {
+          setMessages(prev =>
+            prev.map(item =>
+              item.id === assistantId
+                ? { ...item, content: `${item.content || ''}${delta}` }
+                : item,
+            ),
+          );
+          setMessageUiMetaById(prev =>
+            markAssistantMessageStreaming(prev, assistantId),
+          );
+        },
+        controller.signal,
+      );
+      if (response.reply) {
+        setMessages(prev =>
+          prev.map(item =>
+            item.id === assistantId
+              ? { ...item, content: response.reply }
+              : item,
+          ),
+        );
+      }
+      setMessageUiMetaById(prev =>
+        completeAssistantMessageUiMeta(prev, {
+          messageId: assistantId,
+          status: 'done',
+        }),
+      );
+      if (response.threadId && response.threadId !== threadId) {
+        onThreadChange?.(response.threadId);
+      }
+    } catch (err) {
+      const resolvedError = resolveChatError(err);
+      const isCancelled =
+        err?.name === 'AbortError' || err?.name === 'CanceledError';
+      setMessages(prev => prev.filter(item => item.id !== assistantId));
+      setMessageUiMetaById(prev =>
+        completeAssistantMessageUiMeta(prev, {
+          messageId: assistantId,
+          status: isCancelled ? 'cancelled' : 'error',
+          error: resolvedError,
+        }),
+      );
+      setError(resolvedError);
+      if (!isCancelled) {
+        setLastFailedRequest({
+          payload: {
+            sessionId,
+            threadId: activeThreadId,
+            projectId,
+            message: text,
+            provider,
+            model,
+            attachments: attachmentPayload,
+          },
+          threadId: activeThreadId,
+          attempt: requestAttempt,
+        });
+      }
     } finally {
       setLoading(false);
       abortRef.current = null;
@@ -481,6 +533,7 @@ function ChatZone({ sessionId }) {
     setLoading(true);
     setError('');
     const assistantId = uuidv4();
+    const retryAttempt = lastFailedRequest.attempt + 1;
     try {
       const controller = new AbortController();
       abortRef.current = controller;
@@ -493,6 +546,14 @@ function ChatZone({ sessionId }) {
           createdAt: new Date(),
         },
       ]);
+      setMessageUiMetaById(prev =>
+        startAssistantMessageUiMeta(prev, {
+          messageId: assistantId,
+          threadId: lastFailedRequest.threadId,
+          attempt: retryAttempt,
+          payload: lastFailedRequest.payload,
+        }),
+      );
       const response = await streamChat(
         lastFailedRequest.payload,
         delta => {
@@ -502,6 +563,9 @@ function ChatZone({ sessionId }) {
                 ? { ...item, content: `${item.content || ''}${delta}` }
                 : item,
             ),
+          );
+          setMessageUiMetaById(prev =>
+            markAssistantMessageStreaming(prev, assistantId),
           );
         },
         controller.signal,
@@ -515,13 +579,35 @@ function ChatZone({ sessionId }) {
           ),
         );
       }
+      setMessageUiMetaById(prev =>
+        completeAssistantMessageUiMeta(prev, {
+          messageId: assistantId,
+          status: 'done',
+        }),
+      );
       if (response.threadId && response.threadId !== threadId) {
         onThreadChange?.(response.threadId);
       }
       setLastFailedRequest(null);
     } catch (err) {
+      const resolvedError = resolveChatError(err);
+      const isCancelled =
+        err?.name === 'AbortError' || err?.name === 'CanceledError';
       setMessages(prev => prev.filter(item => item.id !== assistantId));
-      setError(resolveChatError(err));
+      setMessageUiMetaById(prev =>
+        completeAssistantMessageUiMeta(prev, {
+          messageId: assistantId,
+          status: isCancelled ? 'cancelled' : 'error',
+          error: resolvedError,
+        }),
+      );
+      setError(resolvedError);
+      if (!isCancelled) {
+        setLastFailedRequest({
+          ...lastFailedRequest,
+          attempt: retryAttempt,
+        });
+      }
     } finally {
       setLoading(false);
       abortRef.current = null;
@@ -682,6 +768,7 @@ function ChatZone({ sessionId }) {
 
   const handleClear = () => {
     setMessages([]);
+    setMessageUiMetaById({});
     setError('');
   };
 
@@ -701,6 +788,9 @@ function ChatZone({ sessionId }) {
         role: message.role,
         content: normalizeContent(message.content),
         attachments: message.attachments ?? [],
+        metadata: {
+          ui: messageUiMetaById[message.id] || null,
+        },
       }),
       setMessages: setMessagesAdapter,
       onNew: handleSend,
@@ -710,7 +800,7 @@ function ChatZone({ sessionId }) {
       adapters: {
         attachments: attachmentAdapter,
       },
-    }) as any, [attachmentAdapter, handleSend, loading, loadingHistory, messages, userData]),
+    }) as any, [attachmentAdapter, handleSend, loading, loadingHistory, messageUiMetaById, messages, userData]),
   );
 
   return (

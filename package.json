@@ -6,6 +6,15 @@
     "dev": "node \"$npm_execpath\" -r --parallel --filter ./backend --filter ./frontend dev",
     "install:all": "cd frontend && npm install && cd ../backend && npm install",
     "start:frontend": "cd frontend && npm run dev",
-    "start:backend": "cd backend && npm run dev"
+    "start:backend": "cd backend && npm run dev",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "frontend/src/**/*.{ts,tsx}": "frontend/node_modules/.bin/eslint --quiet --fix",
+    "backend/**/*.{ts,js}": "backend/node_modules/.bin/eslint --quiet --fix"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
   }
 }

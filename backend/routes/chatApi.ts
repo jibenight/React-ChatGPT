@@ -1,3 +1,30 @@
+/**
+ * @openapi
+ * /api/chat/message:
+ *   post:
+ *     tags: [Chat]
+ *     summary: Envoyer un message à un provider AI
+ *     security: [{ cookieAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionId, message, provider]
+ *             properties:
+ *               sessionId: { type: string }
+ *               threadId: { type: string }
+ *               message: { type: string }
+ *               provider: { type: string, enum: [openai, gemini, claude, mistral, groq] }
+ *               model: { type: string }
+ *               projectId: { type: integer }
+ *               attachments: { type: array, items: { type: object } }
+ *     responses:
+ *       200: { description: Réponse AI (JSON ou SSE stream) }
+ *       400: { description: Requête invalide }
+ *       401: { description: Non authentifié }
+ */
 const express = require('express');
 const router = express.Router();
 const chatController = require('../controllers/chatController');

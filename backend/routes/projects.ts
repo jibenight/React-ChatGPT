@@ -1,3 +1,86 @@
+/**
+ * @openapi
+ * /api/projects:
+ *   get:
+ *     tags: [Projects]
+ *     summary: Lister les projets
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200: { description: Liste des projets }
+ *   post:
+ *     tags: [Projects]
+ *     summary: Créer un projet
+ *     security: [{ cookieAuth: [] }]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name: { type: string }
+ *               description: { type: string }
+ *               instructions: { type: string }
+ *               context_data: { type: string }
+ *     responses:
+ *       201: { description: Projet créé }
+ * /api/projects/{projectId}:
+ *   get:
+ *     tags: [Projects]
+ *     summary: Détails d'un projet
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: Projet }
+ *   patch:
+ *     tags: [Projects]
+ *     summary: Modifier un projet
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: Projet mis à jour }
+ *   delete:
+ *     tags: [Projects]
+ *     summary: Supprimer un projet
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: Projet supprimé }
+ * /api/projects/{projectId}/members:
+ *   get:
+ *     tags: [Projects]
+ *     summary: Lister les membres d'un projet
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200: { description: Liste des membres }
+ *   post:
+ *     tags: [Projects]
+ *     summary: Ajouter un membre au projet
+ *     security: [{ cookieAuth: [] }]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, role]
+ *             properties:
+ *               email: { type: string }
+ *               role: { type: string, enum: [editor, viewer] }
+ *     responses:
+ *       201: { description: Membre ajouté }
+ */
 const express = require('express');
 const projects = express.Router();
 const isAuthenticated = require('../middlewares/isAuthenticated');

@@ -1,3 +1,24 @@
+/**
+ * @openapi
+ * /api/search:
+ *   get:
+ *     tags: [Search]
+ *     summary: Recherche full-text dans les messages
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *       - in: query
+ *         name: offset
+ *         schema: { type: integer, default: 0 }
+ *     responses:
+ *       200: { description: Résultats de recherche }
+ */
 const express = require('express');
 const search = express.Router();
 const isAuthenticated = require('../middlewares/isAuthenticated');

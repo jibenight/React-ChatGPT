@@ -27,6 +27,8 @@ function Profil() {
     open: false,
     provider: null,
   });
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const {
     register,
     handleSubmit,
@@ -195,6 +197,22 @@ function Profil() {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeletingAccount(true);
+      await apiClient.delete('/api/users/me');
+      localStorage.clear();
+      window.location.href = '/';
+    } catch (err) {
+      console.error(err);
+      setActionMessage({
+        type: 'error',
+        text: 'Impossible de supprimer le compte.',
+      });
+      setIsDeletingAccount(false);
     }
   };
 
@@ -566,8 +584,10 @@ function Profil() {
             </div>
             <div className='mt-4 flex flex-wrap gap-3'>
               <button
-                className='inline-flex justify-center rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
+                className='inline-flex justify-center rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
                 type='button'
+                onClick={() => setConfirmDeleteAccount(true)}
+                disabled={isDeletingAccount}
               >
                 Supprimer le compte
               </button>
@@ -662,6 +682,59 @@ function Profil() {
                   disabled={isDeleting}
                 >
                   {isDeleting ? 'Suppression...' : 'Supprimer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {confirmDeleteAccount && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
+            <div className='w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 shadow-2xl animate-[fadeIn_160ms_ease-out] dark:border-red-500/40 dark:bg-slate-900 dark:shadow-none'>
+              <h4 className='text-lg font-semibold text-red-700 dark:text-red-300'>
+                Supprimer mon compte
+              </h4>
+              <p className='mt-3 text-sm text-gray-700 dark:text-slate-200'>
+                Cette action est <span className='font-semibold'>irréversible</span>. Toutes vos
+                données seront définitivement supprimées :
+              </p>
+              <ul className='mt-3 space-y-1 text-sm text-gray-600 dark:text-slate-300'>
+                <li className='flex items-start gap-2'>
+                  <span className='mt-0.5 text-red-500'>•</span>
+                  <span>Tous vos projets et conversations</span>
+                </li>
+                <li className='flex items-start gap-2'>
+                  <span className='mt-0.5 text-red-500'>•</span>
+                  <span>Toutes vos clés API enregistrées</span>
+                </li>
+                <li className='flex items-start gap-2'>
+                  <span className='mt-0.5 text-red-500'>•</span>
+                  <span>Votre compte utilisateur</span>
+                </li>
+              </ul>
+              <div className='mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
+                <strong>Attention :</strong> Vous ne pourrez pas récupérer vos données après cette
+                opération.
+              </div>
+              <div className='mt-6 flex justify-end gap-3'>
+                <button
+                  type='button'
+                  className='rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                  onClick={() => setConfirmDeleteAccount(false)}
+                  disabled={isDeletingAccount}
+                >
+                  Annuler
+                </button>
+                <button
+                  type='button'
+                  className='rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60'
+                  onClick={() => {
+                    setConfirmDeleteAccount(false);
+                    handleDeleteAccount();
+                  }}
+                  disabled={isDeletingAccount}
+                >
+                  {isDeletingAccount ? 'Suppression...' : 'Supprimer définitivement'}
                 </button>
               </div>
             </div>

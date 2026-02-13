@@ -1,7 +1,11 @@
 require('dotenv').config();
+const config = require('./config');
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const { doubleCsrf } = require('csrf-csrf');
 const pinoHttp = require('pino-http');
 const logger = require('./logger');
 
@@ -38,22 +42,6 @@ const normalizeTrustProxy = value => {
   return 1;
 };
 
-const securityHeaders = (req, res, next) => {
-  const isHttps =
-    req.secure || String(req.headers['x-forwarded-proto']).toLowerCase() === 'https';
-  if (isHttps) {
-    res.setHeader(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload',
-    );
-  }
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
-  next();
-};
 
 const corsOptions = {
   origin(origin, callback) {
@@ -74,22 +62,47 @@ const corsOptions = {
     'X-Dev-User-Id',
     'X-Dev-User-Name',
     'X-Dev-User-Email',
+    'X-Request-Id',
+    'X-CSRF-Token',
   ],
+  exposedHeaders: ['X-Request-Id'],
   optionsSuccessStatus: 204,
 };
+
+const { doubleCsrfProtection } = doubleCsrf({
+  getSecret: () => config.SECRET_KEY,
+  cookieName: '__csrf',
+  cookieOptions: {
+    sameSite: 'lax',
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+  },
+  size: 64,
+  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
+});
 
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', normalizeTrustProxy(process.env.TRUST_PROXY));
-app.use(securityHeaders);
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  frameguard: { action: 'deny' },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: 'no-referrer' },
+}));
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: false, limit: '15mb' }));
 app.use(express.json({ limit: '15mb' }));
 let requestCounter = 0;
 app.use(
   pinoHttp({
     logger,
-    genReqId: () => {
+    genReqId: (req) => {
+      const clientReqId = req.headers['x-request-id'];
+      if (clientReqId && typeof clientReqId === 'string') return clientReqId;
       requestCounter += 1;
       return `req-${requestCounter}`;
     },
@@ -115,12 +128,34 @@ app.use(
   }),
 );
 
+app.use((req, res, next) => {
+  res.setHeader('X-Request-Id', req.id);
+  next();
+});
+
 app.get('/healthz', (_req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
+  db.get('SELECT 1 AS ok', [], (err, row) => {
+    if (err || !row) {
+      return res.status(503).json({
+        status: 'unhealthy',
+        db: 'disconnected',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+      });
+    }
+    return res.status(200).json({
+      status: 'ok',
+      db: 'connected',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
   });
+});
+
+const csrfExcludedPaths = new Set(['/healthz', '/login', '/register', '/reset-password-request', '/verify-email']);
+app.use((req, res, next) => {
+  if (csrfExcludedPaths.has(req.path)) return next();
+  return doubleCsrfProtection(req, res, next);
 });
 
 app.use('/', auth);
@@ -129,6 +164,10 @@ app.use('/', projectsApi);
 app.use('/', threadsApi);
 app.use('/api/chat', chatApiRoute);
 app.use('/', searchApi);
+
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use((err, req, res, next) => {
   if (err && err.message === 'Not allowed by CORS') {
@@ -145,7 +184,7 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 const server = app.listen(PORT, HOST, () => {
   logger.info({ host: HOST, port: PORT }, 'Server running');
@@ -158,12 +197,21 @@ const cleanupInterval = setInterval(() => {
 }, cleanupIntervalMs);
 
 const shutdown = () => {
-  server.close(() => {
-    logger.info('Server terminated');
-    db.close();
-    logger.info('Database connection closed');
-  });
+  logger.info('Shutdown signal received');
   clearInterval(cleanupInterval);
+
+  server.close(() => {
+    logger.info('HTTP server closed');
+    db.close(() => {
+      logger.info('Database connection closed');
+      process.exit(0);
+    });
+  });
+
+  setTimeout(() => {
+    logger.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
 };
 
 process.on('SIGTERM', shutdown);

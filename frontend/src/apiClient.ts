@@ -10,8 +10,22 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+const getCsrfToken = (): string | null => {
+  for (const cookie of document.cookie.split(';')) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === '__csrf') return decodeURIComponent(value);
+  }
+  return null;
+};
+
 apiClient.interceptors.request.use(config => {
   const headers = (config.headers ?? {}) as Record<string, string>;
+  headers['X-Request-Id'] = crypto.randomUUID();
+
+  const csrfToken = getCsrfToken();
+  if (csrfToken && config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
 
   if (DEV_BYPASS_AUTH) {
     const stored = localStorage.getItem('dev_user');
@@ -30,5 +44,16 @@ apiClient.interceptors.request.use(config => {
   config.headers = headers as any;
   return config;
 });
+
+apiClient.interceptors.response.use(
+  response => response,
+  error => {
+    const reqId = error.response?.headers?.['x-request-id'];
+    if (reqId) {
+      console.error(`[Request ID: ${reqId}] API error:`, error.message);
+    }
+    return Promise.reject(error);
+  },
+);
 
 export default apiClient;

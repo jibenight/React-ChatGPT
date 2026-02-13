@@ -173,3 +173,135 @@ exports.updateUserData = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.deleteAccount = async (req, res) => {
+  logger.info('Controller deleteAccount accessed');
+  const userId = req.user.id;
+
+  try {
+    // Get user email for cleanup
+    const user = await new Promise<any>((resolve, reject) => {
+      db.get('SELECT email FROM users WHERE id = ?', [userId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await db.transaction(async txn => {
+      // 1. Delete messages from user's threads
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          'DELETE FROM messages WHERE thread_id IN (SELECT id FROM threads WHERE user_id = ?)',
+          [userId],
+          function(err) {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
+
+      // 2. Delete user's threads
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM threads WHERE user_id = ?', [userId], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 3. Delete project memberships
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM project_members WHERE user_id = ?', [userId], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 4. Delete user's projects
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM projects WHERE user_id = ?', [userId], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 5. Delete API keys
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM api_keys WHERE user_id = ?', [userId], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 6. Delete password reset tokens (by email)
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM password_resets WHERE email = ?', [user.email], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 7. Delete email verification tokens (by email)
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM email_verifications WHERE email = ?', [user.email], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // 8. Delete user account
+      await new Promise<void>((resolve, reject) => {
+        txn.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    });
+
+    // Clear auth cookie
+    const clearAuthCookie = authRes => {
+      const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || 'auth_token';
+      const isProduction = process.env.NODE_ENV === 'production';
+      const parseBoolean = (value, fallback) => {
+        if (value === undefined || value === null || value === '') return fallback;
+        const normalized = String(value).trim().toLowerCase();
+        if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+        if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+        return fallback;
+      };
+      const parseSameSite = value => {
+        const normalized = String(value || 'lax').trim().toLowerCase();
+        if (normalized === 'strict') return 'strict';
+        if (normalized === 'none') return 'none';
+        return 'lax';
+      };
+      const AUTH_COOKIE_SECURE = parseBoolean(process.env.AUTH_COOKIE_SECURE, isProduction);
+      const AUTH_COOKIE_SAME_SITE = parseSameSite(process.env.AUTH_COOKIE_SAMESITE);
+      const AUTH_COOKIE_DOMAIN = process.env.AUTH_COOKIE_DOMAIN
+        ? process.env.AUTH_COOKIE_DOMAIN.trim()
+        : '';
+      const options = {
+        httpOnly: true,
+        secure: AUTH_COOKIE_SECURE,
+        sameSite: AUTH_COOKIE_SAME_SITE,
+        ...(AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {}),
+      };
+      authRes.clearCookie(AUTH_COOKIE_NAME, options);
+    };
+    clearAuthCookie(res);
+
+    // Invalidate API key cache
+    allowedProviders.forEach(provider => {
+      invalidateCache(userId, provider);
+    });
+
+    logger.info({ userId }, 'User account deleted successfully');
+    res.status(200).json({ message: 'Compte supprimé avec succès.' });
+  } catch (err) {
+    logger.error({ err, userId }, 'Failed to delete user account');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

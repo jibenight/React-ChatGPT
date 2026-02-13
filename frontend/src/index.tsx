@@ -59,3 +59,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </UserProvider>
   </ErrorBoundary>,
 );
+
+if (import.meta.env.DEV) {
+  import('./utils/reportWebVitals').then(({ default: reportWebVitals }) => {
+    reportWebVitals(console.log);
+  });
+}

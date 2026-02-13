@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install backend dependencies
+        run: cd backend && npm ci --legacy-peer-deps
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci --legacy-peer-deps
+      - name: Lint backend
+        run: cd backend && npx eslint . --quiet
+      - name: Lint frontend
+        run: cd frontend && npx eslint src --quiet
+      - name: Test backend
+        run: cd backend && npx vitest run
+      - name: Test frontend
+        run: cd frontend && npx vitest run
+      - name: Build backend
+        run: cd backend && npm run build
+      - name: Build frontend
+        run: cd frontend && npm run build

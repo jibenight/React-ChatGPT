@@ -1,3 +1,84 @@
+/**
+ * @openapi
+ * /api/threads:
+ *   get:
+ *     tags: [Threads]
+ *     summary: Lister les conversations
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200: { description: Liste des threads }
+ *   post:
+ *     tags: [Threads]
+ *     summary: Créer une conversation
+ *     security: [{ cookieAuth: [] }]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               title: { type: string }
+ *               projectId: { type: integer }
+ *     responses:
+ *       201: { description: Thread créé }
+ * /api/threads/{threadId}:
+ *   patch:
+ *     tags: [Threads]
+ *     summary: Renommer une conversation
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: threadId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Thread mis à jour }
+ *   delete:
+ *     tags: [Threads]
+ *     summary: Supprimer une conversation
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: threadId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Thread supprimé }
+ * /api/threads/{threadId}/messages:
+ *   get:
+ *     tags: [Threads]
+ *     summary: Récupérer les messages d'une conversation
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: threadId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 50 }
+ *       - in: query
+ *         name: beforeId
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: Liste des messages }
+ * /api/threads/{threadId}/export:
+ *   get:
+ *     tags: [Threads]
+ *     summary: Exporter une conversation (MD ou JSON)
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: threadId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: format
+ *         schema: { type: string, enum: [md, json], default: md }
+ *     responses:
+ *       200: { description: Conversation exportée }
+ */
 const express = require('express');
 const threads = express.Router();
 const isAuthenticated = require('../middlewares/isAuthenticated');

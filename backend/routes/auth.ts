@@ -1,3 +1,87 @@
+/**
+ * @openapi
+ * /register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Créer un compte
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, email, password]
+ *             properties:
+ *               username: { type: string }
+ *               email: { type: string, format: email }
+ *               password: { type: string, minLength: 6 }
+ *     responses:
+ *       201: { description: Compte créé }
+ *       400: { description: Données invalides }
+ * /login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Connexion
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200: { description: Connexion réussie }
+ *       401: { description: Identifiants invalides }
+ * /logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Déconnexion
+ *     responses:
+ *       200: { description: Déconnecté }
+ * /reset-password-request:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Demande de réinitialisation du mot de passe
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200: { description: Email envoyé }
+ * /reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Réinitialiser le mot de passe
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token: { type: string }
+ *               newPassword: { type: string }
+ *     responses:
+ *       200: { description: Mot de passe modifié }
+ * /verify-email:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Vérifier l'email
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Email vérifié }
+ */
 const express = require('express');
 const auth = express.Router();
 const authController = require('../controllers/authController');

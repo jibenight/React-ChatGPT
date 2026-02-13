@@ -1,3 +1,62 @@
+/**
+ * @openapi
+ * /api/users:
+ *   get:
+ *     tags: [Users]
+ *     summary: Récupérer les infos utilisateur
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200: { description: Données utilisateur }
+ * /api/update-user-data:
+ *   post:
+ *     tags: [Users]
+ *     summary: Mettre à jour le profil
+ *     security: [{ cookieAuth: [] }]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username: { type: string }
+ *     responses:
+ *       200: { description: Profil mis à jour }
+ * /api/update-api-key:
+ *   post:
+ *     tags: [Users]
+ *     summary: Sauvegarder une clé API provider
+ *     security: [{ cookieAuth: [] }]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [provider, apiKey]
+ *             properties:
+ *               provider: { type: string, enum: [openai, gemini, claude, mistral, groq] }
+ *               apiKey: { type: string }
+ *     responses:
+ *       200: { description: Clé sauvegardée }
+ * /api/api-keys:
+ *   get:
+ *     tags: [Users]
+ *     summary: Lister les clés API configurées
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200: { description: Liste des providers configurés }
+ * /api/api-keys/{provider}:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Supprimer une clé API
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: provider
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Clé supprimée }
+ */
 const express = require('express');
 const userApi = express.Router();
 const isAuthenticated = require('../middlewares/isAuthenticated');
@@ -38,5 +97,6 @@ userApi.post('/api/update-api-key', isAuthenticated, userLimiter, validateBody(u
 userApi.post('/api/update-user-data', isAuthenticated, userLimiter, validateBody(updateUserDataSchema), asyncHandler(userController.updateUserData));
 userApi.get('/api/api-keys', isAuthenticated, userLimiter, asyncHandler(userController.getApiKeys));
 userApi.delete('/api/api-keys/:provider', isAuthenticated, userLimiter, validateParams(providerParam), asyncHandler(userController.deleteApiKey));
+userApi.delete('/api/users/me', isAuthenticated, userLimiter, asyncHandler(userController.deleteAccount));
 
 module.exports = userApi;

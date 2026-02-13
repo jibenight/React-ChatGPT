@@ -20,7 +20,7 @@ import {
 } from "@assistant-ui/react";
 import { useAuiState } from "@assistant-ui/store";
 import { Virtuoso } from "react-virtuoso";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   ArrowDownIcon,
@@ -55,12 +55,14 @@ export const Thread = ({
 
   useEffect(() => {
     if (!draftKey || typeof window === "undefined") return undefined;
-    try {
-      localStorage.setItem(draftKey, draftValue || "");
-    } catch {
-      // ignore storage errors
-    }
-    return undefined;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, draftValue || "");
+      } catch {
+        // ignore storage errors
+      }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [draftKey, draftValue]);
 
   useEffect(() => {
@@ -84,16 +86,12 @@ export const Thread = ({
           <ThreadWelcome />
         </AuiIf>
 
-        <VirtualizedMessages
+        <MemoizedVirtualizedMessages
           scrollToIndex={scrollToIndex}
           hasMoreHistory={hasMoreHistory}
           loadingMoreHistory={loadingMoreHistory}
           loadMoreHistory={loadMoreHistory}
-          components={{
-            UserMessage: () => <UserMessage searchQuery={searchQuery} />,
-            EditComposer,
-            AssistantMessage: () => <AssistantMessage searchQuery={searchQuery} />,
-          }} />
+          searchQuery={searchQuery} />
 
         <ThreadPrimitive.ViewportFooter
           className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl pb-4 md:pb-6">
@@ -105,13 +103,20 @@ export const Thread = ({
   );
 };
 
-const VirtualizedMessages = ({
-  components,
+const MemoizedVirtualizedMessages = React.memo(VirtualizedMessages);
+
+function VirtualizedMessages({
+  searchQuery,
   scrollToIndex,
   hasMoreHistory,
   loadingMoreHistory,
   loadMoreHistory,
-}) => {
+}) {
+  const components = useMemo(() => ({
+    UserMessage: () => <UserMessage searchQuery={searchQuery} />,
+    EditComposer,
+    AssistantMessage: () => <AssistantMessage searchQuery={searchQuery} />,
+  }), [searchQuery]);
   const messagesLength = useAuiState(({ thread }) => thread.messages.length);
   const isRunning = useAuiState(({ thread }) => thread.isRunning);
   const virtuosoRef = useRef(null);
@@ -177,7 +182,7 @@ const VirtualizedMessages = ({
       )}
     />
   );
-};
+}
 
 const ThreadScrollToBottom = () => {
   return (
@@ -253,7 +258,7 @@ const ThreadSuggestions = () => {
   );
 };
 
-const Composer = ({ draftValue, onDraftChange }) => {
+const Composer = React.memo(({ draftValue, onDraftChange }) => {
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
       <ComposerPrimitive.AttachmentDropzone
@@ -271,7 +276,7 @@ const Composer = ({ draftValue, onDraftChange }) => {
       </ComposerPrimitive.AttachmentDropzone>
     </ComposerPrimitive.Root>
   );
-};
+});
 
 const ComposerAction = () => {
   return (

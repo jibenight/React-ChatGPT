@@ -1,6 +1,7 @@
-const OpenAI = require('openai');
+const OpenAI = require('openai').default;
 const db = require('../models/database');
 const bcrypt = require('bcrypt');
+const logger = require('../logger');
 
 exports.getHistory = async (req, res) => {
   const userId = req.params.userId;
@@ -59,7 +60,7 @@ exports.sendMessage = async (req, res) => {
       const openai = new OpenAI({ apiKey });
 
       // Construire la prompte avec l'historique du chat
-      let history = await new Promise<any[]>((resolve, reject) => {
+      const history = await new Promise<any[]>((resolve, reject) => {
         db.all(
             'SELECT * FROM chat_history WHERE user_id = ? AND session_id = ? ORDER BY timestamp',
             [userId, sessionId],
@@ -105,7 +106,7 @@ exports.sendMessage = async (req, res) => {
 
       res.json({ reply: reply });
   } catch (err) {
-    console.error(err);
+    logger.error({ err: err?.message || err }, 'Failed to send message to OpenAI API');
     res.status(500).json({ error: 'Failed to send message to OpenAI API' });
   }
 };

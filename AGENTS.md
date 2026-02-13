@@ -16,12 +16,14 @@ This file guides agentic coding assistants working in this repo.
 - Install all deps: `npm run install:all`
 - Start backend: `npm run start:backend`
 - Start frontend: `npm run start:frontend`
+- Start frontend + backend with pnpm workspace: `pnpm dev`
 
 ## Build / Lint / Test Commands
 ### Root
 - Install deps for both apps: `npm run install:all`
 - Start backend (dev watch): `npm run start:backend`
 - Start frontend (Vite dev server): `npm run start:frontend`
+- Start backend + frontend in parallel (pnpm workspace): `pnpm dev`
 
 ### Frontend (`frontend/`)
 - Dev server: `npm run dev`

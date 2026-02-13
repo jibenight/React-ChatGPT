@@ -19,8 +19,8 @@ import {
   ThreadPrimitive,
 } from "@assistant-ui/react";
 import { useAuiState } from "@assistant-ui/store";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Virtuoso } from "react-virtuoso";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   ArrowDownIcon,
@@ -36,13 +36,22 @@ import {
   SquareIcon,
 } from "lucide-react";
 
-export const Thread = ({ draftKey, initialDraft, searchQuery, scrollToIndex }) => {
+export const Thread = ({
+  draftKey,
+  initialDraft,
+  searchQuery,
+  scrollToIndex,
+  hasMoreHistory,
+  loadingMoreHistory,
+  loadMoreHistory,
+}) => {
   const [draftValue, setDraftValue] = useState(initialDraft || "");
-  const viewportRef = useRef(null);
+  const [prevDraftKey, setPrevDraftKey] = useState(draftKey);
 
-  useEffect(() => {
+  if (prevDraftKey !== draftKey) {
+    setPrevDraftKey(draftKey);
     setDraftValue(initialDraft || "");
-  }, [initialDraft, draftKey]);
+  }
 
   useEffect(() => {
     if (!draftKey || typeof window === "undefined") return undefined;
@@ -70,17 +79,16 @@ export const Thread = ({ draftKey, initialDraft, searchQuery, scrollToIndex }) =
       style={{
         ["--thread-max-width"]: "44rem",
       } as CSSProperties}>
-      <ThreadPrimitive.Viewport
-        turnAnchor="top"
-        ref={viewportRef}
-        className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth px-4 pt-4">
+      <div className="aui-thread-viewport relative flex flex-1 flex-col overflow-hidden px-4 pt-4">
         <AuiIf condition={({ thread }) => thread.isEmpty}>
           <ThreadWelcome />
         </AuiIf>
 
         <VirtualizedMessages
-          viewportRef={viewportRef}
           scrollToIndex={scrollToIndex}
+          hasMoreHistory={hasMoreHistory}
+          loadingMoreHistory={loadingMoreHistory}
+          loadMoreHistory={loadMoreHistory}
           components={{
             UserMessage: () => <UserMessage searchQuery={searchQuery} />,
             EditComposer,
@@ -92,45 +100,82 @@ export const Thread = ({ draftKey, initialDraft, searchQuery, scrollToIndex }) =
           <ThreadScrollToBottom />
            <Composer draftValue={draftValue} onDraftChange={setDraftValue} />
          </ThreadPrimitive.ViewportFooter>
-       </ThreadPrimitive.Viewport>
+       </div>
      </ThreadPrimitive.Root>
   );
 };
 
-const VirtualizedMessages = ({ components, viewportRef, scrollToIndex }) => {
+const VirtualizedMessages = ({
+  components,
+  scrollToIndex,
+  hasMoreHistory,
+  loadingMoreHistory,
+  loadMoreHistory,
+}) => {
   const messagesLength = useAuiState(({ thread }) => thread.messages.length);
-  const virtualizer = useVirtualizer({
-    count: messagesLength,
-    getScrollElement: () => viewportRef.current,
-    estimateSize: () => 120,
-    overscan: 6,
-  });
+  const isRunning = useAuiState(({ thread }) => thread.isRunning);
+  const virtuosoRef = useRef(null);
 
   useEffect(() => {
     if (scrollToIndex === null || scrollToIndex === undefined) return;
     if (scrollToIndex < 0 || scrollToIndex >= messagesLength) return;
-    virtualizer.scrollToIndex(scrollToIndex, { align: "center" });
-  }, [messagesLength, scrollToIndex, virtualizer]);
+    virtuosoRef.current?.scrollToIndex({
+      index: scrollToIndex,
+      align: 'center',
+      behavior: 'smooth',
+    });
+  }, [messagesLength, scrollToIndex]);
+
+  const handleStartReached = useCallback(() => {
+    if (hasMoreHistory && !loadingMoreHistory) {
+      loadMoreHistory?.();
+    }
+  }, [hasMoreHistory, loadingMoreHistory, loadMoreHistory]);
+
+  const handleFollowOutput = useCallback(
+    (isAtBottom) => {
+      if (isRunning) return 'smooth';
+      return isAtBottom ? 'smooth' : false;
+    },
+    [isRunning],
+  );
 
   if (messagesLength === 0) return null;
 
   return (
-    <div
-      className="relative w-full"
-      style={{ height: virtualizer.getTotalSize() }}>
-      {virtualizer.getVirtualItems().map(item => (
-        <div
-          key={item.key}
-          ref={virtualizer.measureElement}
-          data-index={item.index}
-          className="absolute left-0 top-0 w-full"
-          style={{ transform: `translateY(${item.start}px)` }}>
-          <ThreadPrimitive.MessageByIndex
-            index={item.index}
-            components={components} />
-        </div>
-      ))}
-    </div>
+    <Virtuoso
+      ref={virtuosoRef}
+      totalCount={messagesLength}
+      overscan={600}
+      initialTopMostItemIndex={messagesLength - 1}
+      followOutput={handleFollowOutput}
+      startReached={handleStartReached}
+      defaultItemHeight={120}
+      increaseViewportBy={{ top: 200, bottom: 200 }}
+      className="flex-1"
+      components={{
+        Header: () =>
+          hasMoreHistory ? (
+            <div className="mb-3 flex justify-center">
+              <button
+                type="button"
+                onClick={loadMoreHistory}
+                disabled={loadingMoreHistory}
+                className="rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-sm transition hover:border-gray-300 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              >
+                {loadingMoreHistory
+                  ? 'Chargement...'
+                  : 'Charger les messages précédents'}
+              </button>
+            </div>
+          ) : null,
+      }}
+      itemContent={(index) => (
+        <ThreadPrimitive.MessageByIndex
+          index={index}
+          components={components} />
+      )}
+    />
   );
 };
 

@@ -5,6 +5,7 @@ const threadController = require('../controllers/threadController');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateBody, validateParams, validateQuery } = require('../middlewares/validate');
+const { createDatabaseStore } = require('../rateLimitStore');
 
 const createThreadSchema = z.object({
   id: z.string().optional(),
@@ -26,11 +27,16 @@ const threadMessagesQuery = z.object({
   beforeId: z.coerce.number().int().optional(),
 });
 
+const exportThreadQuery = z.object({
+  format: z.enum(['md', 'json']),
+});
+
 const threadLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
 });
 
 const asyncHandler = fn => (req, res, next) => {
@@ -46,6 +52,14 @@ threads.get(
   validateParams(threadIdParam),
   validateQuery(threadMessagesQuery),
   asyncHandler(threadController.getThreadMessages),
+);
+threads.get(
+  '/api/threads/:threadId/export',
+  isAuthenticated,
+  threadLimiter,
+  validateParams(threadIdParam),
+  validateQuery(exportThreadQuery),
+  asyncHandler(threadController.exportThread),
 );
 threads.delete(
   '/api/threads/:threadId',

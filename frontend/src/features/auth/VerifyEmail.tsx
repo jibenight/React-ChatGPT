@@ -9,14 +9,15 @@ const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setUserData } = useUser();
-  const [status, setStatus] = useState({ type: 'loading', message: 'Vérification en cours...' });
+  const token = searchParams.get('token');
+  const [status, setStatus] = useState(() =>
+    token
+      ? { type: 'loading', message: 'Vérification en cours...' }
+      : { type: 'error', message: 'Lien de vérification invalide.' }
+  );
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (!token) {
-      setStatus({ type: 'error', message: 'Lien de vérification invalide.' });
-      return;
-    }
+    if (!token) return;
 
     const verify = async () => {
       try {

@@ -5,6 +5,7 @@ const userController = require('../controllers/userController');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateBody, validateParams } = require('../middlewares/validate');
+const { createDatabaseStore } = require('../rateLimitStore');
 
 const updateApiKeySchema = z.object({
   provider: z.enum(['openai', 'gemini', 'claude', 'mistral', 'groq']),
@@ -24,6 +25,7 @@ const userLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
 });
 
 // gestion des fonctions asynchrones dans les routes Express

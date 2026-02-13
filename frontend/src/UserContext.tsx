@@ -2,12 +2,13 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import apiClient from './apiClient';
+import type { User } from './types';
 
-type UserData = Record<string, any>;
+type UserData = Partial<User>;
 
 type UserContextValue = {
   userData: UserData;
-  setUserData: (data: UserData) => void;
+  setUserData: (data: UserData | ((prev: UserData) => UserData)) => void;
 };
 
 const UserContext = createContext<UserContextValue>({
@@ -20,20 +21,18 @@ export function useUser() {
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [userData, setUserData] = useState<UserData>({});
-
-  useEffect(() => {
+  const [userData, setUserData] = useState<UserData>(() => {
     const userJson = localStorage.getItem('user');
     if (userJson) {
       try {
-        const user = JSON.parse(userJson);
-        setUserData(user);
+        return JSON.parse(userJson);
       } catch {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
       }
     }
-  }, []);
+    return {};
+  });
 
   useEffect(() => {
     const userJson = localStorage.getItem('user');

@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { ProviderName } from '../types';
 
 export interface ProviderOption {
-  provider: string;
+  provider: ProviderName;
   model: string;
   name?: string;
   avatar?: string;

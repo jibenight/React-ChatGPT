@@ -1,7 +1,9 @@
 {
   "name": "react-chatgpt-clone-root",
   "private": true,
+  "packageManager": "pnpm@10.29.1",
   "scripts": {
+    "dev": "node \"$npm_execpath\" -r --parallel --filter ./backend --filter ./frontend dev",
     "install:all": "cd frontend && npm install && cd ../backend && npm install",
     "start:frontend": "cd frontend && npm run dev",
     "start:backend": "cd backend && npm run dev"

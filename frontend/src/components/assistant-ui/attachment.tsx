@@ -29,11 +29,13 @@ const useFileSrc = (file: File | null | undefined) => {
 
   useEffect(() => {
     if (!file) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with browser ObjectURL API
       setSrc(undefined);
       return;
     }
 
     const objectUrl = URL.createObjectURL(file);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with browser ObjectURL API
     setSrc(objectUrl);
 
     return () => {
@@ -128,9 +130,10 @@ const AttachmentUI = () => {
         return "Document";
       case "file":
         return "File";
-      default:
+      default: {
         const _exhaustiveCheck = type;
         throw new Error(`Unknown attachment type: ${_exhaustiveCheck}`);
+      }
     }
   });
 

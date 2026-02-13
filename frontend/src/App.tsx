@@ -6,6 +6,7 @@ import Aside from './components/layout/Aside';
 import ChatZone from './features/chat/ChatZone';
 import Profil from './features/profile/Profile';
 import Projects from './features/projects/Projects';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { v4 as uuidv4 } from 'uuid';
 import apiClient from './apiClient';
 import { useAppStore } from './stores/appStore';
@@ -97,18 +98,20 @@ function App() {
   return (
     <main className='flex h-screen overflow-hidden'>
       <Aside />
-      <div className={profil ? 'hidden' : 'flex-1 min-h-0'}>
-        {showProjects ? (
-          <Projects />
-        ) : (
-          <ChatZone
-            sessionId={sessionId}
-          />
-        )}
-      </div>
-      <div className={profil ? 'flex-1 min-h-0' : 'hidden'}>
-        <Profil />
-      </div>
+      <ErrorBoundary>
+        <div className={profil ? 'hidden' : 'flex-1 min-h-0'}>
+          {showProjects ? (
+            <Projects />
+          ) : (
+            <ChatZone
+              sessionId={sessionId}
+            />
+          )}
+        </div>
+        <div className={profil ? 'flex-1 min-h-0' : 'hidden'}>
+          <Profil />
+        </div>
+      </ErrorBoundary>
     </main>
   );
 }

@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const cryptoJS = require('crypto-js');
 const db = require('../models/database');
+const { invalidateCache } = require('../apiKeyCache');
+const logger = require('../logger');
 require('dotenv').config();
 
 const saltRounds = 10;
@@ -22,7 +24,7 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.updateApiKey = async (req, res) => {
-  console.log('Controller updateApiKey accessed');
+  logger.info('Controller updateApiKey accessed');
   const { apiKey, provider } = req.body;
   const userId = req.user.id;
   const targetProvider = provider || 'openai';
@@ -56,6 +58,7 @@ exports.updateApiKey = async (req, res) => {
         },
       );
     });
+    invalidateCache(userId, targetProvider);
     res.status(200).json({ message: 'API Key updated successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -101,6 +104,7 @@ exports.deleteApiKey = async (req, res) => {
         },
       );
     });
+    invalidateCache(userId, targetProvider);
     res.status(200).json({ message: 'API key deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
@@ -108,7 +112,7 @@ exports.deleteApiKey = async (req, res) => {
 };
 
 exports.updateUserData = async (req, res) => {
-  console.log('Controller updateUserData accessed');
+  logger.info('Controller updateUserData accessed');
   const userId = req.user.id;
   const { username, password } = req.body;
 
@@ -163,7 +167,7 @@ exports.updateUserData = async (req, res) => {
         });
     });
 
-    console.log(`User data updated successfully for user ID: ${userId}`);
+    logger.info({ userId }, 'User data updated successfully');
     res.status(200).json({ message: 'User data updated successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });

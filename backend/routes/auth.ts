@@ -4,6 +4,7 @@ const authController = require('../controllers/authController');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateBody, validateQuery } = require('../middlewares/validate');
+const { createDatabaseStore } = require('../rateLimitStore');
 
 const registerSchema = z.object({
   username: z.string().min(1).max(100),
@@ -38,6 +39,7 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
 });
 
 const registerLimiter = rateLimit({
@@ -45,6 +47,7 @@ const registerLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
 });
 
 const passwordLimiter = rateLimit({
@@ -52,6 +55,7 @@ const passwordLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
 });
 
 const verifyLimiter = rateLimit({
@@ -59,6 +63,7 @@ const verifyLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
 });
 
 // pour l'inscription

@@ -2,7 +2,8 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const morgan = require('morgan');
+const pinoHttp = require('pino-http');
+const logger = require('./logger');
 
 const db = require('./models/database');
 const auth = require('./routes/auth');
@@ -11,6 +12,7 @@ const userApi = require('./routes/users-api');
 const projectsApi = require('./routes/projects');
 const threadsApi = require('./routes/threads');
 const chatApiRoute = require('./routes/chatApi');
+const searchApi = require('./routes/search');
 
 const parseAllowedOrigins = () => {
   const rawOrigins = process.env.CORS_ALLOWED_ORIGINS || process.env.APP_URL || '';
@@ -83,7 +85,35 @@ app.use(securityHeaders);
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false, limit: '15mb' }));
 app.use(express.json({ limit: '15mb' }));
-app.use(morgan('tiny'));
+let requestCounter = 0;
+app.use(
+  pinoHttp({
+    logger,
+    genReqId: () => {
+      requestCounter += 1;
+      return `req-${requestCounter}`;
+    },
+    customLogLevel: (_req, res, err) => {
+      if (res.statusCode >= 500 || err) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
+    serializers: {
+      req(req) {
+        return {
+          id: req.id,
+          method: req.method,
+          url: req.url,
+        };
+      },
+      res(res) {
+        return {
+          statusCode: res.statusCode,
+        };
+      },
+    },
+  }),
+);
 
 app.get('/healthz', (_req, res) => {
   res.status(200).json({
@@ -98,6 +128,7 @@ app.use('/', userApi);
 app.use('/', projectsApi);
 app.use('/', threadsApi);
 app.use('/api/chat', chatApiRoute);
+app.use('/', searchApi);
 
 app.use((err, req, res, next) => {
   if (err && err.message === 'Not allowed by CORS') {
@@ -110,14 +141,14 @@ app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
-  console.error('Unhandled server error:', err?.message || err);
+  logger.error({ err: err?.message || err }, 'Unhandled server error');
   return res.status(500).json({ error: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const server = app.listen(PORT, HOST, () => {
-  console.log(`Server running on ${HOST}:${PORT}`);
+  logger.info({ host: HOST, port: PORT }, 'Server running');
 });
 
 cleanupExpiredTokens();
@@ -128,9 +159,9 @@ const cleanupInterval = setInterval(() => {
 
 const shutdown = () => {
   server.close(() => {
-    console.log('Server terminated');
+    logger.info('Server terminated');
     db.close();
-    console.log('3) Close the database connection => OK.');
+    logger.info('Database connection closed');
   });
   clearInterval(cleanupInterval);
 };

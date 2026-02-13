@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const db = require('../models/database');
+const logger = require('../logger');
 require('dotenv').config();
 
 const secretKey = process.env.SECRET_KEY;
@@ -75,7 +76,7 @@ const dkimDomain = process.env.DKIM_DOMAIN;
 const dkimSelector = process.env.DKIM_SELECTOR || 'default';
 
 if (dkimPrivateKey && !dkimDomain) {
-  console.warn('DKIM_DOMAIN is missing while DKIM_PRIVATE_KEY is set.');
+  logger.warn('DKIM_DOMAIN is missing while DKIM_PRIVATE_KEY is set.');
 }
 
 const transporter = nodemailer.createTransport({
@@ -100,9 +101,9 @@ const transporter = nodemailer.createTransport({
 if (process.env.SMTP_DEBUG === 'true') {
   transporter.verify(err => {
     if (err) {
-      console.error('SMTP verify failed:', err.message);
+      logger.error({ err: err.message }, 'SMTP verify failed');
     } else {
-      console.log('SMTP server is ready to take messages');
+      logger.info('SMTP server is ready to take messages');
     }
   });
 }
@@ -176,20 +177,20 @@ const logAuthEvent = (event, payload: Record<string, any> = {}) => {
     email: undefined,
     emailFingerprint: payload.email ? emailFingerprint(payload.email) : undefined,
   };
-  console.warn(`[auth] ${event}`, safePayload);
+  logger.warn({ event, ...safePayload }, `[auth] ${event}`);
 };
 
 const cleanupExpiredTokens = () => {
   db.run(
     'DELETE FROM password_resets WHERE expires_at <= CURRENT_TIMESTAMP',
     cleanupErr => {
-      if (cleanupErr) console.error(cleanupErr.message);
+      if (cleanupErr) logger.error({ err: cleanupErr.message }, 'Failed to cleanup expired password resets');
     },
   );
   db.run(
     'DELETE FROM email_verifications WHERE expires_at <= CURRENT_TIMESTAMP',
     cleanupErr => {
-      if (cleanupErr) console.error(cleanupErr.message);
+      if (cleanupErr) logger.error({ err: cleanupErr.message }, 'Failed to cleanup expired email verifications');
     },
   );
 };
@@ -217,13 +218,11 @@ exports.register = async (req, res) => {
       });
     });
     if (emailExists) {
-      console.log('email issue');
       logAuthEvent('register_email_exists', { email });
       return res.status(400).json({ error: 'exists' });
     }
     // Vérification du mot de passe
     if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(password)) {
-      console.log('password issue');
       logAuthEvent('register_password_invalid', { email });
       return res.status(400).json({
         error: 'characters',
@@ -231,49 +230,59 @@ exports.register = async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     cleanupExpiredTokens();
-    db.run(
-      'INSERT INTO users (username, email, password, email_verified) VALUES (?,?,?,?)',
-      [username, email, hashedPassword, 0],
-      function (err) {
-        if (err) {
-          return res.status(500).json({ error: 'Internal server error' });
-        }
-        const resetToken = uuidv4();
-        db.run(
-          'DELETE FROM email_verifications WHERE email = ?',
-          [email],
-          deleteErr => {
-            if (deleteErr) {
-              return res.status(500).json({ error: 'Internal server error' });
-            }
-            db.run(
-              'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)',
-              [email, resetToken, futureDbDateTime(24)],
-              async insertErr => {
-                if (insertErr) {
-                  return res.status(500).json({ error: 'Internal server error' });
-                }
-                try {
-                  await sendVerificationEmail(req, email, resetToken);
-                  logAuthEvent('register_verification_sent', { email });
-                  res.status(201).json({
-                    message: 'User registered successfully',
-                    userId: this.lastID,
-                    emailVerificationRequired: true,
-                  });
-                } catch (mailErr) {
-                  logAuthEvent('register_verification_failed', {
-                    email,
-                    reason: mailErr.message,
-                  });
-                  res.status(500).json({ error: 'Internal server error' });
-                }
-              },
-            );
-          },
-        );
-      },
-    );
+    const resetToken = uuidv4();
+    try {
+      const userId = await db.transaction(async txn => {
+        const insertedId = await new Promise<any>((resolve, reject) => {
+          txn.run(
+            'INSERT INTO users (username, email, password, email_verified) VALUES (?,?,?,?)',
+            [username, email, hashedPassword, 0],
+            function (insertErr) {
+              if (insertErr) return reject(insertErr);
+              resolve(this.lastID);
+            },
+          );
+        });
+        await new Promise<void>((resolve, reject) => {
+          txn.run(
+            'DELETE FROM email_verifications WHERE email = ?',
+            [email],
+            deleteErr => {
+              if (deleteErr) return reject(deleteErr);
+              resolve();
+            },
+          );
+        });
+        await new Promise<void>((resolve, reject) => {
+          txn.run(
+            'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)',
+            [email, resetToken, futureDbDateTime(24)],
+            insertErr => {
+              if (insertErr) return reject(insertErr);
+              resolve();
+            },
+          );
+        });
+        return insertedId;
+      });
+      try {
+        await sendVerificationEmail(req, email, resetToken);
+        logAuthEvent('register_verification_sent', { email });
+        res.status(201).json({
+          message: 'User registered successfully',
+          userId,
+          emailVerificationRequired: true,
+        });
+      } catch (mailErr) {
+        logAuthEvent('register_verification_failed', {
+          email,
+          reason: mailErr.message,
+        });
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    } catch (txnErr) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   });
 };
 
@@ -368,12 +377,12 @@ exports.resetPasswordRequest = (req, res) => {
             return res.status(500).json({ error: 'Internal server error' });
           }
           if (process.env.SMTP_DEBUG === 'true') {
-            console.log('SMTP messageId:', info.messageId);
-            console.log('SMTP accepted:', info.accepted);
-            console.log('SMTP rejected:', info.rejected);
-            if (info.response) {
-              console.log('SMTP response:', info.response);
-            }
+            logger.debug({
+              messageId: info.messageId,
+              accepted: info.accepted,
+              rejected: info.rejected,
+              response: info.response || undefined,
+            }, 'SMTP reset password email sent');
           }
           logAuthEvent('reset_email_sent', { email });
           res.status(200).json({ message: 'Reset email sent' });

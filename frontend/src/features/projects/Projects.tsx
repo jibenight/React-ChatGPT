@@ -1,12 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../../apiClient';
 import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '../../UserContext';
+import { Users, X } from 'lucide-react';
+import ProjectListSkeleton from '@/components/ui/ProjectListSkeleton';
+import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'Owner',
+  editor: 'Editor',
+  viewer: 'Viewer',
+};
+
+const ROLE_BADGE_CLASSES: Record<string, string> = {
+  owner:
+    'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-200',
+  editor:
+    'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200',
+  viewer:
+    'border-gray-200 bg-gray-50 text-gray-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300',
+};
 
 function Projects() {
   const DEV_BYPASS_AUTH =
     import.meta.env.DEV &&
     String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
   const navigate = useNavigate();
+  const { userData } = useUser();
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [threads, setThreads] = useState<any[]>([]);
@@ -17,6 +37,7 @@ function Projects() {
   });
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingThreadTitle, setEditingThreadTitle] = useState('');
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const [confirmProjectDelete, setConfirmProjectDelete] = useState(false);
   const [newProject, setNewProject] = useState({
     name: '',
@@ -33,12 +54,31 @@ function Projects() {
   type Status = { type: 'success' | 'error'; text: string } | null;
   const [status, setStatus] = useState<Status>(null);
 
+  // ── Members state ───────────────────────────────────────────────────
+  const [members, setMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('viewer');
+  const [confirmMemberRemove, setConfirmMemberRemove] = useState<{
+    open: boolean;
+    userId: number | null;
+    username: string;
+  }>({ open: false, userId: null, username: '' });
+
+  const isOwner = selectedProject?.member_role === 'owner';
+  const canEdit =
+    selectedProject?.member_role === 'owner' ||
+    selectedProject?.member_role === 'editor';
+
   const loadProjects = async () => {
+    setLoadingProjects(true);
     try {
       const response = await apiClient.get('/api/projects');
       setProjects(response.data || []);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingProjects(false);
     }
   };
 
@@ -56,7 +96,7 @@ function Projects() {
     });
   }, [selectedProject]);
 
-  const loadThreads = async projectId => {
+  const loadThreads = async (projectId) => {
     if (!projectId) return;
     setLoadingThreads(true);
     try {
@@ -69,14 +109,29 @@ function Projects() {
     }
   };
 
+  const loadMembers = async (projectId) => {
+    if (!projectId) return;
+    setLoadingMembers(true);
+    try {
+      const response = await apiClient.get(`/api/projects/${projectId}/members`);
+      setMembers(response.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
   useEffect(() => {
     if (!selectedProject) {
       setThreads([]);
+      setMembers([]);
       setEditingThreadId(null);
       setEditingThreadTitle('');
       return;
     }
     loadThreads(selectedProject.id);
+    loadMembers(selectedProject.id);
   }, [selectedProject]);
 
   const handleCreate = async () => {
@@ -114,12 +169,13 @@ function Projects() {
       if (refreshed) {
         setSelectedProject(refreshed);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setStatus({
-        type: 'error',
-        text: 'Impossible de mettre à jour le projet.',
-      });
+      const msg =
+        err?.response?.status === 403
+          ? 'Permission refusée.'
+          : 'Impossible de mettre à jour le projet.';
+      setStatus({ type: 'error', text: msg });
     }
   };
 
@@ -130,13 +186,17 @@ function Projects() {
       setSelectedProject(null);
       setStatus({ type: 'success', text: 'Projet supprimé.' });
       await loadProjects();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setStatus({ type: 'error', text: 'Impossible de supprimer le projet.' });
+      const msg =
+        err?.response?.status === 403
+          ? 'Permission refusée.'
+          : 'Impossible de supprimer le projet.';
+      setStatus({ type: 'error', text: msg });
     }
   };
 
-  const handleDeleteThread = async threadId => {
+  const handleDeleteThread = async (threadId) => {
     if (!selectedProject) return;
     try {
       await apiClient.delete(`/api/threads/${threadId}`);
@@ -150,7 +210,7 @@ function Projects() {
     }
   };
 
-  const handleStartRenameThread = thread => {
+  const handleStartRenameThread = (thread) => {
     setEditingThreadId(thread.id);
     setEditingThreadTitle(thread.title || '');
   };
@@ -160,7 +220,7 @@ function Projects() {
     setEditingThreadTitle('');
   };
 
-  const handleRenameThread = async threadId => {
+  const handleRenameThread = async (threadId) => {
     if (!selectedProject) return;
     try {
       await apiClient.patch(`/api/threads/${threadId}`, {
@@ -175,6 +235,58 @@ function Projects() {
         type: 'error',
         text: 'Impossible de renommer la conversation.',
       });
+    }
+  };
+
+  // ── Members handlers ────────────────────────────────────────────────
+  const handleInviteMember = async () => {
+    if (!selectedProject || !inviteEmail.trim()) return;
+    try {
+      await apiClient.post(`/api/projects/${selectedProject.id}/members`, {
+        email: inviteEmail.trim(),
+        role: inviteRole,
+      });
+      setInviteEmail('');
+      setInviteRole('viewer');
+      setStatus({ type: 'success', text: 'Membre invité.' });
+      await loadMembers(selectedProject.id);
+    } catch (err: any) {
+      console.error(err);
+      const serverMsg = err?.response?.data?.error;
+      let msg = 'Impossible d\'inviter ce membre.';
+      if (serverMsg === 'User not found') msg = 'Utilisateur introuvable.';
+      else if (serverMsg === 'User is already a member') msg = 'Cet utilisateur est déjà membre.';
+      else if (serverMsg === 'Cannot add yourself as member') msg = 'Vous ne pouvez pas vous inviter vous-même.';
+      setStatus({ type: 'error', text: msg });
+    }
+  };
+
+  const handleChangeMemberRole = async (targetUserId: number, newRole: string) => {
+    if (!selectedProject) return;
+    try {
+      await apiClient.patch(
+        `/api/projects/${selectedProject.id}/members/${targetUserId}`,
+        { role: newRole },
+      );
+      setStatus({ type: 'success', text: 'Rôle mis à jour.' });
+      await loadMembers(selectedProject.id);
+    } catch (err) {
+      console.error(err);
+      setStatus({ type: 'error', text: 'Impossible de modifier le rôle.' });
+    }
+  };
+
+  const handleRemoveMember = async (targetUserId: number) => {
+    if (!selectedProject) return;
+    try {
+      await apiClient.delete(
+        `/api/projects/${selectedProject.id}/members/${targetUserId}`,
+      );
+      setStatus({ type: 'success', text: 'Membre retiré.' });
+      await loadMembers(selectedProject.id);
+    } catch (err) {
+      console.error(err);
+      setStatus({ type: 'error', text: 'Impossible de retirer le membre.' });
     }
   };
 
@@ -262,7 +374,7 @@ function Projects() {
                     instructions: event.target.value,
                   }))
                 }
-                placeholder="Instructions pour l\'IA (optionnel)"
+                placeholder="Instructions pour l'IA (optionnel)"
                 className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
               />
               <textarea
@@ -294,12 +406,14 @@ function Projects() {
               </h2>
             </div>
             <div className='mt-4 grid gap-3'>
-              {projects.length === 0 && (
+              {loadingProjects ? (
+                <ProjectListSkeleton />
+              ) : projects.length === 0 ? (
                 <p className='text-sm text-gray-500 dark:text-slate-400'>
                   Aucun projet pour le moment.
                 </p>
-              )}
-              {projects.map(project => (
+              ) : null}
+              {!loadingProjects && projects.map(project => (
                 <div
                   key={project.id}
                     className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
@@ -313,7 +427,15 @@ function Projects() {
                     onClick={() => setSelectedProject(project)}
                     className='w-full text-left'
                   >
-                    <p className='font-semibold'>{project.name}</p>
+                    <div className='flex items-center gap-2'>
+                      <p className='font-semibold'>{project.name}</p>
+                      {project.member_role && project.member_role !== 'owner' && (
+                        <span className='inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200'>
+                          <Users className='h-3 w-3' />
+                          Partagé
+                        </span>
+                      )}
+                    </div>
                     <p className='text-xs text-gray-500 dark:text-slate-400'>
                       {project.description || 'Aucune description'}
                     </p>
@@ -348,7 +470,8 @@ function Projects() {
                         name: event.target.value,
                       }))
                     }
-                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    disabled={!canEdit}
+                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
                   />
                   <input
                     type='text'
@@ -359,7 +482,8 @@ function Projects() {
                         description: event.target.value,
                       }))
                     }
-                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    disabled={!canEdit}
+                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
                   />
                   <textarea
                     rows={4}
@@ -370,7 +494,8 @@ function Projects() {
                         instructions: event.target.value,
                       }))
                     }
-                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    disabled={!canEdit}
+                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
                   />
                   <textarea
                     rows={4}
@@ -381,25 +506,140 @@ function Projects() {
                         context_data: event.target.value,
                       }))
                     }
-                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    disabled={!canEdit}
+                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
                   />
                   <div className='flex flex-wrap gap-2'>
-                    <button
-                      type='button'
-                      onClick={handleUpdate}
-                      className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
-                    >
-                      Enregistrer
-                    </button>
-                    <button
-                      type='button'
-                      onClick={() => setConfirmProjectDelete(true)}
-                      className='rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
-                    >
-                      Supprimer le projet
-                    </button>
+                    {canEdit && (
+                      <button
+                        type='button'
+                        onClick={handleUpdate}
+                        className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
+                      >
+                        Enregistrer
+                      </button>
+                    )}
+                    {isOwner && (
+                      <button
+                        type='button'
+                        onClick={() => setConfirmProjectDelete(true)}
+                        className='rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
+                      >
+                        Supprimer le projet
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {/* ── Section Membres ─────────────────────────────────── */}
+                <div className='mt-6 border-t border-gray-200 pt-4 dark:border-slate-800'>
+                  <h4 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
+                    Membres
+                  </h4>
+
+                  {/* Invite form (owner only) */}
+                  {isOwner && (
+                    <div className='mt-3 flex flex-wrap items-end gap-2'>
+                      <input
+                        type='email'
+                        value={inviteEmail}
+                        onChange={e => setInviteEmail(e.target.value)}
+                        placeholder='Email du membre'
+                        className='flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                      />
+                      <select
+                        value={inviteRole}
+                        onChange={e =>
+                          setInviteRole(e.target.value as 'editor' | 'viewer')
+                        }
+                        className='rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                      >
+                        <option value='viewer'>Viewer</option>
+                        <option value='editor'>Editor</option>
+                      </select>
+                      <button
+                        type='button'
+                        onClick={handleInviteMember}
+                        className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
+                      >
+                        Inviter
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Members list */}
+                  <div className='mt-3 space-y-2'>
+                    {loadingMembers ? (
+                      <p className='text-xs text-gray-500 dark:text-slate-400'>
+                        Chargement...
+                      </p>
+                    ) : members.length === 0 ? (
+                      <p className='text-xs text-gray-500 dark:text-slate-400'>
+                        Aucun membre.
+                      </p>
+                    ) : (
+                      members.map(member => (
+                        <div
+                          key={member.user_id}
+                          className='flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900'
+                        >
+                          <div className='flex items-center gap-2'>
+                            <span className='font-semibold text-gray-700 dark:text-slate-200'>
+                              {member.username}
+                            </span>
+                            <span className='text-gray-400 dark:text-slate-500'>
+                              {member.email}
+                            </span>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                ROLE_BADGE_CLASSES[member.role] || ROLE_BADGE_CLASSES.viewer
+                              }`}
+                            >
+                              {ROLE_LABELS[member.role] || member.role}
+                            </span>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            {isOwner &&
+                              member.user_id !== userData?.id &&
+                              member.role !== 'owner' && (
+                                <>
+                                  <select
+                                    value={member.role}
+                                    onChange={e =>
+                                      handleChangeMemberRole(
+                                        member.user_id,
+                                        e.target.value,
+                                      )
+                                    }
+                                    className='rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100'
+                                  >
+                                    <option value='editor'>Editor</option>
+                                    <option value='viewer'>Viewer</option>
+                                  </select>
+                                  <button
+                                    type='button'
+                                    onClick={() =>
+                                      setConfirmMemberRemove({
+                                        open: true,
+                                        userId: member.user_id,
+                                        username: member.username,
+                                      })
+                                    }
+                                    title='Retirer le membre'
+                                    className='rounded-md p-1 text-red-500 transition hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200'
+                                  >
+                                    <X className='h-3.5 w-3.5' />
+                                  </button>
+                                </>
+                              )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Section Conversations ───────────────────────────── */}
                 <div className='mt-6 border-t border-gray-200 pt-4 dark:border-slate-800'>
                   <div className='flex items-center justify-between'>
                     <h4 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
@@ -408,7 +648,7 @@ function Projects() {
                   </div>
                   <div className='mt-3 space-y-2'>
                     {loadingThreads ? (
-                      <p className='text-xs text-gray-500 dark:text-slate-400'>Chargement...</p>
+                      <ThreadListSkeleton />
                     ) : threads.length === 0 ? (
                       <p className='text-xs text-gray-500 dark:text-slate-400'>
                         Aucune conversation pour ce projet.
@@ -498,6 +738,7 @@ function Projects() {
         </div>
       </div>
 
+      {/* ── Modal: confirm thread delete ──────────────────────────────── */}
       {confirmThreadDelete.open && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
           <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
@@ -535,6 +776,7 @@ function Projects() {
         </div>
       )}
 
+      {/* ── Modal: confirm project delete ─────────────────────────────── */}
       {confirmProjectDelete && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
           <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
@@ -562,6 +804,52 @@ function Projects() {
                 }}
               >
                 Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: confirm member remove ──────────────────────────────── */}
+      {confirmMemberRemove.open && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
+          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
+            <h4 className='text-base font-semibold text-gray-900 dark:text-slate-100'>
+              Retirer le membre
+            </h4>
+            <p className='mt-2 text-sm text-gray-600 dark:text-slate-300'>
+              Retirer {confirmMemberRemove.username} de ce projet ?
+            </p>
+            <div className='mt-5 flex justify-end gap-2'>
+              <button
+                type='button'
+                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                onClick={() =>
+                  setConfirmMemberRemove({
+                    open: false,
+                    userId: null,
+                    username: '',
+                  })
+                }
+              >
+                Annuler
+              </button>
+              <button
+                type='button'
+                className='rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700'
+                onClick={() => {
+                  const target = confirmMemberRemove.userId;
+                  setConfirmMemberRemove({
+                    open: false,
+                    userId: null,
+                    username: '',
+                  });
+                  if (target) {
+                    handleRemoveMember(target);
+                  }
+                }}
+              >
+                Retirer
               </button>
             </div>
           </div>

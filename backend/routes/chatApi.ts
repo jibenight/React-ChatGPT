@@ -4,12 +4,14 @@ const chatController = require('../controllers/chatController');
 const isAuthenticated = require('../middlewares/isAuthenticated');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
+const { createDatabaseStore } = require('../rateLimitStore');
 
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  store: createDatabaseStore(),
   handler: (req, res) => {
     res.status(429).json({ error: 'Too many chat requests. Try again soon.' });
   },

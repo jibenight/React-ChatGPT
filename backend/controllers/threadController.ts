@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const db = require('../models/database');
+const logger = require('../logger');
 
 exports.listThreads = async (req, res) => {
   const userId = req.user.id;
@@ -236,6 +237,78 @@ exports.updateThread = async (req, res) => {
       project_id: updatedProjectId,
     });
   } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.exportThread = async (req, res) => {
+  const userId = req.user.id;
+  const { threadId } = req.params;
+  const { format } = req.query;
+
+  try {
+    const thread = await new Promise<any>((resolve, reject) => {
+      db.get(
+        'SELECT id, title, created_at FROM threads WHERE id = ? AND user_id = ?',
+        [threadId, userId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        },
+      );
+    });
+
+    if (!thread) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+
+    const messages = await new Promise<any[]>((resolve, reject) => {
+      db.all(
+        `SELECT role, content, provider, model, created_at
+         FROM messages
+         WHERE thread_id = ?
+         ORDER BY id ASC`,
+        [threadId],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        },
+      );
+    });
+
+    const title = thread.title || 'conversation';
+    const safeTitle = title.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçœæ _-]/gi, '').slice(0, 80);
+
+    if (format === 'md') {
+      const lines = [`# ${title}\n`];
+      for (const msg of messages) {
+        const roleLabel = msg.role === 'user' ? 'Utilisateur' : msg.role === 'assistant' ? 'Assistant' : msg.role;
+        lines.push(`**${roleLabel}**\n`);
+        lines.push(`${msg.content || ''}\n`);
+        lines.push('---\n');
+      }
+      const markdown = lines.join('\n');
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="thread-${safeTitle}.md"`);
+      return res.send(markdown);
+    }
+
+    const payload = {
+      title,
+      created_at: thread.created_at,
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content || '',
+        provider: msg.provider || null,
+        model: msg.model || null,
+        created_at: msg.created_at,
+      })),
+    };
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="thread-${safeTitle}.json"`);
+    return res.json(payload);
+  } catch (err) {
+    logger.error({ err, threadId }, 'Failed to export thread');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

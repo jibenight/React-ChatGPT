@@ -1,10 +1,12 @@
-const openai = require('openai');
+const OpenAI = require('openai').default;
 const { GoogleGenAI } = require('@google/genai');
 const Anthropic = require('@anthropic-ai/sdk');
 const MistralClient = require('@mistralai/mistralai');
 const db = require('../models/database');
 const cryptoJS = require('crypto-js');
 const { Blob } = require('buffer');
+const { getFromCache, setInCache } = require('../apiKeyCache');
+const logger = require('../logger');
 
 const parseAttachments = value => {
   if (!value) return [];
@@ -129,7 +131,7 @@ const uploadGeminiAttachments = async (genAI, attachments) => {
 };
 
 const streamOpenAi = async ({
-  openaiApi,
+  client,
   model,
   messages,
   onDelta = delta => {
@@ -139,57 +141,29 @@ const streamOpenAi = async ({
   onError = err => {
     void err;
   },
-  onStream = stream => {
-    void stream;
-  },
+  signal,
 }) => {
-  const response = await openaiApi.createChatCompletion(
-    {
-      model,
-      messages,
-      stream: true,
-    },
-    { responseType: 'stream' },
-  );
-
-  onStream(response.data);
-
-  return new Promise<void>((resolve, reject) => {
-    response.data.on('data', data => {
-      const lines = data
-        .toString()
-        .split('\n')
-        .filter(line => line.trim().startsWith('data:'));
-      for (const line of lines) {
-        const message = line.replace(/^data:\s*/, '').trim();
-        if (message === '[DONE]') {
-          onComplete?.();
-          resolve();
-          return;
-        }
-        try {
-          const parsed = JSON.parse(message);
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) {
-            onDelta?.(delta);
-          }
-        } catch (err) {
-          onError?.(err);
-        }
-      }
-    });
-
-    response.data.on('error', err => {
-      onError?.(err);
-      reject(err);
-    });
-
-    response.data.on('end', () => {
-      onComplete?.();
-      resolve();
-    });
-
+  const stream = await client.chat.completions.create({
+    model,
+    messages,
+    stream: true,
   });
+
+  try {
+    for await (const chunk of stream) {
+      if (signal?.aborted) {
+        stream.controller?.abort();
+        break;
+      }
+      const delta = chunk.choices?.[0]?.delta?.content;
+      if (delta) {
+        onDelta(delta);
+      }
+    }
+    onComplete();
+  } catch (err) {
+    onError(err);
+  }
 };
 
 exports.sendMessage = async (req, res) => {
@@ -257,35 +231,40 @@ exports.sendMessage = async (req, res) => {
   }
 
   try {
-    const result = await new Promise<any>((resolve, reject) => {
-      db.get(
-        'SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?',
-        [userId, targetProvider],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        },
-      );
-    });
+    let apiKey = getFromCache(userId, targetProvider);
 
-    if (!result)
-      return res
-        .status(400)
-        .json({ error: `API key not found for ${targetProvider}` });
+    if (!apiKey) {
+      const result = await new Promise<any>((resolve, reject) => {
+        db.get(
+          'SELECT api_key FROM api_keys WHERE user_id = ? AND provider = ?',
+          [userId, targetProvider],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          },
+        );
+      });
 
-    const encryptionKey = process.env.ENCRYPTION_KEY;
-    if (!encryptionKey) {
-      return res.status(500).json({ error: 'Server misconfiguration' });
+      if (!result)
+        return res
+          .status(400)
+          .json({ error: `API key not found for ${targetProvider}` });
+
+      const encryptionKey = process.env.ENCRYPTION_KEY;
+      if (!encryptionKey) {
+        return res.status(500).json({ error: 'Server misconfiguration' });
+      }
+      try {
+        const bytes = cryptoJS.AES.decrypt(result.api_key, encryptionKey);
+        apiKey = bytes.toString(cryptoJS.enc.Utf8);
+      } catch (e) {
+        return res.status(500).json({ error: 'Failed to decrypt API key' });
+      }
+
+      if (!apiKey) return res.status(401).json({ error: 'Invalid API key' });
+
+      setInCache(userId, targetProvider, apiKey);
     }
-    let apiKey;
-    try {
-      const bytes = cryptoJS.AES.decrypt(result.api_key, encryptionKey);
-      apiKey = bytes.toString(cryptoJS.enc.Utf8);
-    } catch (e) {
-      return res.status(500).json({ error: 'Failed to decrypt API key' });
-    }
-
-    if (!apiKey) return res.status(401).json({ error: 'Invalid API key' });
 
     const threadRow = await new Promise<any>((resolve, reject) => {
       db.get(
@@ -312,57 +291,59 @@ exports.sendMessage = async (req, res) => {
       );
     }
 
-    if (!threadRow) {
-      const titleSource =
-        message && message.trim()
-          ? message
-          : storedAttachments[0]?.name || 'Nouvelle conversation';
-      const title = titleSource.slice(0, 60);
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          `INSERT INTO threads (id, user_id, project_id, title, last_message_at)
-           VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-          [activeThreadId, userId, projectId || null, title],
-          err => {
-            if (err) reject(err);
-            else resolve();
-          },
-        );
-      });
-    } else if (!threadRow.project_id && projectId) {
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          `UPDATE threads
-           SET project_id = ?, updated_at = CURRENT_TIMESTAMP
-           WHERE id = ? AND user_id = ?`,
-          [projectId, activeThreadId, userId],
-          err => {
-            if (err) reject(err);
-            else resolve();
-          },
-        );
-      });
-    }
+    await db.transaction(async txn => {
+      if (!threadRow) {
+        const titleSource =
+          message && message.trim()
+            ? message
+            : storedAttachments[0]?.name || 'Nouvelle conversation';
+        const title = titleSource.slice(0, 60);
+        await new Promise<void>((resolve, reject) => {
+          txn.run(
+            `INSERT INTO threads (id, user_id, project_id, title, last_message_at)
+             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+            [activeThreadId, userId, projectId || null, title],
+            err => {
+              if (err) reject(err);
+              else resolve();
+            },
+          );
+        });
+      } else if (!threadRow.project_id && projectId) {
+        await new Promise<void>((resolve, reject) => {
+          txn.run(
+            `UPDATE threads
+             SET project_id = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND user_id = ?`,
+            [projectId, activeThreadId, userId],
+            err => {
+              if (err) reject(err);
+              else resolve();
+            },
+          );
+        });
+      }
 
-    await new Promise<void>((resolve, reject) => {
-      db.run(
-        `INSERT INTO messages (thread_id, role, content, attachments, provider, model)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          activeThreadId,
-          'user',
-          message || '',
-          storedAttachments.length > 0
-            ? JSON.stringify(storedAttachments)
-            : null,
-          targetProvider,
-          targetModel,
-        ],
-        err => {
-          if (err) reject(err);
-          else resolve();
-        },
-      );
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          `INSERT INTO messages (thread_id, role, content, attachments, provider, model)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            activeThreadId,
+            'user',
+            message || '',
+            storedAttachments.length > 0
+              ? JSON.stringify(storedAttachments)
+              : null,
+            targetProvider,
+            targetModel,
+          ],
+          err => {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
     });
 
     const effectiveProjectId = threadRow?.project_id || projectId || null;
@@ -434,22 +415,20 @@ exports.sendMessage = async (req, res) => {
 
     let reply = '';
     if (targetProvider === 'openai') {
-      const configuration = new openai.Configuration({ apiKey });
-      const openaiApi = new openai.OpenAIApi(configuration);
+      const client = new OpenAI({ apiKey });
       const messages = systemPrompt
         ? [{ role: 'system', content: systemPrompt }, ...textOnlyHistory]
         : textOnlyHistory;
       if (wantsStream) {
-        let aborted = false;
-        let streamRef = null;
+        const abortController = new AbortController();
         res.on('close', () => {
-          aborted = true;
-          if (streamRef) streamRef.destroy();
+          abortController.abort();
         });
         await streamOpenAi({
-          openaiApi,
+          client,
           model: targetModel,
           messages,
+          signal: abortController.signal,
           onDelta: delta => {
             reply += delta;
             sendEvent({ type: 'delta', content: delta });
@@ -457,28 +436,13 @@ exports.sendMessage = async (req, res) => {
           onError: err => {
             sendEvent({ type: 'error', error: err?.message || 'Stream error' });
           },
-          onStream: stream => {
-            streamRef = stream;
-          },
         });
-        if (aborted && streamRef) {
-          streamRef.destroy();
-        }
       } else {
-        try {
-          const response = await openaiApi.createChatCompletion({
-            model: targetModel,
-            messages,
-          });
-          reply = response.data.choices[0].message.content;
-        } catch (e) {
-          const response = await openaiApi.createCompletion({
-            model: 'text-davinci-003',
-            prompt: systemPrompt ? `${systemPrompt}\n\n${message}` : message,
-            max_tokens: 150,
-          });
-          reply = response.data.choices[0].text.trim();
-        }
+        const response = await client.chat.completions.create({
+          model: targetModel,
+          messages,
+        });
+        reply = response.choices[0].message.content;
       }
     } else if (targetProvider === 'gemini') {
       const genAI = new GoogleGenAI({ apiKey });
@@ -585,7 +549,7 @@ exports.sendMessage = async (req, res) => {
                 reply += delta;
                 sendEvent({ type: 'delta', content: delta });
               }
-            } catch {}
+            } catch { /* skip malformed SSE chunks */ }
           }
         }
       } else {
@@ -598,29 +562,31 @@ exports.sendMessage = async (req, res) => {
       sendEvent({ type: 'delta', content: reply });
     }
 
-    await new Promise<void>((resolve, reject) => {
-      db.run(
-        `INSERT INTO messages (thread_id, role, content, provider, model)
-         VALUES (?, ?, ?, ?, ?)`,
-        [activeThreadId, 'assistant', reply, targetProvider, targetModel],
-        err => {
-          if (err) reject(err);
-          else resolve();
-        },
-      );
-    });
+    await db.transaction(async txn => {
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          `INSERT INTO messages (thread_id, role, content, provider, model)
+           VALUES (?, ?, ?, ?, ?)`,
+          [activeThreadId, 'assistant', reply, targetProvider, targetModel],
+          err => {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
 
-    await new Promise<void>((resolve, reject) => {
-      db.run(
-        `UPDATE threads
-         SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-         WHERE id = ? AND user_id = ?`,
-        [activeThreadId, userId],
-        err => {
-          if (err) reject(err);
-          else resolve();
-        },
-      );
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          `UPDATE threads
+           SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND user_id = ?`,
+          [activeThreadId, userId],
+          err => {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
     });
 
     if (wantsStream) {
@@ -631,7 +597,7 @@ exports.sendMessage = async (req, res) => {
     }
   } catch (err) {
     const errorMessage = resolveChatProviderError(err);
-    console.error('Chat request failed:', errorMessage);
+    logger.error({ err: errorMessage }, 'Chat request failed');
     if (
       typeof req.headers.accept === 'string' &&
       req.headers.accept.includes('text/event-stream')

@@ -67,7 +67,7 @@ function ProjectFormPanel({
   return (
     <div
       className={`absolute inset-0 z-40 flex h-full flex-col bg-white px-4 py-5 transition-transform duration-300 ease-out dark:bg-slate-950 ${
-        show ? 'translate-x-0' : 'translate-x-full'
+        show ? 'translate-x-0' : 'translate-x-full pointer-events-none'
       }`}
     >
       <div className='flex items-center justify-between'>

@@ -162,7 +162,7 @@ function Aside() {
   }
 
   return (
-    <aside className='flex h-screen w-80 shrink-0 flex-col border-r border-gray-200 bg-white text-gray-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100'>
+    <aside className='relative flex h-screen w-80 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white text-gray-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100'>
       <div className='px-4 pt-4'>
         <div className='rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900'>
           <div className='flex items-center gap-3'>

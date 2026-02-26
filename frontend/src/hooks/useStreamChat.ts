@@ -9,10 +9,6 @@ export const buildStreamHeaders = (): Record<string, string> => {
     'Content-Type': 'application/json',
     Accept: 'text/event-stream',
   };
-  const token = localStorage.getItem('token');
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
   if (DEV_BYPASS_AUTH) {
     const stored = localStorage.getItem('dev_user');
     if (stored) {

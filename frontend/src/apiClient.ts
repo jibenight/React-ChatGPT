@@ -52,6 +52,10 @@ apiClient.interceptors.response.use(
     if (reqId) {
       console.error(`[Request ID: ${reqId}] API error:`, error.message);
     }
+    if (error.response?.status === 401 && !DEV_BYPASS_AUTH) {
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   },
 );

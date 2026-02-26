@@ -126,16 +126,7 @@ describe('useStreamChat', () => {
       expect(headers.Accept).toBe('text/event-stream');
     });
 
-    it('should include Authorization header when token exists', () => {
-      vi.mocked(localStorage.getItem).mockImplementation((key: string) => {
-        if (key === 'token') return 'my-jwt-token';
-        return null;
-      });
-      const headers = buildStreamHeaders();
-      expect(headers.Authorization).toBe('Bearer my-jwt-token');
-    });
-
-    it('should not include Authorization header when no token', () => {
+    it('should not include Authorization header (auth is via cookies)', () => {
       vi.mocked(localStorage.getItem).mockReturnValue(null);
       const headers = buildStreamHeaders();
       expect(headers.Authorization).toBeUndefined();

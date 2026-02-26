@@ -1,14 +1,7 @@
 import '@/i18n';
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import Login from './features/auth/Login';
-import Home from './features/chat/Home';
-import ResetPasswordRequest from './features/auth/ResetPasswordRequest';
-import ResetPassword from './features/auth/ResetPassword';
-import Register from './features/auth/Register';
-import VerifyEmail from './features/auth/VerifyEmail';
-import UserGuide from './features/info/UserGuide';
 import './css/App.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
@@ -16,6 +9,14 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import { UserProvider } from './UserContext';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
+
+const Login = lazy(() => import('./features/auth/Login'));
+const Home = lazy(() => import('./features/chat/Home'));
+const ResetPasswordRequest = lazy(() => import('./features/auth/ResetPasswordRequest'));
+const ResetPassword = lazy(() => import('./features/auth/ResetPassword'));
+const Register = lazy(() => import('./features/auth/Register'));
+const VerifyEmail = lazy(() => import('./features/auth/VerifyEmail'));
+const UserGuide = lazy(() => import('./features/info/UserGuide'));
 
 const applyInitialTheme = () => {
   if (typeof window === 'undefined') return;
@@ -38,22 +39,24 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <TooltipProvider>
         <Toaster />
         <Router>
-          <Routes>
-            <Route path='/' element={<Home />} />
-            <Route path='/register' element={<Register />} />
-            <Route path='/login' element={<Login />} />
-            <Route
-              path='/reset-password-request'
-              element={<ResetPasswordRequest />}
-            />
-            <Route path='/reset-password' element={<ResetPassword />} />
-            <Route path='/verify-email' element={<VerifyEmail />} />
-            <Route path='/guide' element={<UserGuide />} />
-            <Route element={<PrivateRoute />}>
-              <Route path='/chat' element={<App />} />
-              <Route path='/projects' element={<App />} />
-            </Route>
-          </Routes>
+          <Suspense fallback={<div>Chargement...</div>}>
+            <Routes>
+              <Route path='/' element={<Home />} />
+              <Route path='/register' element={<Register />} />
+              <Route path='/login' element={<Login />} />
+              <Route
+                path='/reset-password-request'
+                element={<ResetPasswordRequest />}
+              />
+              <Route path='/reset-password' element={<ResetPassword />} />
+              <Route path='/verify-email' element={<VerifyEmail />} />
+              <Route path='/guide' element={<UserGuide />} />
+              <Route element={<PrivateRoute />}>
+                <Route path='/chat' element={<App />} />
+                <Route path='/projects' element={<App />} />
+              </Route>
+            </Routes>
+          </Suspense>
         </Router>
       </TooltipProvider>
     </UserProvider>

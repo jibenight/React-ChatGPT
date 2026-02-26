@@ -85,8 +85,21 @@ const { doubleCsrfProtection } = doubleCsrf({
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', normalizeTrustProxy(process.env.TRUST_PROXY));
+const apiUrl = (process.env.CORS_ALLOWED_ORIGINS || process.env.APP_URL || '').split(',').map(v => v.trim()).filter(Boolean);
+
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'", ...apiUrl],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
   crossOriginResourcePolicy: { policy: 'same-site' },
   frameguard: { action: 'deny' },
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
@@ -165,9 +178,11 @@ app.use('/', threadsApi);
 app.use('/api/chat', chatApiRoute);
 app.use('/', searchApi);
 
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./swagger');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerUi = require('swagger-ui-express');
+  const swaggerSpec = require('./swagger');
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 app.use((err, req, res, next) => {
   if (err && err.message === 'Not allowed by CORS') {

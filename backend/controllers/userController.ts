@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const cryptoJS = require('crypto-js');
 const db = require('../models/database');
 const { invalidateCache } = require('../apiKeyCache');
+const { clearAuthCookie } = require('./authController');
 const logger = require('../logger');
 require('dotenv').config();
 
@@ -9,7 +10,7 @@ const saltRounds = 10;
 const allowedProviders = ['openai', 'gemini', 'claude', 'mistral', 'groq'];
 
 exports.getUsers = async (req, res) => {
-  const query = 'SELECT * FROM users WHERE id = ?;';
+  const query = 'SELECT id, username, email, email_verified FROM users WHERE id = ?;';
   try {
     const rows = await new Promise<any[]>((resolve, reject) => {
         db.all(query, [req.user.id], (err, rows) => {
@@ -262,35 +263,6 @@ exports.deleteAccount = async (req, res) => {
     });
 
     // Clear auth cookie
-    const clearAuthCookie = authRes => {
-      const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || 'auth_token';
-      const isProduction = process.env.NODE_ENV === 'production';
-      const parseBoolean = (value, fallback) => {
-        if (value === undefined || value === null || value === '') return fallback;
-        const normalized = String(value).trim().toLowerCase();
-        if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
-        if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
-        return fallback;
-      };
-      const parseSameSite = value => {
-        const normalized = String(value || 'lax').trim().toLowerCase();
-        if (normalized === 'strict') return 'strict';
-        if (normalized === 'none') return 'none';
-        return 'lax';
-      };
-      const AUTH_COOKIE_SECURE = parseBoolean(process.env.AUTH_COOKIE_SECURE, isProduction);
-      const AUTH_COOKIE_SAME_SITE = parseSameSite(process.env.AUTH_COOKIE_SAMESITE);
-      const AUTH_COOKIE_DOMAIN = process.env.AUTH_COOKIE_DOMAIN
-        ? process.env.AUTH_COOKIE_DOMAIN.trim()
-        : '';
-      const options = {
-        httpOnly: true,
-        secure: AUTH_COOKIE_SECURE,
-        sameSite: AUTH_COOKIE_SAME_SITE,
-        ...(AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {}),
-      };
-      authRes.clearCookie(AUTH_COOKIE_NAME, options);
-    };
     clearAuthCookie(res);
 
     // Invalidate API key cache

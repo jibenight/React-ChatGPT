@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, MessageSquare } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import apiClient from '@/apiClient';
 import { useAppStore } from '@/stores/appStore';
 
@@ -151,7 +152,7 @@ function SidebarSearch() {
                     </p>
                     <p
                       className='mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-gray-600 dark:text-slate-300'
-                      dangerouslySetInnerHTML={{ __html: result.snippet || result.content }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(result.snippet || result.content, { ALLOWED_TAGS: ['mark'], ALLOWED_ATTR: [] }) }}
                     />
                     <div className='mt-1 flex items-center gap-2 text-[10px] text-gray-400 dark:text-slate-500'>
                       <span className='capitalize'>{result.role}</span>

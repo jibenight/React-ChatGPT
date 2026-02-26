@@ -557,4 +557,5 @@ exports.logout = (req, res) => {
   return res.status(200).json({ message: 'Logout successful' });
 };
 
+exports.clearAuthCookie = clearAuthCookie;
 exports.cleanupExpiredTokens = cleanupExpiredTokens;

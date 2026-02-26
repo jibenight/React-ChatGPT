@@ -56,8 +56,14 @@ const ensureDevUser = async (email, username) => {
   return { id: result.lastID, email, username: username || 'Dev User' };
 };
 
+const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
 const isAuthenticated = async (req, res, next) => {
   if (DEV_BYPASS_AUTH) {
+    const clientIp = req.ip || req.socket?.remoteAddress || '';
+    if (!LOCALHOST_IPS.has(clientIp)) {
+      return res.status(403).json({ error: 'Dev bypass only allowed from localhost' });
+    }
     try {
       const headerEmail = normalizeHeaderValue(req.headers['x-dev-user-email']);
       const headerName = normalizeHeaderValue(req.headers['x-dev-user-name']);

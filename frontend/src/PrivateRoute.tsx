@@ -30,8 +30,7 @@ const getOrCreateDevUser = () => {
 };
 
 const PrivateRoute = () => {
-  const { setUserData } = useUser();
-  const hasStoredUser = !!localStorage.getItem('user');
+  const { userData, setUserData } = useUser();
 
   useEffect(() => {
     if (!DEV_BYPASS_AUTH) return;
@@ -44,7 +43,7 @@ const PrivateRoute = () => {
     return <Outlet />;
   }
 
-  return hasStoredUser ? <Outlet /> : <Navigate to='/login' replace />;
+  return userData ? <Outlet /> : <Navigate to='/login' replace />;
 };
 
 export default PrivateRoute;

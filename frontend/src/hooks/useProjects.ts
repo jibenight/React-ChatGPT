@@ -1,9 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import apiClient from '@/apiClient';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Project = any;
+import type { Project } from '@/types';
 
 type ProjectData = {
   name: string;

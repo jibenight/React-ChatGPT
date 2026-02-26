@@ -1,9 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import apiClient from '@/apiClient';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Thread = any;
+import type { Thread } from '@/types';
 
 type UseThreadsReturn = {
   threads: Thread[];

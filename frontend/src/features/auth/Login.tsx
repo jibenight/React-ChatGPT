@@ -1,5 +1,5 @@
 import '../../css/App.css';
-import chatGPT from '../../assets/chatGPT.gif';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../../apiClient';
@@ -131,8 +131,13 @@ const Login = ({ isModal }: LoginProps) => {
         )}
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
-          <div className='inline-block w-32'>
-            <img src={chatGPT} alt='Gif annimé robot' />
+          <div className='inline-block w-96 h-96 -my-16'>
+            <DotLottieReact
+              src='/robot-only.lottie'
+              loop
+              autoplay
+              className='h-full w-full'
+            />
           </div>
           <h2 className='mb-4 text-6xl md:text-7xl text-center font-bold font-heading tracking-px-n leading-tight text-gray-900 dark:text-slate-100'>
             Bon retour
@@ -145,7 +150,7 @@ const Login = ({ isModal }: LoginProps) => {
               <input
                 className='px-4 py-3.5 w-full text-gray-500 font-medium placeholder-gray-500 bg-white outline-none border border-gray-300 rounded-lg focus:ring focus:ring-teal-200 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:border-slate-700 dark:focus:ring-teal-400/30'
                 id='signInInput2-1'
-                type='text'
+                type='email'
                 placeholder='Adresse e-mail'
                 aria-label='Adresse e-mail'
                 aria-invalid={!!errors.email}

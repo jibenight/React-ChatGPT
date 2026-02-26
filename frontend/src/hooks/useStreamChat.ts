@@ -102,6 +102,33 @@ export const streamChat = async (
     }
   }
 
+  // Flush any remaining data in the buffer that wasn't terminated by \n\n
+  if (buffer.trim()) {
+    const line = buffer
+      .split('\n')
+      .find(entry => entry.trim().startsWith('data:'));
+    if (line) {
+      const json = line.replace(/^data:\s*/, '').trim();
+      if (json) {
+        try {
+          const event = JSON.parse(json);
+          if (event.type === 'delta' && typeof event.content === 'string') {
+            finalReply += event.content;
+            onDelta?.(event.content);
+          }
+          if (event.type === 'done') {
+            if (typeof event.reply === 'string') {
+              finalReply = event.reply;
+            }
+            finalThreadId = event.threadId || null;
+          }
+        } catch {
+          // ignore malformed trailing data
+        }
+      }
+    }
+  }
+
   return { reply: finalReply, threadId: finalThreadId };
 };
 

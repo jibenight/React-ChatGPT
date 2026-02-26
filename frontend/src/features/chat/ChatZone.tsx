@@ -93,6 +93,9 @@ function ChatZone({ sessionId }: { sessionId: string }) {
   });
 
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [historyCursor, setHistoryCursor] = useState<number | null>(null);
   const [hasMoreHistory, setHasMoreHistory] = useState(false);

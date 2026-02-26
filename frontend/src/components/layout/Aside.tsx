@@ -5,6 +5,7 @@ import LogOut from '@/features/auth/Logout';
 import chatGPT from '@/assets/chatGPT.mp4';
 import apiClient from '@/apiClient';
 import { useAppStore } from '@/stores/appStore';
+import { useTheme } from '@/hooks/useTheme';
 import SidebarProviderPicker from './SidebarProviderPicker';
 import SidebarModeToggle from './SidebarModeToggle';
 import SidebarProjectList from './SidebarProjectList';
@@ -16,7 +17,6 @@ function Aside() {
   const profil = useAppStore((s) => s.profil);
   const setProfil = useAppStore((s) => s.setProfil);
   const selectedOption = useAppStore((s) => s.selectedOption);
-  const setSelectedOption = useAppStore((s) => s.setSelectedOption);
   const projectMode = useAppStore((s) => s.projectMode);
   const setProjectMode = useAppStore((s) => s.setProjectMode);
   const selectedProjectId = useAppStore((s) => s.selectedProjectId);
@@ -26,6 +26,7 @@ function Aside() {
 
   const { i18n } = useTranslation();
   const { userData } = useUser();
+  const { theme, toggleTheme } = useTheme();
   const hasUserData = userData && userData.username;
   const [showProviderPicker, setShowProviderPicker] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
@@ -38,40 +39,9 @@ function Aside() {
     open: false,
     threadId: null,
   });
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document === 'undefined') return false;
-    return document.documentElement.classList.contains('dark');
-  });
+  const isDark = theme === 'dark';
   const providerAvatar = selectedOption?.avatar || chatGPT;
   const activeProject = projects.find((project) => project.id === selectedProjectId);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('selected_provider');
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored);
-      if (parsed && parsed.provider && parsed.model) {
-        setSelectedOption(parsed);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }, [setSelectedOption]);
-
-  useEffect(() => {
-    if (!selectedOption) return;
-    localStorage.setItem('selected_provider', JSON.stringify(selectedOption));
-  }, [selectedOption]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle('dark', isDark);
-    try {
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    } catch {
-      // Ignore storage failures.
-    }
-  }, [isDark]);
 
   const fetchProjects = async () => {
     setLoadingProjects(true);
@@ -106,10 +76,6 @@ function Aside() {
   useEffect(() => {
     fetchThreads(projectMode ? selectedProjectId : null);
   }, [projectMode, selectedProjectId]);
-
-  useEffect(() => {
-    fetchThreads(projectMode ? selectedProjectId : null);
-  }, [selectedThreadId, projectMode, selectedProjectId]);
 
   const handleSelectProject = (projectId) => {
     setProjectMode(true);
@@ -207,7 +173,7 @@ function Aside() {
           </div>
           <button
             type='button'
-            onClick={() => setIsDark((current) => !current)}
+            onClick={toggleTheme}
             aria-pressed={isDark}
             className={`relative inline-flex h-7 w-12 items-center rounded-full border transition ${
               isDark

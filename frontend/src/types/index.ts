@@ -2,7 +2,6 @@ export type ProviderName = 'openai' | 'gemini' | 'claude' | 'mistral' | 'groq';
 
 export interface User {
   id: number;
-  userId: number;
   username: string;
   email: string;
 }

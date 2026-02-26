@@ -10,7 +10,7 @@ function Profil() {
     import.meta.env.DEV &&
     String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
   const { userData, setUserData } = useUser();
-  const [profilData, setprofilData] = useState(true);
+  const [isReadOnly, setIsReadOnly] = useState(true);
   const [apiStatus, setApiStatus] = useState({
     openai: false,
     gemini: false,
@@ -53,8 +53,8 @@ function Profil() {
   });
   const passwordConfirmationError = errors.passwordConfirmation?.message;
 
-  const toogleProfilData = () => {
-    setprofilData(!profilData);
+  const toggleReadOnly = () => {
+    setIsReadOnly(!isReadOnly);
   };
 
   const fetchApiKeys = async () => {
@@ -119,7 +119,7 @@ function Profil() {
           }));
           reset();
         }
-        toogleProfilData();
+        toggleReadOnly();
       } catch (err) {
         console.error(err);
         setActionMessage({
@@ -373,11 +373,11 @@ function Profil() {
                   </p>
                 </div>
                 <button
-                  onClick={toogleProfilData}
+                  onClick={toggleReadOnly}
                   className='rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-xs font-semibold text-teal-700 transition hover:border-teal-300 hover:bg-teal-100 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200 dark:hover:bg-teal-500/20'
                   type='button'
                 >
-                  {profilData ? 'Éditer le profil' : 'Annuler'}
+                  {isReadOnly ? 'Éditer le profil' : 'Annuler'}
                 </button>
               </div>
 
@@ -399,7 +399,7 @@ function Profil() {
                 })}
               </div>
 
-              {profilData ? (
+              {isReadOnly ? (
                 <div className='mt-6 grid gap-4 md:grid-cols-2'>
                   <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:shadow-none'>
                     <p className='font-semibold text-gray-800 dark:text-slate-100'>Profil</p>

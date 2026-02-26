@@ -1,13 +1,14 @@
 const bcrypt = require('bcrypt');
-const cryptoJS = require('crypto-js');
 const db = require('../models/database');
 const { invalidateCache } = require('../apiKeyCache');
 const { clearAuthCookie } = require('./authController');
+const { encrypt, decrypt } = require('../utils/encryption');
 const logger = require('../logger');
+const { SUPPORTED_PROVIDERS } = require('../constants');
 require('dotenv').config();
 
 const saltRounds = 10;
-const allowedProviders = ['openai', 'gemini', 'claude', 'mistral', 'groq'];
+const allowedProviders = SUPPORTED_PROVIDERS;
 
 exports.getUsers = async (req, res) => {
   const query = 'SELECT id, username, email, email_verified FROM users WHERE id = ?;';
@@ -39,7 +40,7 @@ exports.updateApiKey = async (req, res) => {
   if (!encryptionKey) {
     return res.status(500).json({ error: 'Server misconfiguration' });
   }
-  const encryptedApiKey = cryptoJS.AES.encrypt(apiKey, encryptionKey).toString();
+  const encryptedApiKey = encrypt(apiKey, encryptionKey);
 
   const query = `
     INSERT INTO api_keys (user_id, provider, api_key)

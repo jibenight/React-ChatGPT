@@ -1,6 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
 const db = require('../models/database');
-const cryptoJS = require('crypto-js');
+const { decrypt } = require('../utils/encryption');
 const { getFromCache, setInCache } = require('../apiKeyCache');
 const logger = require('../logger');
 const DOMPurify = require('isomorphic-dompurify');
@@ -23,7 +23,8 @@ const ALLOWED_IMAGE_TYPES = new Set([
   'image/gif',
 ]);
 
-const allowedProviders = new Set(['openai', 'gemini', 'claude', 'mistral', 'groq']);
+const { SUPPORTED_PROVIDERS } = require('../constants');
+const allowedProviders = new Set(SUPPORTED_PROVIDERS);
 const defaultModels = {
   openai: 'gpt-4o',
   gemini: 'gemini-2.5-pro',
@@ -71,7 +72,7 @@ exports.sendMessage = async (req, res) => {
       const encryptionKey = process.env.ENCRYPTION_KEY;
       if (!encryptionKey) return res.status(500).json({ error: 'Server misconfiguration' });
       try {
-        apiKey = cryptoJS.AES.decrypt(result.api_key, encryptionKey).toString(cryptoJS.enc.Utf8);
+        apiKey = decrypt(result.api_key, encryptionKey);
       } catch {
         return res.status(500).json({ error: 'Failed to decrypt API key' });
       }

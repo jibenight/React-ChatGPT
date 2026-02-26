@@ -85,36 +85,39 @@ exports.createProject = async (req, res) => {
     return res.status(400).json({ error: 'Project name is required' });
   }
   try {
-    const result = await new Promise<any>((resolve, reject) => {
-      db.run(
-        `INSERT INTO projects (user_id, name, description, instructions, context_data)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          userId,
-          payload.name,
-          payload.description,
-          payload.instructions,
-          payload.context_data,
-        ],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this);
-        },
-      );
-    });
+    const projectId = await db.transaction(async txn => {
+      const result = await new Promise<any>((resolve, reject) => {
+        txn.run(
+          `INSERT INTO projects (user_id, name, description, instructions, context_data)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            userId,
+            payload.name,
+            payload.description,
+            payload.instructions,
+            payload.context_data,
+          ],
+          function(err) {
+            if (err) reject(err);
+            else resolve(this);
+          },
+        );
+      });
 
-    const projectId = result.lastID;
+      const newProjectId = result.lastID;
 
-    // Insert creator as owner in project_members
-    await new Promise<void>((resolve, reject) => {
-      db.run(
-        `INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, 'owner')`,
-        [projectId, userId],
-        function(err) {
-          if (err) reject(err);
-          else resolve();
-        },
-      );
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          `INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, 'owner')`,
+          [newProjectId, userId],
+          function(err) {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
+
+      return newProjectId;
     });
 
     res.status(201).json({

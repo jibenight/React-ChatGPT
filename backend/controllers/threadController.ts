@@ -157,7 +157,7 @@ exports.deleteThread = async (req, res) => {
   const userId = req.user.id;
   const { threadId } = req.params;
   try {
-      await new Promise<void>((resolve, reject) => {
+    const result = await new Promise<any>((resolve, reject) => {
       db.run(
         'DELETE FROM threads WHERE id = ? AND user_id = ?',
         [threadId, userId],
@@ -167,6 +167,9 @@ exports.deleteThread = async (req, res) => {
         },
       );
     });
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
     res.status(200).json({ message: 'Thread deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });

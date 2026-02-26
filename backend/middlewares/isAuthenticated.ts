@@ -19,17 +19,6 @@ const normalizeHeaderValue = value => {
   return value;
 };
 
-const getCookieToken = cookieHeader => {
-  if (!cookieHeader || typeof cookieHeader !== 'string') return null;
-  const cookies = cookieHeader.split(';');
-  for (const cookie of cookies) {
-    const [name, ...rest] = cookie.trim().split('=');
-    if (name !== AUTH_COOKIE_NAME) continue;
-    return decodeURIComponent(rest.join('='));
-  }
-  return null;
-};
-
 const ensureDevUser = async (email, username) => {
   const existing = await new Promise<any>((resolve, reject) => {
     db.get('SELECT id, email, username FROM users WHERE email = ?', [email], (err, row) => {
@@ -79,7 +68,7 @@ const isAuthenticated = async (req, res, next) => {
 
   const authHeader = req.headers['authorization'];
   const bearerToken = authHeader && authHeader.split(' ')[1];
-  const cookieToken = getCookieToken(req.headers.cookie);
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME] || null;
   const token = bearerToken || cookieToken;
 
   if (!token) {

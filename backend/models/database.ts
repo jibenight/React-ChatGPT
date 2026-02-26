@@ -79,18 +79,6 @@ const ensureSqliteSchema = sqliteDb => {
     );
   `;
 
-  // DEPRECATED: This table is no longer used. The 'messages' table is the current storage.
-  const createChatHistoryTableQuery = `
-    CREATE TABLE IF NOT EXISTS chat_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      session_id TEXT NOT NULL,
-      message TEXT NOT NULL,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    );
-  `;
-
   const createPasswordResetsTableQuery = `
     CREATE TABLE IF NOT EXISTS password_resets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -200,11 +188,6 @@ const ensureSqliteSchema = sqliteDb => {
       );
     });
 
-    sqliteDb.run(createChatHistoryTableQuery, err => {
-      if (err) logger.error({ err: err.message }, 'Failed to create table "chat_history"');
-      else logger.info('Table "chat_history" created or already exists');
-    });
-
     sqliteDb.run(createPasswordResetsTableQuery, err => {
       if (err) logger.error({ err: err.message }, 'Failed to create table "password_resets"');
       else logger.info('Table "password_resets" created or already exists');
@@ -300,6 +283,27 @@ const ensureSqliteSchema = sqliteDb => {
     sqliteDb.run('CREATE INDEX IF NOT EXISTS idx_threads_user ON threads(user_id);', err => {
       if (err) logger.error({ err: err.message }, 'Failed to create index idx_threads_user');
     });
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_threads_user_last_msg ON threads(user_id, last_message_at DESC);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_threads_user_last_msg');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_password_resets_email');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_email_verifications_email');
+      },
+    );
 
     sqliteDb.run(
       'CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id);',
@@ -506,14 +510,6 @@ const ensurePostgresSchema = async pool => {
       api_key TEXT NOT NULL,
       UNIQUE (user_id, provider)
     );`,
-    // DEPRECATED: This table is no longer used. The 'messages' table is the current storage.
-    `CREATE TABLE IF NOT EXISTS chat_history (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      session_id TEXT NOT NULL,
-      message TEXT NOT NULL,
-      timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-    );`,
     `CREATE TABLE IF NOT EXISTS password_resets (
       id SERIAL PRIMARY KEY,
       email TEXT NOT NULL,
@@ -611,6 +607,9 @@ const ensurePostgresSchema = async pool => {
     END $$;`,
     'CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id);',
     'CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_threads_user_last_msg ON threads(user_id, last_message_at DESC);',
+    'CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);',
+    'CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email);',
   ];
 
   for (const query of schemaQueries) {

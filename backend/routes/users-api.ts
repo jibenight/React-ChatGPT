@@ -65,9 +65,11 @@ const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateBody, validateParams } = require('../middlewares/validate');
 const { createDatabaseStore } = require('../rateLimitStore');
+const { asyncHandler } = require('../middlewares/asyncHandler');
+const { SUPPORTED_PROVIDERS } = require('../constants');
 
 const updateApiKeySchema = z.object({
-  provider: z.enum(['openai', 'gemini', 'claude', 'mistral', 'groq']),
+  provider: z.enum(SUPPORTED_PROVIDERS),
   apiKey: z.string().min(1).max(500),
 });
 
@@ -76,7 +78,7 @@ const updateUserDataSchema = z.object({
 });
 
 const providerParam = z.object({
-  provider: z.enum(['openai', 'gemini', 'claude', 'mistral', 'groq']),
+  provider: z.enum(SUPPORTED_PROVIDERS),
 });
 
 const userLimiter = rateLimit({
@@ -87,10 +89,6 @@ const userLimiter = rateLimit({
   store: createDatabaseStore(),
 });
 
-// gestion des fonctions asynchrones dans les routes Express
-const asyncHandler = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
 
 userApi.get('/api/users', isAuthenticated, userLimiter, asyncHandler(userController.getUsers));
 userApi.post('/api/update-api-key', isAuthenticated, userLimiter, validateBody(updateApiKeySchema), asyncHandler(userController.updateApiKey));

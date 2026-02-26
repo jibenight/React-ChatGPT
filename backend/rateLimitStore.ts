@@ -101,36 +101,23 @@ const createDatabaseStore = () => {
     const now = Date.now();
     const expireAt = now + windowMs;
 
-    // Supprime l'entree si elle est expiree
+    // Atomic upsert: insert or increment if not expired, reset if expired
     await dbRun(
-      `DELETE FROM ${TABLE} WHERE key = ? AND expire_at <= ?`,
-      [key, now],
+      `INSERT INTO ${TABLE} (key, total_hits, expire_at) VALUES (?, 1, ?)
+       ON CONFLICT(key) DO UPDATE SET
+         total_hits = CASE WHEN expire_at <= ? THEN 1 ELSE total_hits + 1 END,
+         expire_at  = CASE WHEN expire_at <= ? THEN ? ELSE expire_at END`,
+      [key, expireAt, now, now, expireAt],
     );
 
-    const existing = await dbGet(
+    const row = await dbGet(
       `SELECT total_hits, expire_at FROM ${TABLE} WHERE key = ?`,
       [key],
     );
 
-    if (existing) {
-      const newHits = existing.total_hits + 1;
-      await dbRun(
-        `UPDATE ${TABLE} SET total_hits = ? WHERE key = ?`,
-        [newHits, key],
-      );
-      return {
-        totalHits: newHits,
-        resetTime: new Date(existing.expire_at),
-      };
-    }
-
-    await dbRun(
-      `INSERT INTO ${TABLE} (key, total_hits, expire_at) VALUES (?, 1, ?)`,
-      [key, expireAt],
-    );
     return {
-      totalHits: 1,
-      resetTime: new Date(expireAt),
+      totalHits: row ? row.total_hits : 1,
+      resetTime: new Date(row ? row.expire_at : expireAt),
     };
   };
 

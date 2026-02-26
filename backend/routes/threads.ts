@@ -87,6 +87,7 @@ const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateBody, validateParams, validateQuery } = require('../middlewares/validate');
 const { createDatabaseStore } = require('../rateLimitStore');
+const { asyncHandler } = require('../middlewares/asyncHandler');
 
 const createThreadSchema = z.object({
   id: z.string().optional(),
@@ -119,10 +120,6 @@ const threadLimiter = rateLimit({
   legacyHeaders: false,
   store: createDatabaseStore(),
 });
-
-const asyncHandler = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
 
 threads.get('/api/threads', isAuthenticated, threadLimiter, asyncHandler(threadController.listThreads));
 threads.post('/api/threads', isAuthenticated, threadLimiter, validateBody(createThreadSchema), asyncHandler(threadController.createThreadRoot));

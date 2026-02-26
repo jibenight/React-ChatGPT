@@ -90,6 +90,7 @@ const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateBody, validateParams } = require('../middlewares/validate');
 const { createDatabaseStore } = require('../rateLimitStore');
+const { asyncHandler } = require('../middlewares/asyncHandler');
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(200),
@@ -130,10 +131,6 @@ const projectLimiter = rateLimit({
   legacyHeaders: false,
   store: createDatabaseStore(),
 });
-
-const asyncHandler = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
 
 // ── Project CRUD ────────────────────────────────────────────────────
 projects.get('/api/projects', isAuthenticated, projectLimiter, asyncHandler(projectController.listProjects));

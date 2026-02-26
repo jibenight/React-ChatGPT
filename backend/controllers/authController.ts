@@ -196,94 +196,84 @@ const cleanupExpiredTokens = () => {
 };
 
 exports.register = async (req, res) => {
-  const checkUserCountQuery = 'SELECT COUNT(*) as user_count FROM users';
+  const { username, password } = req.body;
+  const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
 
-  db.get(checkUserCountQuery, async (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-    // if (row.user_count >= 10) {
-    //   return res.status(400).json({ error: 'Only one user allowed' });
-    // }
-
-    const { username, password } = req.body;
-    const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
+  try {
     // Vérification si l'email existe déjà
     const emailExists = await new Promise<any>((resolve, reject) => {
-      db.get('SELECT email FROM users WHERE email = ?', email, (err, row) => {
-        if (err) {
-          reject(err);
-        }
-        resolve(row);
+      db.get('SELECT email FROM users WHERE email = ?', [email], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
       });
     });
     if (emailExists) {
       logAuthEvent('register_email_exists', { email });
       return res.status(400).json({ error: 'exists' });
     }
+
     // Vérification du mot de passe
     if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(password)) {
       logAuthEvent('register_password_invalid', { email });
-      return res.status(400).json({
-        error: 'characters',
-      });
+      return res.status(400).json({ error: 'characters' });
     }
+
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     cleanupExpiredTokens();
-    const resetToken = uuidv4();
-    try {
-      const userId = await db.transaction(async txn => {
-        const insertedId = await new Promise<any>((resolve, reject) => {
-          txn.run(
-            'INSERT INTO users (username, email, password, email_verified) VALUES (?,?,?,?)',
-            [username, email, hashedPassword, 0],
-            function (insertErr) {
-              if (insertErr) return reject(insertErr);
-              resolve(this.lastID);
-            },
-          );
-        });
-        await new Promise<void>((resolve, reject) => {
-          txn.run(
-            'DELETE FROM email_verifications WHERE email = ?',
-            [email],
-            deleteErr => {
-              if (deleteErr) return reject(deleteErr);
-              resolve();
-            },
-          );
-        });
-        await new Promise<void>((resolve, reject) => {
-          txn.run(
-            'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)',
-            [email, resetToken, futureDbDateTime(24)],
-            insertErr => {
-              if (insertErr) return reject(insertErr);
-              resolve();
-            },
-          );
-        });
-        return insertedId;
+    const verifyToken = uuidv4();
+
+    const userId = await db.transaction(async txn => {
+      const insertedId = await new Promise<any>((resolve, reject) => {
+        txn.run(
+          'INSERT INTO users (username, email, password, email_verified) VALUES (?,?,?,?)',
+          [username, email, hashedPassword, 0],
+          function (insertErr) {
+            if (insertErr) return reject(insertErr);
+            resolve(this.lastID);
+          },
+        );
       });
-      try {
-        await sendVerificationEmail(req, email, resetToken);
-        logAuthEvent('register_verification_sent', { email });
-        res.status(201).json({
-          message: 'User registered successfully',
-          userId,
-          emailVerificationRequired: true,
-        });
-      } catch (mailErr) {
-        logAuthEvent('register_verification_failed', {
-          email,
-          reason: mailErr.message,
-        });
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    } catch (txnErr) {
-      return res.status(500).json({ error: 'Internal server error' });
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          'DELETE FROM email_verifications WHERE email = ?',
+          [email],
+          deleteErr => {
+            if (deleteErr) return reject(deleteErr);
+            resolve();
+          },
+        );
+      });
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          'INSERT INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)',
+          [email, verifyToken, futureDbDateTime(24)],
+          insertErr => {
+            if (insertErr) return reject(insertErr);
+            resolve();
+          },
+        );
+      });
+      return insertedId;
+    });
+
+    try {
+      await sendVerificationEmail(req, email, verifyToken);
+      logAuthEvent('register_verification_sent', { email });
+      res.status(201).json({
+        message: 'User registered successfully',
+        userId,
+        emailVerificationRequired: true,
+      });
+    } catch (mailErr) {
+      logAuthEvent('register_verification_failed', {
+        email,
+        reason: mailErr.message,
+      });
+      res.status(500).json({ error: 'Internal server error' });
     }
-  });
+  } catch (err) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 exports.login = (req, res) => {
@@ -392,7 +382,7 @@ exports.resetPasswordRequest = (req, res) => {
   });
 };
 
-exports.resetPassword = (req, res) => {
+exports.resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
   // Vérification de la complexité du mot de passe
@@ -403,39 +393,52 @@ exports.resetPassword = (req, res) => {
     });
   }
 
-  db.get(
-    'SELECT * FROM password_resets WHERE token = ? AND expires_at > CURRENT_TIMESTAMP',
-    [token],
-    async (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-      if (!row) {
-        logAuthEvent('verify_token_invalid', { tokenPresent: true });
-        return res.status(404).json({ error: 'Invalid or expired token' });
-      }
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-      db.run(
-        'UPDATE users SET password = ? WHERE email = ?',
-        [hashedPassword, row.email],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ error: 'Internal server error' });
-          }
-          db.run(
-            'DELETE FROM password_resets WHERE token = ?',
-            [token],
-            function (err) {
-              if (err) {
-                return res.status(500).json({ error: 'Internal server error' });
-              }
-              res.status(200).json({ message: 'Password reset successfully' });
-            },
-          );
+  try {
+    const row = await new Promise<any>((resolve, reject) => {
+      db.get(
+        'SELECT email FROM password_resets WHERE token = ? AND expires_at > CURRENT_TIMESTAMP',
+        [token],
+        (err, r) => {
+          if (err) reject(err);
+          else resolve(r);
         },
       );
-    },
-  );
+    });
+
+    if (!row) {
+      logAuthEvent('verify_token_invalid', { tokenPresent: true });
+      return res.status(404).json({ error: 'Invalid or expired token' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    await db.transaction(async txn => {
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          'UPDATE users SET password = ? WHERE email = ?',
+          [hashedPassword, row.email],
+          function (err) {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
+      await new Promise<void>((resolve, reject) => {
+        txn.run(
+          'DELETE FROM password_resets WHERE token = ?',
+          [token],
+          function (err) {
+            if (err) reject(err);
+            else resolve();
+          },
+        );
+      });
+    });
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 exports.resendVerification = (req, res) => {

@@ -27,6 +27,7 @@ const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { validateQuery } = require('../middlewares/validate');
 const { createDatabaseStore } = require('../rateLimitStore');
+const { asyncHandler } = require('../middlewares/asyncHandler');
 
 const searchQuerySchema = z.object({
   q: z.string().min(2),
@@ -41,10 +42,6 @@ const searchLimiter = rateLimit({
   legacyHeaders: false,
   store: createDatabaseStore(),
 });
-
-const asyncHandler = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
 
 search.get(
   '/api/search',

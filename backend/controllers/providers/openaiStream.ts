@@ -33,6 +33,7 @@ const handleOpenAi = async ({ apiKey, model, messages, wantsStream, sendEvent, r
         reply += delta;
         sendEvent({ type: 'delta', content: delta });
       },
+      onComplete: () => {},
       onError: (err) => {
         sendEvent({ type: 'error', error: err?.message || 'Stream error' });
       },

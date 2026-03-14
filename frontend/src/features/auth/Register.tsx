@@ -1,6 +1,6 @@
 import '../../css/App.css';
 import React, { useEffect, useState } from 'react';
-import code from '../../assets/code.gif';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { NavLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import apiClient from '../../apiClient';
@@ -131,8 +131,13 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
       )}
       <div className='container px-4 mx-auto'>
         <div className='text-center max-w-md mx-auto'>
-          <div className='inline-block w-32'>
-            <img src={code} alt='Gif annimé robot' />
+          <div className='inline-block w-96 h-96 -my-16'>
+            <DotLottieReact
+              src='/robot-only.lottie'
+              loop
+              autoplay
+              className='h-full w-full'
+            />
           </div>
           <h2 className='mb-9 text-6xl md:text-5xl text-center font-bold font-heading tracking-px-n leading-tight text-gray-900 dark:text-slate-100'>
             Créez un compte et commencez.
@@ -247,25 +252,6 @@ const Register = ({ isModal, onSwitchToLogin }: RegisterProps) => {
               Le mot de passe doit contenir au moins 8 caractères, une
               majuscule et un chiffre
             </p>
-            <div className='mb-5 rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'>
-              <p className='mb-2 font-semibold text-gray-700 dark:text-slate-200'>
-                Exigences mot de passe
-              </p>
-              <ul className='space-y-1'>
-                <li className={passwordRules.length ? 'text-emerald-600 dark:text-emerald-300' : ''}>
-                  8 caractères minimum
-                </li>
-                <li className={passwordRules.upper ? 'text-emerald-600 dark:text-emerald-300' : ''}>
-                  Une majuscule
-                </li>
-                <li className={passwordRules.lower ? 'text-emerald-600 dark:text-emerald-300' : ''}>
-                  Une minuscule
-                </li>
-                <li className={passwordRules.digit ? 'text-emerald-600 dark:text-emerald-300' : ''}>
-                  Un chiffre
-                </li>
-              </ul>
-            </div>
             {errors.password && (
               <p id='register-password-error' role='alert' className='text-red-500 mb-4 text-sm dark:text-red-300'>
                 {typeof passwordError === 'string' ? passwordError : 'Erreur'}

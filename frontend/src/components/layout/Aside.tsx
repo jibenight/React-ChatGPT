@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Settings, ChevronRight } from 'lucide-react';
 import { useUser } from '@/UserContext';
 import LogOut from '@/features/auth/Logout';
 import chatGPT from '@/assets/chatGPT.mp4';
@@ -39,9 +40,24 @@ function Aside() {
     open: false,
     threadId: null,
   });
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
   const isDark = theme === 'dark';
   const providerAvatar = selectedOption?.avatar || chatGPT;
   const activeProject = projects.find((project) => project.id === selectedProjectId);
+
+  // Click-outside to close settings popover
+  useEffect(() => {
+    if (!showSettings) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSettings]);
 
   const fetchProjects = async () => {
     setLoadingProjects(true);
@@ -128,92 +144,81 @@ function Aside() {
   }
 
   return (
-    <aside className='relative flex h-screen w-80 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white text-gray-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100'>
-      <div className='px-4 pt-4'>
-        <div className='rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-slate-800 dark:bg-slate-900'>
-          <div className='flex items-center gap-3'>
-            <div className='flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white dark:border-slate-700 dark:bg-slate-950'>
-              <video
-                src={providerAvatar}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className='h-8 w-8 rounded-md object-cover'
+    <aside className='relative flex h-screen w-80 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white text-gray-900 dark:border-white/[0.06] dark:bg-sidebar dark:text-foreground'>
+      {/* Header compact */}
+      <div className='flex items-center gap-3 px-4 pt-3 pb-1'>
+        <video
+          src={providerAvatar}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className='h-7 w-7 rounded-md object-cover'
+        />
+        <p className='min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-foreground'>
+          {hasUserData ? userData.username : 'Chargement...'}
+        </p>
+        <button
+          type='button'
+          onClick={() => setShowSettings((prev) => !prev)}
+          className='ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-card dark:hover:text-foreground'
+          title='Paramètres'
+        >
+          <Settings className='h-4 w-4' />
+        </button>
+      </div>
+
+      {/* Settings popover */}
+      {showSettings && (
+        <div
+          ref={settingsRef}
+          className='absolute left-4 right-4 top-[52px] z-50 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-border dark:bg-card'
+        >
+          <div className='flex items-center justify-between'>
+            <span className='text-xs font-semibold text-gray-700 dark:text-foreground'>
+              {isDark ? 'Sombre' : 'Clair'}
+            </span>
+            <button
+              type='button'
+              onClick={toggleTheme}
+              aria-pressed={isDark}
+              className={`relative inline-flex h-6 w-10 items-center rounded-full border transition ${
+                isDark
+                  ? 'border-teal-400/40 bg-teal-500/25'
+                  : 'border-gray-300 bg-gray-100 dark:border-border dark:bg-background/90'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition ${
+                  isDark ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
               />
-            </div>
-            <div className='min-w-0'>
-              <p className='text-[10px] uppercase tracking-[0.26em] text-gray-500 dark:text-slate-400'>
-                Bienvenue
-              </p>
-              <p className='truncate text-sm font-semibold text-gray-900 dark:text-white'>
-                {hasUserData ? `Bonjour, ${userData.username}` : 'Chargement...'}
-              </p>
-              <p className='truncate text-[11px] text-gray-500 dark:text-slate-400'>
-                {selectedOption?.name || 'Aucun modèle sélectionné'}
-              </p>
-            </div>
+            </button>
+          </div>
+          <div className='my-2.5 border-t border-gray-200 dark:border-border' />
+          <div className='flex items-center justify-between'>
+            <span className='text-xs font-semibold text-gray-700 dark:text-foreground'>
+              {i18n.language?.startsWith('fr') ? 'Français' : 'English'}
+            </span>
+            <button
+              type='button'
+              onClick={() =>
+                i18n.changeLanguage(i18n.language?.startsWith('fr') ? 'en' : 'fr')
+              }
+              className='rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-gray-600 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
+            >
+              {i18n.language?.startsWith('fr') ? 'EN' : 'FR'}
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
       <SidebarSearch />
 
       <SidebarModeToggle />
 
-      <div className='px-4 pt-3'>
-        <div className='flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900'>
-          <div>
-            <p className='text-[10px] uppercase tracking-[0.2em] text-gray-500 dark:text-slate-500'>
-              Thème
-            </p>
-            <p className='text-sm font-semibold text-gray-900 dark:text-slate-100'>
-              {isDark ? 'Sombre' : 'Clair'}
-            </p>
-          </div>
-          <button
-            type='button'
-            onClick={toggleTheme}
-            aria-pressed={isDark}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full border transition ${
-              isDark
-                ? 'border-teal-400/40 bg-teal-500/25'
-                : 'border-gray-300 bg-white dark:border-slate-700 dark:bg-slate-950/90'
-            }`}
-          >
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition ${
-                isDark ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      <div className='px-4 pt-2'>
-        <div className='flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900'>
-          <div>
-            <p className='text-[10px] uppercase tracking-[0.2em] text-gray-500 dark:text-slate-500'>
-              Langue
-            </p>
-            <p className='text-sm font-semibold text-gray-900 dark:text-slate-100'>
-              {i18n.language?.startsWith('fr') ? 'Français' : 'English'}
-            </p>
-          </div>
-          <button
-            type='button'
-            onClick={() =>
-              i18n.changeLanguage(i18n.language?.startsWith('fr') ? 'en' : 'fr')
-            }
-            className='rounded-full border border-gray-300 bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-600 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-400 dark:hover:text-white'
-          >
-            {i18n.language?.startsWith('fr') ? 'EN' : 'FR'}
-          </button>
-        </div>
-      </div>
-
-      <div className='flex-1 min-h-0 px-4 pb-3 pt-3'>
-        <div className='flex h-full min-h-0 flex-col gap-3'>
+      <div className='flex-1 min-h-0 px-4 pb-2 pt-2'>
+        <div className='flex h-full min-h-0 flex-col gap-2'>
           <SidebarProjectList
             activeProject={activeProject}
             onOpenPanel={() => setShowProjectPanel(true)}
@@ -233,20 +238,29 @@ function Aside() {
         </div>
       </div>
 
-      <div className='px-4 pb-3'>
+      {/* Provider row compact */}
+      <div className='px-4 pb-2'>
         <button
           type='button'
           onClick={openPicker}
-          className='flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white'
+          className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-gray-50 dark:hover:bg-card'
         >
-          <span className='truncate'>{selectedOption?.name || 'Choisir le fournisseur IA'}</span>
-          <span className='rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-600 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-300'>
-            Modifier
+          <video
+            src={providerAvatar}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className='h-5 w-5 rounded-full object-cover'
+          />
+          <span className='truncate text-xs font-semibold text-gray-700 dark:text-foreground'>
+            {selectedOption?.name || 'Choisir le fournisseur IA'}
           </span>
+          <ChevronRight className='ml-auto h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-muted-foreground' />
         </button>
       </div>
 
-      <div className='border-t border-gray-200 px-4 py-4 dark:border-slate-800/70'>
+      <div className='border-t border-gray-200 px-4 py-2.5 dark:border-white/[0.06]'>
         <LogOut setProfil={setProfil} profil={profil} />
       </div>
 

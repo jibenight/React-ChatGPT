@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import apiClient from '@/apiClient';
 import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
@@ -34,6 +35,7 @@ function SidebarThreadList({
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingThreadTitle, setEditingThreadTitle] = useState('');
   const [showThreadManager, setShowThreadManager] = useState(false);
+  const [showNewInput, setShowNewInput] = useState(false);
 
   const visibleThreads = projectMode
     ? threads
@@ -89,46 +91,72 @@ function SidebarThreadList({
 
   return (
     <>
-      <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200'>
-        <div className='border-b border-gray-200 px-3 py-3 dark:border-slate-800'>
-          <p className='text-xs uppercase tracking-[0.24em] text-gray-500 dark:text-slate-500'>
-            Conversations ({visibleThreads.length})
-          </p>
-          <div className='mt-2 flex items-center gap-2'>
-            <button
-              type='button'
-              onClick={onCreateThread}
-              className='rounded-full border border-gray-300 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white'
-            >
-              Nouveau
-            </button>
-            {visibleThreads.length > 0 && (
+      <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 dark:border-border dark:bg-card dark:text-foreground'>
+        <div className='border-b border-gray-200 px-3 py-2 dark:border-border'>
+          <div className='flex items-center justify-between'>
+            <p className='text-xs uppercase tracking-[0.24em] text-gray-500 dark:text-muted-foreground'>
+              Conversations ({visibleThreads.length})
+            </p>
+            <div className='flex items-center gap-1'>
+              <button
+                type='button'
+                onClick={() => setShowNewInput((prev) => !prev)}
+                className='flex h-6 w-6 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
+                title='Nouvelle conversation'
+              >
+                <Plus className='h-4 w-4' />
+              </button>
+              {visibleThreads.length > 0 && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setShowThreadManager((prev) => !prev);
+                    handleCancelRenameThread();
+                  }}
+                  className='rounded-full border border-gray-300 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
+                >
+                  {showThreadManager ? 'Fermer' : 'Gérer'}
+                </button>
+              )}
+            </div>
+          </div>
+          {showNewInput && (
+            <div className='mt-2 flex items-center gap-2'>
+              <input
+                type='text'
+                value={newThreadTitle}
+                onChange={(event) => setNewThreadTitle(event.target.value)}
+                placeholder='Titre (optionnel)'
+                autoFocus
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    onCreateThread();
+                    setShowNewInput(false);
+                  } else if (event.key === 'Escape') {
+                    setShowNewInput(false);
+                  }
+                }}
+                className='flex-1 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
+              />
               <button
                 type='button'
                 onClick={() => {
-                  setShowThreadManager((prev) => !prev);
-                  handleCancelRenameThread();
+                  onCreateThread();
+                  setShowNewInput(false);
                 }}
-                className='rounded-full border border-gray-300 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-white'
+                className='rounded-md bg-teal-500/15 px-2.5 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-500/25 dark:text-teal-100'
               >
-                {showThreadManager ? 'Fermer' : 'Gérer'}
+                Créer
               </button>
-            )}
-          </div>
-          <input
-            type='text'
-            value={newThreadTitle}
-            onChange={(event) => setNewThreadTitle(event.target.value)}
-            placeholder='Titre de conversation (optionnel)'
-            className='mt-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'
-          />
+            </div>
+          )}
         </div>
 
         <div className='mt-0 flex-1 min-h-0 space-y-2 overflow-y-auto px-2 py-2'>
           {loadingThreads ? (
             <ThreadListSkeleton />
           ) : visibleThreads.length === 0 ? (
-            <p className='px-2 text-xs text-gray-500 dark:text-slate-500'>
+            <p className='px-2 text-xs text-gray-500 dark:text-muted-foreground'>
               Aucune conversation pour le moment
             </p>
           ) : showThreadManager ? (
@@ -140,17 +168,17 @@ function SidebarThreadList({
                   className={`rounded-lg border px-3 py-3 text-xs transition ${
                     selectedThreadId === thread.id
                       ? 'border-teal-500/40 bg-teal-500/10 text-teal-700 dark:text-teal-100'
-                      : 'border-gray-200 bg-white text-gray-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300'
+                      : 'border-gray-200 bg-white text-gray-700 dark:border-border dark:bg-background dark:text-muted-foreground'
                   }`}
                 >
-                  <div className='text-xs font-semibold text-gray-900 dark:text-slate-100'>
+                  <div className='text-xs font-semibold text-gray-900 dark:text-foreground'>
                     {isEditing ? (
                       <input
                         type='text'
                         value={editingThreadTitle}
                         onChange={(event) => setEditingThreadTitle(event.target.value)}
                         placeholder='Titre de conversation'
-                        className='w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'
+                        className='w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
                       />
                     ) : (
                       <span className='line-clamp-2'>
@@ -171,7 +199,7 @@ function SidebarThreadList({
                         <button
                           type='button'
                           onClick={handleCancelRenameThread}
-                          className='text-gray-500 transition hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
+                          className='text-gray-500 transition hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
                         >
                           Annuler
                         </button>
@@ -188,7 +216,7 @@ function SidebarThreadList({
                         <button
                           type='button'
                           onClick={() => handleStartRenameThread(thread)}
-                          className='text-gray-500 transition hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
+                          className='text-gray-500 transition hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
                         >
                           Renommer
                         </button>
@@ -215,7 +243,7 @@ function SidebarThreadList({
                         const parsed = value === '' ? null : Number(value);
                         handleAssignThread(thread.id, Number.isNaN(parsed) ? null : parsed);
                       }}
-                      className='w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200'
+                      className='w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
                     >
                       <option value=''>Sans projet</option>
                       {projects.map((project) => (
@@ -237,12 +265,12 @@ function SidebarThreadList({
                 className={`flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-xs font-semibold transition ${
                   selectedThreadId === thread.id
                     ? 'border-teal-500/40 bg-teal-500/10 text-teal-700 dark:text-teal-100'
-                    : 'border-transparent text-gray-700 hover:border-gray-200 hover:bg-white dark:text-slate-300 dark:hover:border-slate-800 dark:hover:bg-slate-950'
+                    : 'border-transparent text-gray-700 hover:border-gray-200 hover:bg-white dark:text-muted-foreground dark:hover:border-border dark:hover:bg-background'
                 }`}
               >
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    selectedThreadId === thread.id ? 'bg-teal-300' : 'bg-slate-600'
+                    selectedThreadId === thread.id ? 'bg-teal-300' : 'bg-border'
                   }`}
                 />
                 <span className='truncate'>{thread.title || 'Conversation sans titre'}</span>
@@ -254,17 +282,17 @@ function SidebarThreadList({
 
       {confirmThreadDelete.open && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
-          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
-            <h4 className='text-base font-semibold text-gray-900 dark:text-slate-100'>
+          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none'>
+            <h4 className='text-base font-semibold text-gray-900 dark:text-foreground'>
               Supprimer la conversation
             </h4>
-            <p className='mt-2 text-sm text-gray-600 dark:text-slate-300'>
+            <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
               Cette action est irréversible.
             </p>
             <div className='mt-5 flex justify-end gap-2'>
               <button
                 type='button'
-                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted'
                 onClick={() => setConfirmThreadDelete({ open: false, threadId: null })}
               >
                 Annuler

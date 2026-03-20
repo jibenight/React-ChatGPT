@@ -1,36 +1,11 @@
-import logoutAnime from '../../assets/logout.gif';
-import logout from '../../assets/logout.webp';
-import profilImg from '../../assets/profil.webp';
-import profilAnime from '../../assets/profil.gif';
-import React, { useState } from 'react';
+import { User, LogOut as LogOutIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../apiClient';
 import { useUser } from '../../UserContext';
 
-function LogOut({ setProfil, profil }) {
+function LogOut({ setProfil }) {
   const navigate = useNavigate();
   const { setUserData } = useUser();
-  const [images, setImages] = useState({
-    logoutSrc: logout,
-    profilSrc: profilImg,
-  });
-
-  // pour changer l'image quand on passe la souris dessus
-  const handleMouseOver = key => {
-    if (key === 'logoutSrc') {
-      setImages({ ...images, logoutSrc: logoutAnime });
-    } else if (key === 'profilSrc') {
-      setImages({ ...images, profilSrc: profilAnime });
-    }
-  };
-  // pour changer l'image quand on sort la souris
-  const handleMouseOut = key => {
-    if (key === 'logoutSrc') {
-      setImages({ ...images, logoutSrc: logout });
-    } else if (key === 'profilSrc') {
-      setImages({ ...images, profilSrc: profilImg });
-    }
-  };
 
   // pour se déconnecter
   const handleLogout = async () => {
@@ -51,38 +26,22 @@ function LogOut({ setProfil, profil }) {
   };
 
   return (
-    <div className='flex justify-evenly w-full'>
+    <div className='flex w-full justify-evenly'>
       <button
         type='button'
         onClick={toggleProfil}
-        className='flex flex-col items-center'
+        className='flex items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground'
       >
-        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800'>
-          <img
-            src={images.profilSrc}
-            alt='Icône de profil'
-            className='h-9 w-9 rounded-full'
-            onMouseOver={() => handleMouseOver('profilSrc')}
-            onMouseOut={() => handleMouseOut('profilSrc')}
-          />
-        </span>
-        <span className='mr-2 text-lg italic text-white'>Profil</span>
+        <User className='h-4 w-4' />
+        Profil
       </button>
       <button
         type='button'
         onClick={handleLogout}
-        className='flex flex-col items-center'
+        className='flex items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground'
       >
-        <span className='flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800'>
-          <img
-            src={images.logoutSrc}
-            alt='Icône de déconnexion'
-            className='h-8 w-8'
-            onMouseOver={() => handleMouseOver('logoutSrc')}
-            onMouseOut={() => handleMouseOut('logoutSrc')}
-          />
-        </span>
-        <span className='mr-2 text-lg italic text-white'>Déconnexion</span>
+        <LogOutIcon className='h-4 w-4' />
+        Quitter
       </button>
     </div>
   );

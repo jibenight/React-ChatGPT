@@ -116,7 +116,7 @@ export function SearchControls({
 }: SearchControlsProps) {
   return (
     <div
-      className={`flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 ${sizeClass}`}
+      className={`flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-border dark:bg-card dark:text-foreground ${sizeClass}`}
     >
       <input
         type='search'
@@ -124,12 +124,12 @@ export function SearchControls({
         value={searchQuery}
         onChange={event => setSearchQuery(event.target.value)}
         placeholder='Rechercher\u2026'
-        className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-slate-200 dark:placeholder:text-slate-500'
+        className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-foreground dark:placeholder:text-muted-foreground'
       />
       {searchQuery && (
         <button
           type='button'
-          className='text-gray-400 transition hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200'
+          className='text-gray-400 transition hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground'
           onClick={() => setSearchQuery('')}
         >
           Effacer
@@ -141,7 +141,7 @@ export function SearchControls({
         </span>
       )}
       {searchQuery && searchMatchesCount > 0 && (
-        <span className='flex items-center gap-1 text-[10px] text-gray-500 dark:text-slate-400'>
+        <span className='flex items-center gap-1 text-[10px] text-gray-500 dark:text-muted-foreground'>
           {activeMatchIndex + 1}/{searchMatchesCount}
         </span>
       )}
@@ -150,14 +150,14 @@ export function SearchControls({
           <button
             type='button'
             onClick={handlePrevMatch}
-            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground'
           >
             Pr\u00e9c\u00e9dent
           </button>
           <button
             type='button'
             onClick={handleNextMatch}
-            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground'
           >
             Suivant
           </button>
@@ -198,15 +198,15 @@ export function MobileSearchPanel({
           : 'pointer-events-none max-h-0 opacity-0'
       }`}
     >
-      <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/80'>
+      <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-3 shadow-sm dark:border-border dark:bg-card/80'>
         <div className='mb-3 flex items-center justify-between'>
-          <div className='text-xs font-semibold text-gray-600 dark:text-slate-300'>
+          <div className='text-xs font-semibold text-gray-600 dark:text-muted-foreground'>
             Recherche
           </div>
           <button
             type='button'
             onClick={() => setShowMobileSearch(false)}
-            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100'
+            className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground'
           >
             Fermer
           </button>
@@ -221,7 +221,7 @@ export function MobileSearchPanel({
           handlePrevMatch={handlePrevMatch}
           handleNextMatch={handleNextMatch}
         />
-        <div className='mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400'>
+        <div className='mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:border-border dark:bg-muted dark:text-muted-foreground'>
           {searchQuery
             ? `${searchMatchesCount} r\u00e9sultat${
                 searchMatchesCount > 1 ? 's' : ''

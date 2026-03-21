@@ -155,11 +155,11 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
         >
           {({ open }) => (
             <>
-              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-slate-200'>
+              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-muted-foreground'>
                 Choisir le fournisseur
               </Listbox.Label>
               <div className='relative mt-2'>
-                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700'>
+                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-card dark:text-foreground dark:ring-border'>
                   <span className='flex items-center'>
                     <video
                       src={selectedProvider.avatar}
@@ -189,7 +189,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                   leaveFrom='opacity-100'
                   leaveTo='opacity-0'
                 >
-                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-slate-900 dark:ring-slate-800/70'>
+                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-card dark:ring-border/70'>
                     {providers.map(option => (
                       <Listbox.Option
                         key={option.id}
@@ -197,7 +197,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                           classNames(
                             active
                               ? 'bg-teal-500 text-white'
-                              : 'text-gray-900 dark:text-slate-100',
+                              : 'text-gray-900 dark:text-foreground',
                             'relative cursor-default select-none py-2 pl-3 pr-9',
                           )
                         }
@@ -243,7 +243,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
             </>
           )}
         </Listbox>
-        <p className='text-white mt-2 text-sm dark:text-slate-200'>
+        <p className='text-white mt-2 text-sm dark:text-muted-foreground'>
           {selectedProvider.description}
         </p>
       </div>
@@ -252,11 +252,11 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
         <Listbox value={selectedModel} onChange={setSelectedModel}>
           {({ open }) => (
             <>
-              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-slate-200'>
+              <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-muted-foreground'>
                 Choisir le modèle
               </Listbox.Label>
               <div className='relative mt-2'>
-                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700'>
+                <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-card dark:text-foreground dark:ring-border'>
                   <span className='flex items-center'>
                     <span className='ml-1 block truncate'>
                       {selectedModel.label}
@@ -277,7 +277,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                   leaveFrom='opacity-100'
                   leaveTo='opacity-0'
                 >
-                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-slate-900 dark:ring-slate-800/70'>
+                  <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-card dark:ring-border/70'>
                     {modelsForProvider.map(model => (
                       <Listbox.Option
                         key={model.id}
@@ -285,7 +285,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                           classNames(
                             active
                               ? 'bg-teal-500 text-white'
-                              : 'text-gray-900 dark:text-slate-100',
+                              : 'text-gray-900 dark:text-foreground',
                             'relative cursor-default select-none py-2 pl-3 pr-9',
                           )
                         }

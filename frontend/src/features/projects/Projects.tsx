@@ -1,32 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import apiClient from '../../apiClient';
-import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '../../UserContext';
-import { Users, X } from 'lucide-react';
+import * as tauri from '@/tauriClient';
+import { Link } from 'react-router-dom';
 import ProjectListSkeleton from '@/components/ui/ProjectListSkeleton';
 import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
 
-const ROLE_LABELS: Record<string, string> = {
-  owner: 'Owner',
-  editor: 'Editor',
-  viewer: 'Viewer',
-};
-
-const ROLE_BADGE_CLASSES: Record<string, string> = {
-  owner:
-    'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-200',
-  editor:
-    'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200',
-  viewer:
-    'border-gray-200 bg-gray-50 text-gray-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300',
-};
-
 function Projects() {
-  const DEV_BYPASS_AUTH =
-    import.meta.env.DEV &&
-    String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
-  const navigate = useNavigate();
-  const { userData } = useUser();
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [threads, setThreads] = useState<any[]>([]);
@@ -54,27 +32,11 @@ function Projects() {
   type Status = { type: 'success' | 'error'; text: string } | null;
   const [status, setStatus] = useState<Status>(null);
 
-  // ── Members state ───────────────────────────────────────────────────
-  const [members, setMembers] = useState<any[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('viewer');
-  const [confirmMemberRemove, setConfirmMemberRemove] = useState<{
-    open: boolean;
-    userId: number | null;
-    username: string;
-  }>({ open: false, userId: null, username: '' });
-
-  const isOwner = selectedProject?.member_role === 'owner';
-  const canEdit =
-    selectedProject?.member_role === 'owner' ||
-    selectedProject?.member_role === 'editor';
-
   const loadProjects = async () => {
     setLoadingProjects(true);
     try {
-      const response = await apiClient.get('/api/projects');
-      setProjects(response.data || []);
+      const data = await tauri.listProjects() as any[];
+      setProjects(data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,8 +62,8 @@ function Projects() {
     if (!projectId) return;
     setLoadingThreads(true);
     try {
-      const response = await apiClient.get(`/api/projects/${projectId}/threads`);
-      setThreads(response.data || []);
+      const data = await tauri.listThreads(projectId) as any[];
+      setThreads(data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -109,35 +71,21 @@ function Projects() {
     }
   };
 
-  const loadMembers = async (projectId) => {
-    if (!projectId) return;
-    setLoadingMembers(true);
-    try {
-      const response = await apiClient.get(`/api/projects/${projectId}/members`);
-      setMembers(response.data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
-
   useEffect(() => {
     if (!selectedProject) {
       setThreads([]);
-      setMembers([]);
       setEditingThreadId(null);
       setEditingThreadTitle('');
       return;
     }
     loadThreads(selectedProject.id);
-    loadMembers(selectedProject.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject]);
 
   const handleCreate = async () => {
     if (!newProject.name.trim()) return;
     try {
-      const response = await apiClient.post('/api/projects', newProject);
+      const created = await tauri.createProject(newProject) as any;
       setNewProject({
         name: '',
         description: '',
@@ -146,11 +94,7 @@ function Projects() {
       });
       setStatus({ type: 'success', text: 'Projet créé.' });
       await loadProjects();
-      if (response.data?.id) {
-        const created = {
-          ...response.data,
-          id: response.data.id,
-        };
+      if (created?.id) {
         setSelectedProject(created);
       }
     } catch (err) {
@@ -162,44 +106,36 @@ function Projects() {
   const handleUpdate = async () => {
     if (!selectedProject) return;
     try {
-      await apiClient.patch(`/api/projects/${selectedProject.id}`, editProject);
+      await tauri.updateProject(selectedProject.id, editProject);
       setStatus({ type: 'success', text: 'Projet mis à jour.' });
       await loadProjects();
       const refreshed = projects.find(item => item.id === selectedProject.id);
       if (refreshed) {
         setSelectedProject(refreshed);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.status === 403
-          ? 'Permission refusée.'
-          : 'Impossible de mettre à jour le projet.';
-      setStatus({ type: 'error', text: msg });
+      setStatus({ type: 'error', text: 'Impossible de mettre à jour le projet.' });
     }
   };
 
   const handleDelete = async () => {
     if (!selectedProject) return;
     try {
-      await apiClient.delete(`/api/projects/${selectedProject.id}`);
+      await tauri.deleteProject(selectedProject.id);
       setSelectedProject(null);
       setStatus({ type: 'success', text: 'Projet supprimé.' });
       await loadProjects();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.status === 403
-          ? 'Permission refusée.'
-          : 'Impossible de supprimer le projet.';
-      setStatus({ type: 'error', text: msg });
+      setStatus({ type: 'error', text: 'Impossible de supprimer le projet.' });
     }
   };
 
   const handleDeleteThread = async (threadId) => {
     if (!selectedProject) return;
     try {
-      await apiClient.delete(`/api/threads/${threadId}`);
+      await tauri.deleteThread(threadId);
       await loadThreads(selectedProject.id);
     } catch (err) {
       console.error(err);
@@ -223,9 +159,7 @@ function Projects() {
   const handleRenameThread = async (threadId) => {
     if (!selectedProject) return;
     try {
-      await apiClient.patch(`/api/threads/${threadId}`, {
-        title: editingThreadTitle,
-      });
+      await tauri.updateThread(threadId, { title: editingThreadTitle });
       setStatus({ type: 'success', text: 'Conversation renommée.' });
       handleCancelRenameThread();
       await loadThreads(selectedProject.id);
@@ -238,90 +172,32 @@ function Projects() {
     }
   };
 
-  // ── Members handlers ────────────────────────────────────────────────
-  const handleInviteMember = async () => {
-    if (!selectedProject || !inviteEmail.trim()) return;
-    try {
-      await apiClient.post(`/api/projects/${selectedProject.id}/members`, {
-        email: inviteEmail.trim(),
-        role: inviteRole,
-      });
-      setInviteEmail('');
-      setInviteRole('viewer');
-      setStatus({ type: 'success', text: 'Membre invité.' });
-      await loadMembers(selectedProject.id);
-    } catch (err: any) {
-      console.error(err);
-      const serverMsg = err?.response?.data?.error;
-      let msg = 'Impossible d\'inviter ce membre.';
-      if (serverMsg === 'User not found') msg = 'Utilisateur introuvable.';
-      else if (serverMsg === 'User is already a member') msg = 'Cet utilisateur est déjà membre.';
-      else if (serverMsg === 'Cannot add yourself as member') msg = 'Vous ne pouvez pas vous inviter vous-même.';
-      setStatus({ type: 'error', text: msg });
-    }
-  };
-
-  const handleChangeMemberRole = async (targetUserId: number, newRole: string) => {
-    if (!selectedProject) return;
-    try {
-      await apiClient.patch(
-        `/api/projects/${selectedProject.id}/members/${targetUserId}`,
-        { role: newRole },
-      );
-      setStatus({ type: 'success', text: 'Rôle mis à jour.' });
-      await loadMembers(selectedProject.id);
-    } catch (err) {
-      console.error(err);
-      setStatus({ type: 'error', text: 'Impossible de modifier le rôle.' });
-    }
-  };
-
-  const handleRemoveMember = async (targetUserId: number) => {
-    if (!selectedProject) return;
-    try {
-      await apiClient.delete(
-        `/api/projects/${selectedProject.id}/members/${targetUserId}`,
-      );
-      setStatus({ type: 'success', text: 'Membre retiré.' });
-      await loadMembers(selectedProject.id);
-    } catch (err) {
-      console.error(err);
-      setStatus({ type: 'error', text: 'Impossible de retirer le membre.' });
-    }
-  };
-
   return (
-    <div className='relative h-screen flex-1 overflow-y-auto overflow-x-hidden bg-linear-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100'>
+    <div className='relative h-screen flex-1 overflow-y-auto overflow-x-hidden bg-linear-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-foreground'>
       <div className='mx-auto max-w-6xl px-4 py-10'>
         <div className='mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
-            <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-slate-400'>
+            <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
               Projets
             </p>
-            <h1 className='text-3xl font-semibold text-gray-900 dark:text-slate-100'>
+            <h1 className='text-3xl font-semibold text-gray-900 dark:text-foreground'>
               Espace projets
             </h1>
-            <p className='text-sm text-gray-500 dark:text-slate-300'>
+            <p className='text-sm text-gray-500 dark:text-muted-foreground'>
               Gérer les instructions et le contexte de chaque projet.
             </p>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
-            {DEV_BYPASS_AUTH && (
-              <span className='rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
-                Dev mode
-              </span>
-            )}
-            <button
-              type='button'
-              onClick={() => navigate('/chat')}
-              className='inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100'
+            <Link
+              to='/chat'
+              className='inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground'
             >
               <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
                 <path d='M18 6 6 18' />
                 <path d='m6 6 12 12' />
               </svg>
               Fermer
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -338,9 +214,9 @@ function Projects() {
         )}
 
         <div className='grid gap-6 lg:grid-cols-[1.1fr_1.4fr]'>
-          <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-none'>
+          <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none'>
             <div className='flex items-center justify-between'>
-              <h2 className='text-lg font-semibold text-gray-900 dark:text-slate-100'>
+              <h2 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
               Créer un projet
               </h2>
             </div>
@@ -355,7 +231,7 @@ function Projects() {
                   }))
                 }
                 placeholder='Nom du projet'
-                className='w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                className='w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <input
                 type='text'
@@ -367,7 +243,7 @@ function Projects() {
                   }))
                 }
                 placeholder='Description courte (optionnel)'
-                className='w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                className='w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <textarea
                 rows={4}
@@ -379,7 +255,7 @@ function Projects() {
                   }))
                 }
                 placeholder="Instructions pour l'IA (optionnel)"
-                className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <textarea
                 rows={4}
@@ -391,7 +267,7 @@ function Projects() {
                   }))
                 }
                 placeholder='Données de contexte (optionnel)'
-                className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <button
                 type='button'
@@ -403,9 +279,9 @@ function Projects() {
             </div>
           </section>
 
-          <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-none'>
+          <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none'>
             <div className='flex items-center justify-between'>
-              <h2 className='text-lg font-semibold text-gray-900 dark:text-slate-100'>
+              <h2 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
                 Vos projets
               </h2>
             </div>
@@ -413,7 +289,7 @@ function Projects() {
               {loadingProjects ? (
                 <ProjectListSkeleton />
               ) : projects.length === 0 ? (
-                <p className='text-sm text-gray-500 dark:text-slate-400'>
+                <p className='text-sm text-gray-500 dark:text-muted-foreground'>
                   Aucun projet pour le moment.
                 </p>
               ) : null}
@@ -423,7 +299,7 @@ function Projects() {
                     className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                       selectedProject?.id === project.id
                         ? 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-100'
-                        : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-teal-200 hover:bg-teal-50 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-teal-500/40 dark:hover:bg-teal-500/10'
+                        : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-teal-200 hover:bg-teal-50 dark:border-border dark:bg-card/60 dark:text-foreground dark:hover:border-teal-500/40 dark:hover:bg-teal-500/10'
                     }`}
                 >
                   <button
@@ -431,16 +307,8 @@ function Projects() {
                     onClick={() => setSelectedProject(project)}
                     className='w-full text-left'
                   >
-                    <div className='flex items-center gap-2'>
-                      <p className='font-semibold'>{project.name}</p>
-                      {project.member_role && project.member_role !== 'owner' && (
-                        <span className='inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200'>
-                          <Users className='h-3 w-3' />
-                          Partagé
-                        </span>
-                      )}
-                    </div>
-                    <p className='text-xs text-gray-500 dark:text-slate-400'>
+                    <p className='font-semibold'>{project.name}</p>
+                    <p className='text-xs text-gray-500 dark:text-muted-foreground'>
                       {project.description || 'Aucune description'}
                     </p>
                   </button>
@@ -454,8 +322,8 @@ function Projects() {
               ))}
             </div>
             {selectedProject && (
-              <div className='mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
-                <h3 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
+              <div className='mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-border dark:bg-card/60'>
+                <h3 className='text-sm font-semibold text-gray-700 dark:text-foreground'>
                   Modifier le projet
                 </h3>
                 <Link
@@ -474,8 +342,7 @@ function Projects() {
                         name: event.target.value,
                       }))
                     }
-                    disabled={!canEdit}
-                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                   />
                   <input
                     type='text'
@@ -486,8 +353,7 @@ function Projects() {
                         description: event.target.value,
                       }))
                     }
-                    disabled={!canEdit}
-                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                   />
                   <textarea
                     rows={4}
@@ -498,8 +364,7 @@ function Projects() {
                         instructions: event.target.value,
                       }))
                     }
-                    disabled={!canEdit}
-                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                   />
                   <textarea
                     rows={4}
@@ -510,143 +375,30 @@ function Projects() {
                         context_data: event.target.value,
                       }))
                     }
-                    disabled={!canEdit}
-                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                    className='w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                   />
                   <div className='flex flex-wrap gap-2'>
-                    {canEdit && (
-                      <button
-                        type='button'
-                        onClick={handleUpdate}
-                        className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
-                      >
-                        Enregistrer
-                      </button>
-                    )}
-                    {isOwner && (
-                      <button
-                        type='button'
-                        onClick={() => setConfirmProjectDelete(true)}
-                        className='rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
-                      >
-                        Supprimer le projet
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* ── Section Membres ─────────────────────────────────── */}
-                <div className='mt-6 border-t border-gray-200 pt-4 dark:border-slate-800'>
-                  <h4 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
-                    Membres
-                  </h4>
-
-                  {/* Invite form (owner only) */}
-                  {isOwner && (
-                    <div className='mt-3 flex flex-wrap items-end gap-2'>
-                      <input
-                        type='email'
-                        value={inviteEmail}
-                        onChange={e => setInviteEmail(e.target.value)}
-                        placeholder='Email du membre'
-                        className='flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
-                      />
-                      <select
-                        value={inviteRole}
-                        onChange={e =>
-                          setInviteRole(e.target.value as 'editor' | 'viewer')
-                        }
-                        className='rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
-                      >
-                        <option value='viewer'>Viewer</option>
-                        <option value='editor'>Editor</option>
-                      </select>
-                      <button
-                        type='button'
-                        onClick={handleInviteMember}
-                        className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
-                      >
-                        Inviter
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Members list */}
-                  <div className='mt-3 space-y-2'>
-                    {loadingMembers ? (
-                      <p className='text-xs text-gray-500 dark:text-slate-400'>
-                        Chargement...
-                      </p>
-                    ) : members.length === 0 ? (
-                      <p className='text-xs text-gray-500 dark:text-slate-400'>
-                        Aucun membre.
-                      </p>
-                    ) : (
-                      members.map(member => (
-                        <div
-                          key={member.user_id}
-                          className='flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900'
-                        >
-                          <div className='flex items-center gap-2'>
-                            <span className='font-semibold text-gray-700 dark:text-slate-200'>
-                              {member.username}
-                            </span>
-                            <span className='text-gray-400 dark:text-slate-500'>
-                              {member.email}
-                            </span>
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                                ROLE_BADGE_CLASSES[member.role] || ROLE_BADGE_CLASSES.viewer
-                              }`}
-                            >
-                              {ROLE_LABELS[member.role] || member.role}
-                            </span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            {isOwner &&
-                              member.user_id !== userData?.id &&
-                              member.role !== 'owner' && (
-                                <>
-                                  <select
-                                    value={member.role}
-                                    onChange={e =>
-                                      handleChangeMemberRole(
-                                        member.user_id,
-                                        e.target.value,
-                                      )
-                                    }
-                                    className='rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100'
-                                  >
-                                    <option value='editor'>Editor</option>
-                                    <option value='viewer'>Viewer</option>
-                                  </select>
-                                  <button
-                                    type='button'
-                                    onClick={() =>
-                                      setConfirmMemberRemove({
-                                        open: true,
-                                        userId: member.user_id,
-                                        username: member.username,
-                                      })
-                                    }
-                                    title='Retirer le membre'
-                                    className='rounded-md p-1 text-red-500 transition hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-200'
-                                  >
-                                    <X className='h-3.5 w-3.5' />
-                                  </button>
-                                </>
-                              )}
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    <button
+                      type='button'
+                      onClick={handleUpdate}
+                      className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
+                    >
+                      Enregistrer
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => setConfirmProjectDelete(true)}
+                      className='rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
+                    >
+                      Supprimer le projet
+                    </button>
                   </div>
                 </div>
 
                 {/* ── Section Conversations ───────────────────────────── */}
-                <div className='mt-6 border-t border-gray-200 pt-4 dark:border-slate-800'>
+                <div className='mt-6 border-t border-gray-200 pt-4 dark:border-border'>
                   <div className='flex items-center justify-between'>
-                    <h4 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
+                    <h4 className='text-sm font-semibold text-gray-700 dark:text-foreground'>
                       Conversations
                     </h4>
                   </div>
@@ -654,7 +406,7 @@ function Projects() {
                     {loadingThreads ? (
                       <ThreadListSkeleton />
                     ) : threads.length === 0 ? (
-                      <p className='text-xs text-gray-500 dark:text-slate-400'>
+                      <p className='text-xs text-gray-500 dark:text-muted-foreground'>
                         Aucune conversation pour ce projet.
                       </p>
                     ) : (
@@ -663,7 +415,7 @@ function Projects() {
                         return (
                           <div
                             key={thread.id}
-                            className='flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900'
+                            className='flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs dark:border-border dark:bg-card'
                           >
                             {isEditing ? (
                               <input
@@ -673,10 +425,10 @@ function Projects() {
                                   setEditingThreadTitle(event.target.value)
                                 }
                                 placeholder='Titre de conversation'
-                                className='mr-3 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                                className='mr-3 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                               />
                             ) : (
-                              <span className='font-semibold text-gray-700 dark:text-slate-200'>
+                              <span className='font-semibold text-gray-700 dark:text-foreground'>
                                 {thread.title || 'Conversation sans titre'}
                               </span>
                             )}
@@ -693,7 +445,7 @@ function Projects() {
                                   <button
                                     type='button'
                                     onClick={handleCancelRenameThread}
-                                    className='text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
+                                    className='text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
                                   >
                                     Annuler
                                   </button>
@@ -709,7 +461,7 @@ function Projects() {
                                   <button
                                     type='button'
                                     onClick={() => handleStartRenameThread(thread)}
-                                    className='text-xs font-semibold text-gray-600 hover:text-gray-800 dark:text-slate-300 dark:hover:text-slate-100'
+                                    className='text-xs font-semibold text-gray-600 hover:text-gray-800 dark:text-muted-foreground dark:hover:text-foreground'
                                   >
                                     Renommer
                                   </button>
@@ -745,17 +497,17 @@ function Projects() {
       {/* ── Modal: confirm thread delete ──────────────────────────────── */}
       {confirmThreadDelete.open && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
-          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
-            <h4 className='text-base font-semibold text-gray-900 dark:text-slate-100'>
+          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none'>
+            <h4 className='text-base font-semibold text-gray-900 dark:text-foreground'>
               Supprimer la conversation
             </h4>
-            <p className='mt-2 text-sm text-gray-600 dark:text-slate-300'>
+            <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
               Cette action est irréversible.
             </p>
             <div className='mt-5 flex justify-end gap-2'>
               <button
                 type='button'
-                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted'
                 onClick={() =>
                   setConfirmThreadDelete({ open: false, threadId: null })
                 }
@@ -783,18 +535,18 @@ function Projects() {
       {/* ── Modal: confirm project delete ─────────────────────────────── */}
       {confirmProjectDelete && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
-          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
-            <h4 className='text-base font-semibold text-gray-900 dark:text-slate-100'>
+          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none'>
+            <h4 className='text-base font-semibold text-gray-900 dark:text-foreground'>
               Supprimer le projet
             </h4>
-            <p className='mt-2 text-sm text-gray-600 dark:text-slate-300'>
+            <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
               Ce projet sera supprimé et ses conversations détachées. Action
               irréversible.
             </p>
             <div className='mt-5 flex justify-end gap-2'>
               <button
                 type='button'
-                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted'
                 onClick={() => setConfirmProjectDelete(false)}
               >
                 Annuler
@@ -814,51 +566,6 @@ function Projects() {
         </div>
       )}
 
-      {/* ── Modal: confirm member remove ──────────────────────────────── */}
-      {confirmMemberRemove.open && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
-          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-900 dark:shadow-none'>
-            <h4 className='text-base font-semibold text-gray-900 dark:text-slate-100'>
-              Retirer le membre
-            </h4>
-            <p className='mt-2 text-sm text-gray-600 dark:text-slate-300'>
-              Retirer {confirmMemberRemove.username} de ce projet ?
-            </p>
-            <div className='mt-5 flex justify-end gap-2'>
-              <button
-                type='button'
-                className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
-                onClick={() =>
-                  setConfirmMemberRemove({
-                    open: false,
-                    userId: null,
-                    username: '',
-                  })
-                }
-              >
-                Annuler
-              </button>
-              <button
-                type='button'
-                className='rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700'
-                onClick={() => {
-                  const target = confirmMemberRemove.userId;
-                  setConfirmMemberRemove({
-                    open: false,
-                    userId: null,
-                    username: '',
-                  });
-                  if (target) {
-                    handleRemoveMember(target);
-                  }
-                }}
-              >
-                Retirer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

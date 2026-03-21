@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import apiClient from '@/apiClient';
+import * as tauri from '@/tauriClient';
 import type { Project } from '@/types';
 
 type ProjectData = {
@@ -29,8 +29,8 @@ export function useProjects(): UseProjectsReturn {
     setLoadingProjects(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/projects');
-      setProjects(response.data || []);
+      const result = await tauri.listProjects() as Project[];
+      setProjects(result || []);
     } catch (err) {
       console.error(err);
       setError('Erreur lors du chargement des projets.');
@@ -57,8 +57,7 @@ export function useProjects(): UseProjectsReturn {
     });
 
     try {
-      const response = await apiClient.post('/api/projects', data);
-      const created = response.data || null;
+      const created = await tauri.createProject(data) as Project | null;
 
       if (created) {
         setProjects((prev) => prev.map((p) => (p.id === tempId ? created : p)));
@@ -70,8 +69,8 @@ export function useProjects(): UseProjectsReturn {
     } catch (err) {
       console.error(err);
       setProjects(previousProjects);
-      setError('Erreur lors de la cr\u00e9ation du projet.');
-      toast.error('Erreur lors de la cr\u00e9ation du projet');
+      setError('Erreur lors de la création du projet.');
+      toast.error('Erreur lors de la création du projet');
       return null;
     }
   }, []);
@@ -86,12 +85,12 @@ export function useProjects(): UseProjectsReturn {
     });
 
     try {
-      await apiClient.patch(`/api/projects/${id}`, data);
+      await tauri.updateProject(id, data);
     } catch (err) {
       console.error(err);
       setProjects(previousProjects);
-      setError('Erreur lors de la mise \u00e0 jour du projet.');
-      toast.error('Erreur lors de la mise \u00e0 jour du projet');
+      setError('Erreur lors de la mise à jour du projet.');
+      toast.error('Erreur lors de la mise à jour du projet');
     }
   }, []);
 
@@ -105,7 +104,7 @@ export function useProjects(): UseProjectsReturn {
     });
 
     try {
-      await apiClient.delete(`/api/projects/${id}`);
+      await tauri.deleteProject(id);
     } catch (err) {
       console.error(err);
       setProjects(previousProjects);

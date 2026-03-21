@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import apiClient from '@/apiClient';
+import * as tauri from '@/tauriClient';
 import type { Thread } from '@/types';
 
 type UseThreadsReturn = {
@@ -23,9 +23,8 @@ export function useThreads(): UseThreadsReturn {
     setLoadingThreads(true);
     setError(null);
     try {
-      const url = projectId ? `/api/projects/${projectId}/threads` : '/api/threads';
-      const response = await apiClient.get(url);
-      setThreads(response.data || []);
+      const result = await tauri.listThreads(projectId) as Thread[];
+      setThreads(result || []);
     } catch (err) {
       console.error(err);
       setError('Erreur lors du chargement des conversations.');
@@ -41,7 +40,7 @@ export function useThreads(): UseThreadsReturn {
     const optimisticThread: Thread = {
       id: tempId,
       title: title || 'Nouvelle conversation',
-      projectId: projectId || null,
+      project_id: projectId || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -53,11 +52,10 @@ export function useThreads(): UseThreadsReturn {
     });
 
     try {
-      const url = projectId ? `/api/projects/${projectId}/threads` : '/api/threads';
-      const response = await apiClient.post(url, {
-        title: title || null,
-      });
-      const created = response.data || null;
+      const created = await tauri.createThread({
+        title: title || undefined,
+        project_id: projectId || undefined,
+      }) as Thread | null;
 
       if (created) {
         setThreads((prev) => prev.map((t) => (t.id === tempId ? created : t)));
@@ -69,8 +67,8 @@ export function useThreads(): UseThreadsReturn {
     } catch (err) {
       console.error(err);
       setThreads(previousThreads);
-      setError('Erreur lors de la cr\u00e9ation de la conversation.');
-      toast.error('Erreur lors de la cr\u00e9ation de la conversation');
+      setError('Erreur lors de la création de la conversation.');
+      toast.error('Erreur lors de la création de la conversation');
       return null;
     }
   }, []);
@@ -85,7 +83,7 @@ export function useThreads(): UseThreadsReturn {
     });
 
     try {
-      await apiClient.patch(`/api/threads/${threadId}`, { title });
+      await tauri.updateThread(threadId, { title });
     } catch (err) {
       console.error(err);
       setThreads(previousThreads);
@@ -104,7 +102,7 @@ export function useThreads(): UseThreadsReturn {
     });
 
     try {
-      await apiClient.delete(`/api/threads/${threadId}`);
+      await tauri.deleteThread(threadId);
     } catch (err) {
       console.error(err);
       setThreads(previousThreads);
@@ -116,7 +114,7 @@ export function useThreads(): UseThreadsReturn {
   const assignThreadToProject = useCallback(async (threadId: string, projectId: number | null) => {
     setError(null);
     try {
-      await apiClient.patch(`/api/threads/${threadId}`, { projectId });
+      await tauri.updateThread(threadId, { project_id: projectId });
     } catch (err) {
       console.error(err);
       setError('Erreur lors de l\'assignation de la conversation au projet.');

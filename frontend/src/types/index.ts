@@ -2,6 +2,7 @@ export type ProviderName = 'openai' | 'gemini' | 'claude' | 'mistral' | 'groq';
 
 export interface User {
   id: number;
+  userId?: number;
   username: string;
   email: string;
 }
@@ -19,18 +20,22 @@ export interface ChatMessage {
 export interface Thread {
   id: string;
   title: string;
-  user_id: number;
+  user_id?: number;
   project_id?: number | null;
   last_message_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Project {
-  id: number;
+  id: number | string;
   name: string;
   description?: string;
   instructions?: string;
   context_data?: string;
-  user_id: number;
+  user_id?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Attachment {

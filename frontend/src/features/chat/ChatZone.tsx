@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import apiClient from '../../apiClient';
+import * as tauri from '@/tauriClient';
 import { useExternalStoreRuntime } from '@assistant-ui/react';
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '../../UserContext';
@@ -125,12 +125,10 @@ function ChatZone({ sessionId }: { sessionId: string }) {
     setLoadingHistory(true);
     setHistoryCursor(null);
     setHasMoreHistory(false);
-    apiClient
-      .get(`/api/threads/${threadId}/messages`, {
-        params: { limit: HISTORY_PAGE_SIZE },
-      })
-      .then(response => {
-        const history = (response.data || []).map((item: any) => ({
+    tauri
+      .getThreadMessages(threadId, HISTORY_PAGE_SIZE)
+      .then(data => {
+        const history = (data || []).map((item: any) => ({
           id: item.id ? String(item.id) : uuidv4(),
           role: normalizeRole(item.role),
           content: normalizeContent(item.content),
@@ -138,8 +136,8 @@ function ChatZone({ sessionId }: { sessionId: string }) {
           createdAt: item.created_at ? new Date(item.created_at) : new Date(),
         }));
         setMessages(history);
-        setHistoryCursor(resolveHistoryCursor(response.data || []));
-        setHasMoreHistory((response.data || []).length === HISTORY_PAGE_SIZE);
+        setHistoryCursor(resolveHistoryCursor(data || []));
+        setHasMoreHistory((data || []).length === HISTORY_PAGE_SIZE);
         setError('');
       })
       .catch((err: any) => {
@@ -156,13 +154,8 @@ function ChatZone({ sessionId }: { sessionId: string }) {
     if (!threadId || !historyCursor || loadingMoreHistory) return;
     setLoadingMoreHistory(true);
     try {
-      const response = await apiClient.get(
-        `/api/threads/${threadId}/messages`,
-        {
-          params: { limit: HISTORY_PAGE_SIZE, beforeId: historyCursor },
-        },
-      );
-      const nextHistory = (response.data || []).map((item: any) => ({
+      const data = await tauri.getThreadMessages(threadId, HISTORY_PAGE_SIZE, historyCursor);
+      const nextHistory = (data || []).map((item: any) => ({
         id: item.id ? String(item.id) : uuidv4(),
         role: normalizeRole(item.role),
         content: normalizeContent(item.content),
@@ -174,8 +167,8 @@ function ChatZone({ sessionId }: { sessionId: string }) {
         return;
       }
       setMessages(prev => mergeHistory(prev, nextHistory));
-      setHistoryCursor(resolveHistoryCursor(response.data || []));
-      setHasMoreHistory((response.data || []).length === HISTORY_PAGE_SIZE);
+      setHistoryCursor(resolveHistoryCursor(data || []));
+      setHasMoreHistory((data || []).length === HISTORY_PAGE_SIZE);
     } catch (err: any) {
       setError(
         err.response?.data?.error ||
@@ -431,7 +424,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
   );
 
   return (
-    <div className='relative flex h-screen flex-1 flex-col overflow-hidden bg-gradient-to-b from-gray-100 via-white to-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900'>
+    <div className='relative flex h-screen flex-1 flex-col overflow-hidden bg-white dark:bg-background'>
       <ChatHeader
         activeModelLabel={activeModelLabel}
         messagesCount={messages.length}

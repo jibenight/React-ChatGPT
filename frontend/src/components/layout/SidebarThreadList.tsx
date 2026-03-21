@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
-import apiClient from '@/apiClient';
+import * as tauri from '@/tauriClient';
 import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
 
 interface SidebarThreadListProps {
@@ -53,9 +53,7 @@ function SidebarThreadList({
 
   const handleRenameThread = async (threadId) => {
     try {
-      await apiClient.patch(`/api/threads/${threadId}`, {
-        title: editingThreadTitle,
-      });
+      await tauri.updateThread(threadId, { title: editingThreadTitle });
       handleCancelRenameThread();
       onRefreshThreads();
     } catch (err) {
@@ -65,9 +63,7 @@ function SidebarThreadList({
 
   const handleAssignThread = async (threadId, projectId) => {
     try {
-      await apiClient.patch(`/api/threads/${threadId}`, {
-        projectId,
-      });
+      await tauri.updateThread(threadId, { project_id: projectId });
       if (projectMode && projectId !== selectedProjectId) {
         setSelectedThreadId(null);
       }
@@ -79,7 +75,7 @@ function SidebarThreadList({
 
   const handleDeleteThread = async (threadId) => {
     try {
-      await apiClient.delete(`/api/threads/${threadId}`);
+      await tauri.deleteThread(threadId);
       if (selectedThreadId === threadId) {
         setSelectedThreadId(null);
       }

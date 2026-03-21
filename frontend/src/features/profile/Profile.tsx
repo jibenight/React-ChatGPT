@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../../UserContext';
 import { useForm } from 'react-hook-form';
-import apiClient from '../../apiClient';
+import * as tauri from '@/tauriClient';
 import { useAppStore } from '../../stores/appStore';
 
 function Profil() {
   const setProfil = useAppStore(s => s.setProfil);
-  const DEV_BYPASS_AUTH =
-    import.meta.env.DEV &&
-    String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
   const { userData, setUserData } = useUser();
   const [isReadOnly, setIsReadOnly] = useState(true);
   const [apiStatus, setApiStatus] = useState({
@@ -29,29 +26,11 @@ function Profil() {
     open: false,
     provider: null,
   });
-  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const {
     register,
     handleSubmit,
-    formState: { errors },
     reset,
-  } = useForm<any>({
-    resolver: async (data: any) => {
-      const errors: Record<string, any> = {};
-      if (data.password !== data.passwordConfirmation) {
-        errors.passwordConfirmation = {
-          type: 'manual',
-          message: 'Les mots de passe ne correspondent pas',
-        };
-      }
-      return {
-        values: data.password === data.passwordConfirmation ? data : {},
-        errors,
-      };
-    },
-  });
-  const passwordConfirmationError = errors.passwordConfirmation?.message;
+  } = useForm<any>();
 
   const toggleReadOnly = () => {
     setIsReadOnly(!isReadOnly);
@@ -59,8 +38,8 @@ function Profil() {
 
   const fetchApiKeys = async () => {
     try {
-      const response = await apiClient.get('/api/api-keys');
-      const providers = response.data?.providers || [];
+      const result = await tauri.listApiKeys();
+      const providers = result?.providers || [];
       const nextStatus = {
         openai: false,
         gemini: false,
@@ -103,22 +82,15 @@ function Profil() {
     if (Object.keys(updatedData).length === 0) {
       return;
     }
-    if (data.username || data.password) {
+    if (data.username) {
       try {
         setIsSaving(true);
-        const response = await apiClient.post(
-          '/api/update-user-data',
-          updatedData,
-        );
-        if (response.data.message === 'User data updated successfully') {
-          // Mettre à jour le contexte utilisateur avec les nouvelles données
-          setUserData(prevUserData => ({
-            ...prevUserData,
-            username: updatedData.username || prevUserData.username, // Mise à jour conditionnelle
-            password: updatedData.password || prevUserData.password, // Mise à jour conditionnelle
-          }));
-          reset();
-        }
+        await tauri.updateUsername(data.username.trim());
+        setUserData(prevUserData => ({
+          ...prevUserData,
+          username: data.username.trim(),
+        }));
+        reset();
         toggleReadOnly();
       } catch (err) {
         console.error(err);
@@ -148,10 +120,7 @@ function Profil() {
         setIsSaving(true);
         await Promise.all(
           apiUpdates.map(item =>
-            apiClient.post('/api/update-api-key', {
-              apiKey: data[item.key],
-              provider: item.provider,
-            }),
+            tauri.saveApiKey(item.provider, data[item.key]),
           ),
         );
         const resetPayload = apiKeyFields.reduce((acc, item) => {
@@ -174,7 +143,7 @@ function Profil() {
         console.error(err);
         setActionMessage({
           type: 'error',
-          text: 'Impossible d’enregistrer la clé API.',
+          text: 'Impossible d\'enregistrer la clé API.',
         });
       } finally {
         setIsSaving(false);
@@ -185,7 +154,7 @@ function Profil() {
   const handleDeleteApiKey = async provider => {
     try {
       setIsDeleting(true);
-      await apiClient.delete(`/api/api-keys/${provider}`);
+      await tauri.deleteApiKey(provider);
       setApiStatus(prev => ({ ...prev, [provider]: false }));
       setActionMessage({
         type: 'success',
@@ -199,22 +168,6 @@ function Profil() {
       });
     } finally {
       setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      setIsDeletingAccount(true);
-      await apiClient.delete('/api/users/me');
-      localStorage.clear();
-      window.location.href = '/';
-    } catch (err) {
-      console.error(err);
-      setActionMessage({
-        type: 'error',
-        text: 'Impossible de supprimer le compte.',
-      });
-      setIsDeletingAccount(false);
     }
   };
 
@@ -235,29 +188,29 @@ function Profil() {
     .join('');
 
   return (
-    <div className='relative h-screen flex-1 overflow-y-auto bg-linear-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100'>
+    <div className='relative h-screen flex-1 overflow-y-auto bg-linear-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-background dark:via-background dark:to-card dark:text-foreground'>
       <div className='mx-auto w-full max-w-6xl px-4 py-10'>
-        <div className='mb-8 rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-xs backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 dark:shadow-none'>
+        <div className='mb-8 rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-xs backdrop-blur dark:border-border dark:bg-card/70 dark:shadow-none'>
           <div className='flex flex-col gap-6 md:flex-row md:items-center md:justify-between'>
             <div className='flex items-center gap-4'>
               <div className='flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-500 text-lg font-semibold text-white shadow'>
                 {initials || 'U'}
               </div>
               <div>
-                <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-slate-400'>
+                <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
                   Profil
                 </p>
-                <h1 className='text-2xl font-semibold text-gray-900 dark:text-slate-100'>
+                <h1 className='text-2xl font-semibold text-gray-900 dark:text-foreground'>
                   {displayName}
                 </h1>
-                <p className='text-sm text-gray-500 dark:text-slate-300'>{displayEmail}</p>
+                <p className='text-sm text-gray-500 dark:text-muted-foreground'>{displayEmail}</p>
               </div>
             </div>
             <div className='flex flex-wrap items-center gap-2'>
               <button
                 type='button'
                 onClick={() => setProfil(false)}
-                className='inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100'
+                className='inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground'
               >
                 <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
                   <path d='M18 6 6 18' />
@@ -265,11 +218,6 @@ function Profil() {
                 </svg>
                 Fermer
               </button>
-              {DEV_BYPASS_AUTH && (
-                <span className='rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
-                  Dev mode
-                </span>
-              )}
               {apiProviders.map(provider => {
                 const enabled = apiStatus[provider.key];
                 return (
@@ -278,7 +226,7 @@ function Profil() {
                     className={`rounded-full border px-3 py-1 text-xs font-medium ${
                       enabled
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-                        : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-border dark:bg-muted dark:text-muted-foreground'
                     }`}
                   >
                     {provider.label}
@@ -303,27 +251,23 @@ function Profil() {
 
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
           <div className='grid gap-6 lg:grid-cols-[1fr_1.4fr]'>
-            <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-none'>
+            <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none'>
               <div className='flex items-center justify-between'>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-slate-100'>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
                   Aperçu du compte
                 </h3>
-                <span className='text-xs font-medium uppercase tracking-[0.2em] text-gray-400 dark:text-slate-400'>
+                <span className='text-xs font-medium uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
                   Statut
                 </span>
               </div>
               <dl className='mt-4 space-y-4 text-sm'>
                 <div className='flex items-center justify-between'>
-                  <dt className='text-gray-500 dark:text-slate-400'>Nom d'utilisateur</dt>
-                  <dd className='font-medium text-gray-900 dark:text-slate-100'>{displayName}</dd>
+                  <dt className='text-gray-500 dark:text-muted-foreground'>Nom d'utilisateur</dt>
+                  <dd className='font-medium text-gray-900 dark:text-foreground'>{displayName}</dd>
                 </div>
                 <div className='flex items-center justify-between'>
-                  <dt className='text-gray-500 dark:text-slate-400'>Adresse e-mail</dt>
-                  <dd className='font-medium text-gray-900 dark:text-slate-100'>{displayEmail}</dd>
-                </div>
-                <div className='flex items-center justify-between'>
-                  <dt className='text-gray-500 dark:text-slate-400'>Mot de passe</dt>
-                  <dd className='font-medium text-gray-900 dark:text-slate-100'>••••••••</dd>
+                  <dt className='text-gray-500 dark:text-muted-foreground'>Adresse e-mail</dt>
+                  <dd className='font-medium text-gray-900 dark:text-foreground'>{displayEmail}</dd>
                 </div>
               </dl>
               <div className='mt-6 grid gap-3'>
@@ -332,19 +276,19 @@ function Profil() {
                   return (
                     <div
                       key={provider.key}
-                      className='flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/70'
+                      className='flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm dark:border-border dark:bg-card/70'
                     >
-                      <span className='font-medium text-gray-700 dark:text-slate-200'>
+                      <span className='font-medium text-gray-700 dark:text-foreground'>
                         {provider.label}
                       </span>
                       <span
                         className={`flex items-center gap-2 text-xs font-semibold ${
-                          enabled ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-400 dark:text-slate-500'
+                          enabled ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-400 dark:text-muted-foreground'
                         }`}
                       >
                         <span
                           className={`h-2 w-2 rounded-full ${
-                            enabled ? 'bg-emerald-400' : 'bg-gray-300 dark:bg-slate-600'
+                            enabled ? 'bg-emerald-400' : 'bg-gray-300 dark:bg-border'
                           }`}
                         />
                         {enabled ? 'Enregistrée' : 'Non renseignée'}
@@ -358,17 +302,17 @@ function Profil() {
               </div>
             </section>
 
-            <section className='relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:shadow-none'>
+            <section className='relative overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-border dark:bg-card/70 dark:shadow-none'>
               <div className='absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-400 via-teal-300 to-teal-500' />
               <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
                 <div>
-                  <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-slate-400'>
+                  <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
                     Paramètres
                   </p>
-                  <h3 className='text-lg font-semibold text-gray-900 dark:text-slate-100'>
+                  <h3 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
                     Profil & Clés API
                   </h3>
-                  <p className='text-sm text-gray-500 dark:text-slate-300'>
+                  <p className='text-sm text-gray-500 dark:text-muted-foreground'>
                     Mettez à jour vos informations et vos clés fournisseurs.
                   </p>
                 </div>
@@ -390,7 +334,7 @@ function Profil() {
                       className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                         enabled
                           ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200'
-                          : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                          : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-border dark:bg-muted dark:text-muted-foreground'
                       }`}
                     >
                       {provider.label}
@@ -401,30 +345,27 @@ function Profil() {
 
               {isReadOnly ? (
                 <div className='mt-6 grid gap-4 md:grid-cols-2'>
-                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:shadow-none'>
-                    <p className='font-semibold text-gray-800 dark:text-slate-100'>Profil</p>
-                    <p className='mt-1 text-xs text-gray-500 dark:text-slate-400'>
+                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600 shadow-sm dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:shadow-none'>
+                    <p className='font-semibold text-gray-800 dark:text-foreground'>Profil</p>
+                    <p className='mt-1 text-xs text-gray-500 dark:text-muted-foreground'>
                       Modifiez votre nom d'utilisateur et mot de passe.
                     </p>
                     <div className='mt-3 space-y-2'>
-                    <div className='rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'>
+                      <div className='rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-400 dark:border-border dark:bg-card dark:text-muted-foreground'>
                         Nom d'utilisateur
-                      </div>
-                      <div className='rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'>
-                        Mot de passe
                       </div>
                     </div>
                   </div>
-                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:shadow-none'>
-                    <p className='font-semibold text-gray-800 dark:text-slate-100'>Clés API</p>
-                    <p className='mt-1 text-xs text-gray-500 dark:text-slate-400'>
+                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600 shadow-sm dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:shadow-none'>
+                    <p className='font-semibold text-gray-800 dark:text-foreground'>Clés API</p>
+                    <p className='mt-1 text-xs text-gray-500 dark:text-muted-foreground'>
                       Ajoutez vos clés pour débloquer chaque fournisseur.
                     </p>
                     <div className='mt-3 grid gap-2 sm:grid-cols-2'>
                       {apiProviders.map(provider => (
                         <div
                           key={provider.key}
-                          className='rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'
+                          className='rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-400 dark:border-border dark:bg-card dark:text-muted-foreground'
                         >
                           {provider.label}
                         </div>
@@ -434,132 +375,98 @@ function Profil() {
                 </div>
               ) : (
                 <div className='mt-6 grid gap-6'>
-                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
-                    <h4 className='text-sm font-semibold text-gray-800 dark:text-slate-100'>
+                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-border dark:bg-card/60'>
+                    <h4 className='text-sm font-semibold text-gray-800 dark:text-foreground'>
                       Informations personnelles
                     </h4>
                     <div className='mt-4 grid gap-5'>
                       <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-muted-foreground'>
                         Nouveau nom d'utilisateur
                         </label>
                         <div className='mt-2'>
                           <input
                             {...register('username')}
                             type='text'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                             placeholder="Entrer un nom d'utilisateur"
                           />
                         </div>
                       </div>
 
-                      <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
-                        Nouveau mot de passe
-                        </label>
-                        <div className='mt-2'>
-                          <input
-                            {...register('password')}
-                            type='password'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
-                            placeholder='Entrer un mot de passe'
-                          />
-                        </div>
-                      </div>
                     </div>
-
-                    <div className='mt-5'>
-                      <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
-                        Confirmer le mot de passe
-                      </label>
-                      <div className='mt-2'>
-                        <input
-                          {...register('passwordConfirmation')}
-                          type='password'
-                          className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
-                          placeholder='Confirmer le mot de passe'
-                        />
-                      </div>
-                    </div>
-                    {errors.passwordConfirmation && (
-                      <p className='mt-2 text-sm text-red-500 dark:text-red-300'>
-                        {typeof passwordConfirmationError === 'string'
-                          ? passwordConfirmationError
-                          : 'Erreur'}
-                      </p>
-                    )}
                   </div>
 
-                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
-                    <h4 className='text-sm font-semibold text-gray-800 dark:text-slate-100'>
+                  <div className='rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-border dark:bg-card/60'>
+                    <h4 className='text-sm font-semibold text-gray-800 dark:text-foreground'>
                       Clés API par fournisseur
                     </h4>
-                    <p className='mt-1 text-xs text-gray-500 dark:text-slate-400'>
+                    <p className='mt-1 text-xs text-gray-500 dark:text-muted-foreground'>
                       Ajoutez une clé par fournisseur. Vous pouvez les supprimer
                       dans la zone de danger.
                     </p>
                     <div className='mt-4 grid gap-4'>
                       <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-muted-foreground'>
                         Clé API OpenAI
                         </label>
                         <div className='mt-2'>
                           <input
                             {...register('openai_api_key')}
                             type='text'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                             placeholder='sk-...'
                           />
                         </div>
                       </div>
                       <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-muted-foreground'>
                         Clé API Gemini
                         </label>
                         <div className='mt-2'>
                           <input
                             {...register('gemini_api_key')}
                             type='text'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                             placeholder='AIza...'
                           />
                         </div>
                       </div>
                       <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-muted-foreground'>
                         Clé API Claude
                         </label>
                         <div className='mt-2'>
                           <input
                             {...register('claude_api_key')}
                             type='text'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                             placeholder='sk-ant-...'
                           />
                         </div>
                       </div>
                       <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-muted-foreground'>
                         Clé API Mistral
                         </label>
                         <div className='mt-2'>
                           <input
                             {...register('mistral_api_key')}
                             type='text'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                             placeholder='mistral-...'
                           />
                         </div>
                       </div>
                       <div>
-                        <label className='block text-sm font-medium text-gray-700 dark:text-slate-300'>
+                        <label className='block text-sm font-medium text-gray-700 dark:text-muted-foreground'>
                         Clé API Groq
                         </label>
                         <div className='mt-2'>
                           <input
                             {...register('groq_api_key')}
                             type='text'
-                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-teal-400/30'
+                            className='w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                             placeholder='gsk_...'
                           />
                         </div>
@@ -581,14 +488,14 @@ function Profil() {
             </section>
           </div>
 
-          <section className='rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/40 dark:bg-slate-900/60 dark:shadow-none'>
+          <section className='rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/40 dark:bg-card/60 dark:shadow-none'>
             <div className='flex items-center justify-between'>
               <div>
                 <h3 className='text-lg font-semibold text-red-700 dark:text-red-300'>
                   Zone de danger
                 </h3>
-                <p className='text-sm text-gray-500 dark:text-slate-300'>
-                  Supprimez votre compte ou vos clés API. Action irréversible.
+                <p className='text-sm text-gray-500 dark:text-muted-foreground'>
+                  Supprimez vos clés API. Action irréversible.
                 </p>
               </div>
               <span className='rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200'>
@@ -596,14 +503,6 @@ function Profil() {
               </span>
             </div>
             <div className='mt-4 flex flex-wrap gap-3'>
-              <button
-                className='inline-flex justify-center rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
-                type='button'
-                onClick={() => setConfirmDeleteAccount(true)}
-                disabled={isDeletingAccount}
-              >
-                Supprimer le compte
-              </button>
               <button
                 className='inline-flex justify-center rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
                 type='button'
@@ -660,11 +559,11 @@ function Profil() {
 
         {confirmDelete.open && (
           <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4'>
-            <div className='w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-[fadeIn_160ms_ease-out] dark:bg-slate-900 dark:shadow-none'>
-              <h4 className='text-lg font-semibold text-gray-900 dark:text-slate-100'>
+            <div className='w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-[fadeIn_160ms_ease-out] dark:bg-card dark:shadow-none'>
+              <h4 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
                 Supprimer la clé API
               </h4>
-              <p className='mt-2 text-sm text-gray-600 dark:text-slate-300'>
+              <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
                 Confirmer la suppression de la clé{' '}
                 <span className='font-semibold'>
                   {confirmDelete.provider?.toUpperCase()}
@@ -674,7 +573,7 @@ function Profil() {
               <div className='mt-6 flex justify-end gap-3'>
                 <button
                   type='button'
-                  className='rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                  className='rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted'
                   onClick={() =>
                     setConfirmDelete({ open: false, provider: null })
                   }
@@ -701,58 +600,6 @@ function Profil() {
           </div>
         )}
 
-        {confirmDeleteAccount && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
-            <div className='w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 shadow-2xl animate-[fadeIn_160ms_ease-out] dark:border-red-500/40 dark:bg-slate-900 dark:shadow-none'>
-              <h4 className='text-lg font-semibold text-red-700 dark:text-red-300'>
-                Supprimer mon compte
-              </h4>
-              <p className='mt-3 text-sm text-gray-700 dark:text-slate-200'>
-                Cette action est <span className='font-semibold'>irréversible</span>. Toutes vos
-                données seront définitivement supprimées :
-              </p>
-              <ul className='mt-3 space-y-1 text-sm text-gray-600 dark:text-slate-300'>
-                <li className='flex items-start gap-2'>
-                  <span className='mt-0.5 text-red-500'>•</span>
-                  <span>Tous vos projets et conversations</span>
-                </li>
-                <li className='flex items-start gap-2'>
-                  <span className='mt-0.5 text-red-500'>•</span>
-                  <span>Toutes vos clés API enregistrées</span>
-                </li>
-                <li className='flex items-start gap-2'>
-                  <span className='mt-0.5 text-red-500'>•</span>
-                  <span>Votre compte utilisateur</span>
-                </li>
-              </ul>
-              <div className='mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
-                <strong>Attention :</strong> Vous ne pourrez pas récupérer vos données après cette
-                opération.
-              </div>
-              <div className='mt-6 flex justify-end gap-3'>
-                <button
-                  type='button'
-                  className='rounded-full border border-gray-200 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
-                  onClick={() => setConfirmDeleteAccount(false)}
-                  disabled={isDeletingAccount}
-                >
-                  Annuler
-                </button>
-                <button
-                  type='button'
-                  className='rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60'
-                  onClick={() => {
-                    setConfirmDeleteAccount(false);
-                    handleDeleteAccount();
-                  }}
-                  disabled={isDeletingAccount}
-                >
-                  {isDeletingAccount ? 'Suppression...' : 'Supprimer définitivement'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

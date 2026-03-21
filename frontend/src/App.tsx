@@ -8,7 +8,7 @@ import Profil from './features/profile/Profile';
 import Projects from './features/projects/Projects';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { v4 as uuidv4 } from 'uuid';
-import apiClient from './apiClient';
+import * as tauri from './tauriClient';
 import { useAppStore } from './stores/appStore';
 
 function App() {
@@ -32,9 +32,8 @@ function App() {
     let isActive = true;
     const loadLastProjectThread = async () => {
       try {
-         const response = await apiClient.get('/api/threads');
-        const allThreads = response.data || [];
-        const lastProjectThread = allThreads.find(
+        const allThreads = await tauri.listThreads() as any[];
+        const lastProjectThread = (allThreads || []).find(
           thread => thread.project_id !== null && thread.project_id !== undefined,
         );
         if (isActive && lastProjectThread?.project_id) {
@@ -71,9 +70,8 @@ function App() {
       let isActive = true;
       const loadLastProjectThread = async () => {
         try {
-           const response = await apiClient.get('/api/threads');
-          const allThreads = response.data || [];
-          const lastThread = allThreads.find(thread =>
+          const allThreads = await tauri.listThreads() as any[];
+          const lastThread = (allThreads || []).find(thread =>
             projectMode
               ? thread.project_id !== null && thread.project_id !== undefined
               : thread.project_id === null || thread.project_id === undefined,

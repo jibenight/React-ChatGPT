@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import apiClient from '@/apiClient';
+import * as tauri from '@/tauriClient';
 
 type ApiKeyStatus = Record<string, boolean>;
 
@@ -29,8 +29,8 @@ export function useApiKeys(): UseApiKeysReturn {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/api-keys');
-      const providers: string[] = response.data?.providers || [];
+      const result = await tauri.listApiKeys();
+      const providers: string[] = result?.providers || [];
       const nextStatus: ApiKeyStatus = {};
       DEFAULT_PROVIDERS.forEach((p) => {
         nextStatus[p] = false;
@@ -52,7 +52,7 @@ export function useApiKeys(): UseApiKeysReturn {
   const saveApiKey = useCallback(async (provider: string, apiKey: string) => {
     setError(null);
     try {
-      await apiClient.post('/api/update-api-key', { provider, apiKey });
+      await tauri.saveApiKey(provider, apiKey);
       setApiKeys((prev) => ({ ...prev, [provider]: true }));
     } catch (err) {
       console.error(err);
@@ -63,7 +63,7 @@ export function useApiKeys(): UseApiKeysReturn {
   const deleteApiKey = useCallback(async (provider: string) => {
     setError(null);
     try {
-      await apiClient.delete(`/api/api-keys/${provider}`);
+      await tauri.deleteApiKey(provider);
       setApiKeys((prev) => ({ ...prev, [provider]: false }));
     } catch (err) {
       console.error(err);

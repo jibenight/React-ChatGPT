@@ -1,11 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { SearchControls } from './ChatSearchBar';
-import apiClient from '../../apiClient';
-
-const DEV_BYPASS_AUTH =
-  import.meta.env.DEV &&
-  String(import.meta.env.VITE_DEV_BYPASS_AUTH).toLowerCase() === 'true';
+import * as tauri from '@/tauriClient';
 
 type ChatHeaderProps = {
   activeModelLabel: string;
@@ -57,18 +53,12 @@ function ChatHeader({
     if (!threadId) return;
     setExportOpen(false);
     try {
-      const response = await apiClient.get(
-        `/api/threads/${threadId}/export`,
-        { params: { format }, responseType: 'blob' },
-      );
-      const disposition = response.headers['content-disposition'] || '';
-      const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
-      const fallbackExt = format === 'md' ? 'md' : 'json';
-      const filename = filenameMatch?.[1] || `conversation.${fallbackExt}`;
-      const url = URL.createObjectURL(response.data);
+      const result = await tauri.exportThread(threadId, format);
+      const blob = new Blob([result.content], { type: result.mime_type });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = filename;
+      link.download = result.filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -81,26 +71,21 @@ function ChatHeader({
   const canExport = !!threadId && messagesCount > 0;
 
   return (
-    <header className='sticky top-0 z-10 border-b border-gray-200/70 bg-white/80 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/80'>
+    <header className='sticky top-0 z-10 border-b border-gray-200/70 bg-white/80 backdrop-blur dark:border-white/[0.06] dark:bg-[#0E0E16]/80'>
       <div className='mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3'>
         <div className='space-y-1'>
-          <p className='text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-slate-400'>
+          <p className='text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
             Conversation
           </p>
-          <h2 className='text-lg font-semibold text-gray-800 dark:text-slate-100'>
+          <h2 className='text-lg font-semibold text-gray-800 dark:text-foreground'>
             Chat
           </h2>
         </div>
         <div className='flex items-center gap-2'>
-          {DEV_BYPASS_AUTH && (
-            <span className='rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'>
-              Dev mode
-            </span>
-          )}
           <button
             type='button'
             onClick={() => setShowMobileSearch(!showMobileSearch)}
-            className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-slate-100 sm:hidden'
+            className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground sm:hidden'
           >
             {showMobileSearch ? 'Fermer' : 'Recherche'}
           </button>
@@ -122,23 +107,23 @@ function ChatHeader({
               onClick={() => setExportOpen(prev => !prev)}
               disabled={!canExport}
               title='Exporter la conversation'
-              className='rounded-full border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100'
+              className='rounded-full border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
             >
               <Download size={16} />
             </button>
             {exportOpen && (
-              <div className='absolute right-0 top-full mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900'>
+              <div className='absolute right-0 top-full mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-border dark:bg-card'>
                 <button
                   type='button'
                   onClick={() => handleExport('md')}
-                  className='flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-800'
+                  className='flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-foreground dark:hover:bg-muted'
                 >
                   Exporter en Markdown
                 </button>
                 <button
                   type='button'
                   onClick={() => handleExport('json')}
-                  className='flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-slate-200 dark:hover:bg-slate-800'
+                  className='flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-foreground dark:hover:bg-muted'
                 >
                   Exporter en JSON
                 </button>
@@ -149,11 +134,11 @@ function ChatHeader({
             type='button'
             onClick={onClear}
             disabled={messagesCount === 0}
-            className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-slate-100'
+            className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
           >
             Effacer la conversation
           </button>
-          <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'>
+          <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-border dark:bg-card dark:text-foreground'>
             <span className='h-2 w-2 rounded-full bg-teal-400' />
             <span className='truncate max-w-[170px] sm:max-w-[240px]'>
               {activeModelLabel}

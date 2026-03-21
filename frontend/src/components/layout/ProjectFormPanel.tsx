@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '@/stores/appStore';
-import apiClient from '@/apiClient';
+import * as tauri from '@/tauriClient';
 import ProjectListSkeleton from '@/components/ui/ProjectListSkeleton';
 import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
 
@@ -48,7 +48,7 @@ function ProjectFormPanel({
   const handleCreateProject = async () => {
     if (!newProject.name.trim()) return;
     try {
-      const response = await apiClient.post('/api/projects', {
+      const project = await tauri.createProject({
         name: newProject.name,
         instructions: newProject.instructions,
         context_data: newProject.context_data,
@@ -56,8 +56,8 @@ function ProjectFormPanel({
       setNewProject({ name: '', instructions: '', context_data: '' });
       setShowNewProject(false);
       await onRefreshProjects();
-      if (response.data?.id) {
-        onSelectProject(response.data.id);
+      if (project?.id) {
+        onSelectProject(project.id);
       }
     } catch (err) {
       console.error(err);
@@ -66,23 +66,23 @@ function ProjectFormPanel({
 
   return (
     <div
-      className={`absolute inset-0 z-40 flex h-full flex-col bg-white px-4 py-5 transition-transform duration-300 ease-out dark:bg-slate-950 ${
+      className={`absolute inset-0 z-40 flex h-full flex-col bg-white px-4 py-5 transition-transform duration-300 ease-out dark:bg-background ${
         show ? 'translate-x-0' : 'translate-x-full pointer-events-none'
       }`}
     >
       <div className='flex items-center justify-between'>
         <div>
-          <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-slate-400'>
+          <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
             Projets
           </p>
-          <h3 className='text-base font-semibold text-gray-900 dark:text-slate-100'>
+          <h3 className='text-base font-semibold text-gray-900 dark:text-foreground'>
             Gestion des projets
           </h3>
         </div>
         <button
           type='button'
           onClick={onClose}
-          className='rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-600 dark:bg-slate-950/80 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white'
+          className='rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-card dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
         >
           Fermer
         </button>
@@ -91,29 +91,29 @@ function ProjectFormPanel({
       <div className='mt-4 flex-1 min-h-0 space-y-4 overflow-y-auto pb-24 pr-1'>
         <Link
           to='/projects'
-          className='flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-slate-700/70 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:text-white'
+          className='flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-border dark:bg-card dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
         >
-          <span className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-slate-400'>
+          <span className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
             Vue projets
           </span>
           <span className='text-xs font-semibold text-teal-600 dark:text-teal-300'>Ouvrir</span>
         </Link>
-        <div className='rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-slate-700/70 dark:bg-slate-900/70 dark:text-slate-200'>
+        <div className='rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-border dark:bg-card dark:text-foreground'>
           <div className='flex items-center justify-between'>
-            <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-slate-500'>
+            <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
               Projets
             </p>
             <button
               type='button'
               onClick={() => setShowNewProject((prev) => !prev)}
-              className='rounded-full border border-gray-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-600 dark:bg-slate-950/80 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white'
+              className='rounded-full border border-gray-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
             >
               Nouveau
             </button>
           </div>
 
           {showNewProject && (
-            <div className='mt-3 space-y-2 rounded-xl border border-gray-200 bg-white p-3 dark:border-slate-700/70 dark:bg-slate-950/70'>
+            <div className='mt-3 space-y-2 rounded-xl border border-gray-200 bg-white p-3 dark:border-border dark:bg-background'>
               <input
                 type='text'
                 value={newProject.name}
@@ -124,7 +124,7 @@ function ProjectFormPanel({
                   }))
                 }
                 placeholder='Nom du projet'
-                className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-100'
+                className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
               />
               <textarea
                 value={newProject.instructions}
@@ -136,7 +136,7 @@ function ProjectFormPanel({
                 }
                 placeholder='Instructions (optionnel)'
                 rows={2}
-                className='w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-100'
+                className='w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
               />
               <textarea
                 value={newProject.context_data}
@@ -148,7 +148,7 @@ function ProjectFormPanel({
                 }
                 placeholder='Données de contexte (optionnel)'
                 rows={2}
-                className='w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-100'
+                className='w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
               />
               <div className='flex gap-2'>
                 <button
@@ -161,7 +161,7 @@ function ProjectFormPanel({
                 <button
                   type='button'
                   onClick={() => setShowNewProject(false)}
-                  className='flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-400 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-500'
+                  className='flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-400 dark:border-border dark:text-foreground dark:hover:border-border'
                 >
                   Annuler
                 </button>
@@ -176,7 +176,7 @@ function ProjectFormPanel({
               className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
                 selectedProjectId === null
                   ? 'bg-teal-500/20 text-teal-700 dark:text-teal-100'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800/70'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-muted-foreground dark:hover:bg-muted/70'
               }`}
             >
               Tous les projets
@@ -192,7 +192,7 @@ function ProjectFormPanel({
                   className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
                     selectedProjectId === project.id
                       ? 'bg-teal-500/20 text-teal-700 dark:text-teal-100'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800/70'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-muted-foreground dark:hover:bg-muted/70'
                   }`}
                 >
                   {project.name}
@@ -202,15 +202,15 @@ function ProjectFormPanel({
           </div>
         </div>
 
-        <div className='rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-slate-700/70 dark:bg-slate-900/70 dark:text-slate-200'>
+        <div className='rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-border dark:bg-card dark:text-foreground'>
           <div className='flex items-center justify-between'>
-            <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-slate-500'>
+            <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
               Conversations
             </p>
             <button
               type='button'
               onClick={onCreateThread}
-              className='rounded-full border border-gray-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-slate-600 dark:bg-slate-950/80 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white'
+              className='rounded-full border border-gray-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
             >
               Nouveau
             </button>
@@ -220,13 +220,13 @@ function ProjectFormPanel({
             value={newThreadTitle}
             onChange={(event) => setNewThreadTitle(event.target.value)}
             placeholder='Titre de conversation (optionnel)'
-            className='mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-100'
+            className='mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
           />
           <div className='mt-3 space-y-2'>
             {loadingThreads ? (
               <ThreadListSkeleton />
             ) : threads.length === 0 ? (
-              <p className='text-xs text-gray-500 dark:text-slate-500'>
+              <p className='text-xs text-gray-500 dark:text-muted-foreground'>
                 Aucune conversation pour le moment
               </p>
             ) : (
@@ -236,7 +236,7 @@ function ProjectFormPanel({
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
                     selectedThreadId === thread.id
                       ? 'bg-teal-500/20 text-teal-700 dark:text-teal-100'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800/70'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-muted-foreground dark:hover:bg-muted/70'
                   }`}
                 >
                   <button

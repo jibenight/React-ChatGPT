@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { toast } from 'sonner';
-import apiClient from './apiClient';
+import { invoke } from '@tauri-apps/api/core';
 import type { User } from './types';
 
 type UserData = Partial<User>;
@@ -21,43 +20,24 @@ export function useUser() {
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [userData, setUserData] = useState<UserData>(() => {
-    const userJson = localStorage.getItem('user');
-    if (userJson) {
-      try {
-        return JSON.parse(userJson);
-      } catch {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
-    }
-    return {};
-  });
+  const [userData, setUserData] = useState<UserData>({});
 
   useEffect(() => {
-    const userJson = localStorage.getItem('user');
-    if (!userJson) return;
     let cancelled = false;
-    apiClient
-      .get('/api/users')
-      .then(response => {
+    invoke('get_user')
+      .then((user: any) => {
         if (cancelled) return;
-        const current = response.data?.[0];
-        if (!current) return;
         const normalized = {
-          id: current.id,
-          userId: current.id,
-          username: current.username,
-          email: current.email,
+          id: user.id,
+          userId: user.id,
+          username: user.username,
+          email: user.email,
         };
-        localStorage.setItem('user', JSON.stringify(normalized));
         setUserData(normalized);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        toast.error('Session expirée, veuillez vous reconnecter');
-        localStorage.removeItem('user');
-        setUserData({});
+        console.error('Failed to load user:', err);
       });
     return () => {
       cancelled = true;

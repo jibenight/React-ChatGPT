@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, ChevronRight } from 'lucide-react';
+import { Settings, ChevronRight, User } from 'lucide-react';
 import { useUser } from '@/UserContext';
-import LogOut from '@/features/auth/Logout';
 import chatGPT from '@/assets/chatGPT.mp4';
-import apiClient from '@/apiClient';
+import * as tauri from '@/tauriClient';
 import { useAppStore } from '@/stores/appStore';
 import { useTheme } from '@/hooks/useTheme';
 import SidebarProviderPicker from './SidebarProviderPicker';
@@ -62,8 +61,8 @@ function Aside() {
   const fetchProjects = async () => {
     setLoadingProjects(true);
     try {
-      const response = await apiClient.get('/api/projects');
-      setProjects(response.data || []);
+      const data = await tauri.listProjects();
+      setProjects(data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -74,9 +73,8 @@ function Aside() {
   const fetchThreads = async (projectId) => {
     setLoadingThreads(true);
     try {
-      const url = projectId ? `/api/projects/${projectId}/threads` : '/api/threads';
-      const response = await apiClient.get(url);
-      setThreads(response.data || []);
+      const data = await tauri.listThreads(projectId);
+      setThreads(data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -102,14 +100,14 @@ function Aside() {
   const handleCreateThread = async () => {
     try {
       const targetProjectId = projectMode ? selectedProjectId : null;
-      const url = targetProjectId ? `/api/projects/${targetProjectId}/threads` : '/api/threads';
-      const response = await apiClient.post(url, {
-        title: newThreadTitle || null,
+      const thread = await tauri.createThread({
+        title: newThreadTitle || undefined,
+        project_id: targetProjectId || undefined,
       });
       setNewThreadTitle('');
       await fetchThreads(projectMode ? targetProjectId : null);
-      if (response.data?.id) {
-        setSelectedThreadId(response.data.id);
+      if (thread?.id) {
+        setSelectedThreadId(thread.id);
       }
     } catch (err) {
       console.error(err);
@@ -261,7 +259,14 @@ function Aside() {
       </div>
 
       <div className='border-t border-gray-200 px-4 py-2.5 dark:border-white/[0.06]'>
-        <LogOut setProfil={setProfil} profil={profil} />
+        <button
+          type='button'
+          onClick={() => setProfil(!profil)}
+          className='flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground'
+        >
+          <User className='h-4 w-4' />
+          Profil
+        </button>
       </div>
 
       <ProjectFormPanel

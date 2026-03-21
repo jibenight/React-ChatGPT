@@ -1,11 +1,13 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+import { HardDrive } from 'lucide-react';
 import chatGPT from '../../assets/chatGPT.mp4';
 import code from '../../assets/code.mp4';
 import grammar from '../../assets/grammar.mp4';
 import sqlTranslate from '../../assets/sql-translate.mp4';
 import helperJs from '../../assets/helper-js.mp4';
+import { listLocalModels } from '@/tauriClient';
 
 const providers = [
   {
@@ -60,16 +62,50 @@ const providers = [
   },
 ];
 
+const isTauri = '__TAURI_INTERNALS__' in window;
+
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 export default function Aioption({ selectedOption, setSelectedOption }) {
-  const defaultProvider = providers[0];
+  const [localModels, setLocalModels] = useState([]);
+
+  const fetchLocalModels = async () => {
+    if (!isTauri) return;
+    try {
+      const models = await listLocalModels();
+      setLocalModels(models);
+    } catch {
+      setLocalModels([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocalModels();
+    const handler = () => fetchLocalModels();
+    window.addEventListener('local-models-changed', handler);
+    return () => window.removeEventListener('local-models-changed', handler);
+  }, []);
+
+  const allProviders = useMemo(() => {
+    if (!isTauri || localModels.length === 0) return providers;
+    const localProvider = {
+      id: 'local',
+      name: 'Local',
+      description: 'Modèles importés (GGUF)',
+      avatar: null,
+      isLocal: true,
+      models: localModels.map(m => ({ id: m.filename, label: m.name })),
+    };
+    return [...providers, localProvider];
+  }, [localModels]);
+
+  const defaultProvider = allProviders[0];
   const resolveProvider = selection => {
     if (selection?.provider) {
       return (
-        providers.find(
+        allProviders.find(
           p => p.id === selection.provider || p.provider === selection.provider,
         ) || defaultProvider
       );
@@ -161,15 +197,21 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
               <div className='relative mt-2'>
                 <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-card dark:text-foreground dark:ring-border'>
                   <span className='flex items-center'>
-                    <video
-                      src={selectedProvider.avatar}
-                      alt=''
-                      className='h-5 w-5 shrink-0 rounded-full'
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
+                    {selectedProvider.avatar ? (
+                      <video
+                        src={selectedProvider.avatar}
+                        alt=''
+                        className='h-5 w-5 shrink-0 rounded-full'
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <div className='flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-500/20'>
+                        <HardDrive className='h-3 w-3 text-teal-500' />
+                      </div>
+                    )}
                     <span className='ml-3 block truncate'>
                       {selectedProvider.name}
                     </span>
@@ -190,7 +232,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                   leaveTo='opacity-0'
                 >
                   <Listbox.Options className='absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm dark:bg-card dark:ring-border/70'>
-                    {providers.map(option => (
+                    {allProviders.map(option => (
                       <Listbox.Option
                         key={option.id}
                         className={({ active }) =>
@@ -206,15 +248,21 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
                         {({ selected }) => (
                           <>
                             <div className='flex items-center'>
-                              <video
-                                src={option.avatar}
-                                alt=''
-                                className='h-5 w-5 shrink-0 rounded-full'
-                                autoPlay
-                                muted
-                                loop
-                                playsInline
-                              />
+                              {option.avatar ? (
+                                <video
+                                  src={option.avatar}
+                                  alt=''
+                                  className='h-5 w-5 shrink-0 rounded-full'
+                                  autoPlay
+                                  muted
+                                  loop
+                                  playsInline
+                                />
+                              ) : (
+                                <div className='flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-500/20'>
+                                  <HardDrive className='h-3 w-3 text-teal-500' />
+                                </div>
+                              )}
                               <span
                                 className={classNames(
                                   selected ? 'font-semibold' : 'font-normal',

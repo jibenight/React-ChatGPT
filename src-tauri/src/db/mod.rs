@@ -60,6 +60,20 @@ pub fn initialize(conn: &Connection) -> SqliteResult<()> {
         ",
     )?;
 
+    // Local GGUF models
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS local_models (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            filename TEXT NOT NULL UNIQUE,
+            file_path TEXT NOT NULL,
+            size_bytes INTEGER NOT NULL DEFAULT 0,
+            imported_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        ",
+    )?;
+
     // Indexes
     conn.execute_batch(
         "
@@ -70,6 +84,7 @@ pub fn initialize(conn: &Connection) -> SqliteResult<()> {
         CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id);
         CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON messages(thread_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id);
+        CREATE INDEX IF NOT EXISTS idx_local_models_name ON local_models(name);
         ",
     )?;
 

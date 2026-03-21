@@ -1,4 +1,4 @@
-export type ProviderName = 'openai' | 'gemini' | 'claude' | 'mistral' | 'groq';
+export type ProviderName = 'openai' | 'gemini' | 'claude' | 'mistral' | 'groq' | 'local';
 
 export interface User {
   id: number;

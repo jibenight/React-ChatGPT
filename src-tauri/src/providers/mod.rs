@@ -1,6 +1,7 @@
 pub mod claude;
 pub mod gemini;
 pub mod groq;
+pub mod local;
 pub mod mistral;
 pub mod openai;
 
@@ -35,6 +36,6 @@ pub async fn route_to_provider(
         "claude" => claude::send(&req).await,
         "gemini" => gemini::send(&req).await,
         "mistral" => mistral::send(&req).await,
-        _ => Err(AppError::Validation(format!("Unsupported provider: {provider}"))),
+        _ => Err(AppError::Validation(format!("Fournisseur non supporté: {provider}"))),
     }
 }

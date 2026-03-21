@@ -8,6 +8,7 @@
   "permissions": [
     "core:default",
     "shell:default",
-    "biometry:default"
+    "biometry:default",
+    "dialog:default"
   ]
 }

@@ -5,8 +5,9 @@ mod error;
 mod providers;
 mod state;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
+use llama_cpp_2::llama_backend::LlamaBackend;
 use rusqlite::Connection;
 
 use state::AppState;
@@ -26,6 +27,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_biometry::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|_app| {
             Ok(())
         })
@@ -35,9 +37,17 @@ pub fn run() {
                 .expect("Failed to open SQLite database");
             db::initialize(&conn).expect("Failed to initialize database schema");
 
+            // LlamaBackend is a process-global singleton.
+            // Wrapping in Arc lets spawn_blocking closures hold a reference.
+            let llama_backend = Arc::new(
+                LlamaBackend::init().expect("Failed to initialize LlamaBackend"),
+            );
+
             AppState {
                 db: Mutex::new(conn),
                 encryption_key: derive_encryption_key(),
+                llama_backend,
+                loaded_model: Mutex::new(None),
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -64,6 +74,10 @@ pub fn run() {
             commands::chat::send_message,
             // Search
             commands::search::search_messages,
+            // Local models
+            commands::local_model::import_model,
+            commands::local_model::list_local_models,
+            commands::local_model::delete_local_model,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

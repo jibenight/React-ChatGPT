@@ -36,6 +36,7 @@ function AppGate() {
   const [username, setUsername] = useState('');
 
   const handleUnlocked = useCallback(() => setUnlocked(true), []);
+  const handleLock = useCallback(() => setUnlocked(false), []);
 
   useEffect(() => {
     if (!isTauri) return;
@@ -47,6 +48,13 @@ function AppGate() {
       .catch(() => setUnlocked(true))
       .finally(() => setChecking(false));
   }, []);
+
+  // Listen for lock event from sidebar logout button
+  useEffect(() => {
+    if (!isTauri) return;
+    window.addEventListener('lock-app', handleLock);
+    return () => window.removeEventListener('lock-app', handleLock);
+  }, [handleLock]);
 
   if (checking) return null;
   if (!unlocked)

@@ -40,11 +40,6 @@ export default function LockScreen({
     }
   }, [onUnlocked]);
 
-  // Auto-trigger biometric when entering that step
-  useEffect(() => {
-    if (step === 'biometric') tryAuthenticate();
-  }, [step, tryAuthenticate]);
-
   // Focus input on username step
   useEffect(() => {
     if (step === 'username') inputRef.current?.focus();

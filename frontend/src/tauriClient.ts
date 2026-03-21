@@ -83,6 +83,24 @@ export const exportThread = (threadId: string, format: 'md' | 'json') =>
     { threadId, format },
   );
 
+// ── Local Models ──
+export interface LocalModel {
+  id: number;
+  name: string;
+  filename: string;
+  size_bytes: number;
+  imported_at: string | null;
+}
+
+export const importModel = (path: string) =>
+  invoke<LocalModel>('import_model', { input: { path } });
+
+export const listLocalModels = () =>
+  invoke<LocalModel[]>('list_local_models');
+
+export const deleteLocalModel = (modelId: number) =>
+  invoke('delete_local_model', { modelId });
+
 // ── Search ──
 export const searchMessages = (
   query: string,

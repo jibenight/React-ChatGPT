@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 use tauri::{ipc::Channel, State};
 
@@ -53,7 +55,7 @@ pub async fn send_message(
     input: SendMessageInput,
     on_event: Channel<ChatEvent>,
 ) -> Result<SendMessageResult, AppError> {
-    // Validate
+    // Validation
     let msg = input.message.as_deref().unwrap_or("");
     let attachments = input.attachments.as_deref().unwrap_or(&[]);
     if msg.is_empty() && attachments.is_empty() {
@@ -72,31 +74,49 @@ pub async fn send_message(
         )));
     }
 
-    // Decrypt API key
-    let api_key = super::user::get_decrypted_api_key(&state, &input.provider)?;
+    // Pour le provider local, récupérer le chemin du fichier modèle depuis la DB.
+    // C5 — Rechercher uniquement par `filename`, pas par `name`.
+    // Pour les autres providers, déchiffrer la clé API stockée.
+    let (api_key, local_model_path) = if input.provider == "local" {
+        let db = state
+            .db
+            .lock()
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        let path: String = db
+            .query_row(
+                "SELECT file_path FROM local_models WHERE filename = ?1",
+                rusqlite::params![input.model],
+                |row| row.get(0),
+            )
+            .map_err(|_| AppError::NotFound("Modèle local introuvable.".into()))?;
+        ("local".to_string(), Some(path))
+    } else {
+        let key = super::user::get_decrypted_api_key(&state, &input.provider)?;
+        (key, None)
+    };
 
-    // Thread ID: use existing or create from session_id
+    // Thread ID : utiliser l'existant ou créer depuis session_id
     let thread_id = input
         .thread_id
         .clone()
         .or_else(|| input.session_id.clone())
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
-    // Serialize attachments JSON
+    // Sérialiser les pièces jointes en JSON
     let att_json = if attachments.is_empty() {
         None
     } else {
         Some(serde_json::to_string(attachments)?)
     };
 
-    // Database operations (sync, inside lock)
+    // Opérations base de données (synchrones, sous mutex)
     let (system_prompt, history) = {
         let db = state
             .db
             .lock()
             .map_err(|e| AppError::Internal(e.to_string()))?;
 
-        // Ensure thread exists
+        // S'assurer que le thread existe
         let thread_exists: bool = db
             .query_row(
                 "SELECT 1 FROM threads WHERE id = ?1",
@@ -112,7 +132,7 @@ pub async fn send_message(
                 rusqlite::params![thread_id, input.project_id],
             )?;
         } else if input.project_id.is_some() {
-            // Assign project if not yet set
+            // Assigner le projet s'il n'est pas encore défini
             db.execute(
                 "UPDATE threads SET project_id = ?1
                  WHERE id = ?2 AND user_id = 1 AND project_id IS NULL",
@@ -120,14 +140,14 @@ pub async fn send_message(
             )?;
         }
 
-        // Store user message
+        // Stocker le message utilisateur
         db.execute(
             "INSERT INTO messages (thread_id, role, content, attachments, provider, model)
              VALUES (?1, 'user', ?2, ?3, ?4, ?5)",
             rusqlite::params![thread_id, msg, att_json, input.provider, input.model],
         )?;
 
-        // Build system prompt from project context
+        // Construire le system prompt depuis le contexte du projet
         let system_prompt: Option<String> = if let Some(pid) = input.project_id {
             let result: Result<(Option<String>, Option<String>), _> = db.query_row(
                 "SELECT instructions, context_data FROM projects WHERE id = ?1 AND user_id = 1",
@@ -159,7 +179,7 @@ pub async fn send_message(
             None
         };
 
-        // Load conversation history
+        // Charger l'historique de conversation
         let mut stmt = db.prepare(
             "SELECT role, content FROM messages
              WHERE thread_id = ?1 ORDER BY id DESC LIMIT ?2",
@@ -178,7 +198,7 @@ pub async fn send_message(
         (system_prompt, history)
     };
 
-    // Call AI provider
+    // Appeler le provider IA
     let provider_req = ProviderRequest {
         api_key,
         model: input.model.clone(),
@@ -186,13 +206,72 @@ pub async fn send_message(
         system_prompt,
     };
 
-    let channel = on_event.clone();
-    let reply = providers::route_to_provider(&input.provider, provider_req, move |delta| {
-        let _ = channel.send(ChatEvent::Delta {
-            content: delta,
-        });
-    })
-    .await;
+    let reply = if let Some(model_path) = local_model_path {
+        // C4 — Vérifier que le fichier modèle existe toujours avant l'inférence
+        if !std::path::Path::new(&model_path).exists() {
+            return Err(AppError::NotFound("Le fichier modèle a été supprimé.".into()));
+        }
+
+        // W1 — Obtenir ou charger le modèle depuis le cache
+        let model = {
+            let mut cache = state
+                .loaded_model
+                .lock()
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+
+            if let Some((cached_path, cached_model)) = cache.as_ref() {
+                if cached_path == &model_path {
+                    // Cache hit : réutiliser le modèle existant
+                    Arc::clone(cached_model)
+                } else {
+                    // Cache miss : charger un nouveau modèle
+                    let model_params = llama_cpp_2::model::params::LlamaModelParams::default();
+                    let new_model = Arc::new(
+                        llama_cpp_2::model::LlamaModel::load_from_file(
+                            &state.llama_backend,
+                            std::path::Path::new(&model_path),
+                            &model_params,
+                        )
+                        .map_err(|e| AppError::Provider(format!("Impossible de charger le modèle: {e}")))?,
+                    );
+                    *cache = Some((model_path.clone(), Arc::clone(&new_model)));
+                    new_model
+                }
+            } else {
+                // Cache vide : charger le modèle pour la première fois
+                let model_params = llama_cpp_2::model::params::LlamaModelParams::default();
+                let new_model = Arc::new(
+                    llama_cpp_2::model::LlamaModel::load_from_file(
+                        &state.llama_backend,
+                        std::path::Path::new(&model_path),
+                        &model_params,
+                    )
+                    .map_err(|e| AppError::Provider(format!("Impossible de charger le modèle: {e}")))?,
+                );
+                *cache = Some((model_path.clone(), Arc::clone(&new_model)));
+                new_model
+            }
+        };
+
+        // L'inférence GGUF locale est synchrone — l'exécuter sur un thread pool bloquant
+        // pour ne pas affamer le runtime async.
+        let channel = on_event.clone();
+        let req_clone = provider_req.clone();
+        let backend = Arc::clone(&state.llama_backend);
+        tokio::task::spawn_blocking(move || {
+            providers::local::send_blocking(&backend, &model, &req_clone, move |delta| {
+                let _ = channel.send(ChatEvent::Delta { content: delta });
+            })
+        })
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+    } else {
+        let channel = on_event.clone();
+        providers::route_to_provider(&input.provider, provider_req, move |delta| {
+            let _ = channel.send(ChatEvent::Delta { content: delta });
+        })
+        .await
+    };
 
     let reply = match reply {
         Ok(r) => r,
@@ -205,7 +284,7 @@ pub async fn send_message(
         }
     };
 
-    // Store assistant response
+    // Stocker la réponse de l'assistant
     {
         let db = state
             .db

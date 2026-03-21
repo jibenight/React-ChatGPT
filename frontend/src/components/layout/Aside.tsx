@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, ChevronRight, User } from 'lucide-react';
+import { Settings, ChevronRight, HardDrive, User, Lock } from 'lucide-react';
 import { useUser } from '@/UserContext';
 import chatGPT from '@/assets/chatGPT.mp4';
 import * as tauri from '@/tauriClient';
@@ -12,6 +12,8 @@ import SidebarProjectList from './SidebarProjectList';
 import SidebarThreadList from './SidebarThreadList';
 import ProjectFormPanel from './ProjectFormPanel';
 import SidebarSearch from './SidebarSearch';
+
+const isTauri = '__TAURI_INTERNALS__' in window;
 
 function Aside() {
   const profil = useAppStore((s) => s.profil);
@@ -145,14 +147,20 @@ function Aside() {
     <aside className='relative flex h-screen w-80 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white text-gray-900 dark:border-white/[0.06] dark:bg-sidebar dark:text-foreground'>
       {/* Header compact */}
       <div className='flex items-center gap-3 px-4 pt-3 pb-1'>
-        <video
-          src={providerAvatar}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className='h-7 w-7 rounded-md object-cover'
-        />
+        {selectedOption?.avatar ? (
+          <video
+            src={providerAvatar}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className='h-7 w-7 rounded-md object-cover'
+          />
+        ) : (
+          <div className='flex h-7 w-7 items-center justify-center rounded-md bg-teal-500/15'>
+            <HardDrive className='h-4 w-4 text-teal-500' />
+          </div>
+        )}
         <p className='min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-foreground'>
           {hasUserData ? userData.username : 'Chargement...'}
         </p>
@@ -208,6 +216,22 @@ function Aside() {
               {i18n.language?.startsWith('fr') ? 'EN' : 'FR'}
             </button>
           </div>
+          {isTauri && (
+            <>
+              <div className='my-2.5 border-t border-gray-200 dark:border-border' />
+              <button
+                type='button'
+                onClick={() => {
+                  setShowSettings(false);
+                  window.dispatchEvent(new Event('lock-app'));
+                }}
+                className='flex w-full items-center gap-2 rounded-md px-1 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:text-foreground dark:hover:bg-background'
+              >
+                <Lock className='h-3.5 w-3.5' />
+                Verrouiller
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -243,14 +267,20 @@ function Aside() {
           onClick={openPicker}
           className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-gray-50 dark:hover:bg-card'
         >
-          <video
-            src={providerAvatar}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className='h-5 w-5 rounded-full object-cover'
-          />
+          {selectedOption?.avatar ? (
+            <video
+              src={providerAvatar}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className='h-5 w-5 rounded-full object-cover'
+            />
+          ) : (
+            <div className='flex h-5 w-5 items-center justify-center rounded-full bg-teal-500/15'>
+              <HardDrive className='h-3 w-3 text-teal-500' />
+            </div>
+          )}
           <span className='truncate text-xs font-semibold text-gray-700 dark:text-foreground'>
             {selectedOption?.name || 'Choisir le fournisseur IA'}
           </span>

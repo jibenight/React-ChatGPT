@@ -2,25 +2,25 @@ use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    #[error("Database error: {0}")]
+    #[error("Erreur de base de données: {0}")]
     Database(#[from] rusqlite::Error),
 
-    #[error("HTTP request error: {0}")]
+    #[error("Erreur de requête HTTP: {0}")]
     Http(#[from] reqwest::Error),
 
-    #[error("JSON error: {0}")]
+    #[error("Erreur JSON: {0}")]
     Json(#[from] serde_json::Error),
 
-    #[error("Encryption error: {0}")]
+    #[error("Erreur de chiffrement: {0}")]
     Encryption(String),
 
-    #[error("Not found: {0}")]
+    #[error("Introuvable: {0}")]
     NotFound(String),
 
-    #[error("Validation error: {0}")]
+    #[error("Erreur de validation: {0}")]
     Validation(String),
 
-    #[error("Provider error: {0}")]
+    #[error("Erreur du fournisseur: {0}")]
     Provider(String),
 
     #[error("{0}")]

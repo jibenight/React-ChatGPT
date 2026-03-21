@@ -1,13 +1,13 @@
 # Projet ChatBot AI
 
-Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec :
-- Frontend React + Vite + Tailwind.
-- Backend Express avec authentification par cookie HttpOnly.
-- Base de données sélectionnable : SQLite ou PostgreSQL.
+Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral, Groq) disponible en deux modes :
+- **Web** : Frontend React + Vite + Tailwind + Backend Express avec authentification par cookie HttpOnly.
+- **Desktop** : Application native via Tauri 2 (macOS, Windows, Linux) avec SQLite local embarqué et inférence locale de modèles GGUF.
 
 ## Structure
 - `frontend/` : application React (routes auth/chat/profil/projets/guide).
 - `backend/` : API Express, contrôleurs, middlewares, adaptateur DB (`sqlite` ou `postgres`).
+- `src-tauri/` : application desktop Tauri 2 (Rust), commandes natives, inférence GGUF via llama-cpp-2.
 - `database/` : base SQLite locale (si `DB_CLIENT=sqlite`).
 - `docs/` : documentation utilisateur et déploiement.
 
@@ -21,6 +21,9 @@ Chatbot multi-fournisseurs (OpenAI, Gemini, Claude, Mistral) avec :
 - Chat multi-providers avec stockage des conversations et gestion des threads/projets.
 - Clés API chiffrées en base (AES via `ENCRYPTION_KEY`).
 - Endpoint de santé backend : `GET /healthz`.
+- **Desktop Tauri** : application native avec SQLite local, chiffrement AES-256-GCM des clés API dérivé du hostname machine, full-text search (FTS5) sur les messages.
+- **Modèles locaux GGUF** : import de fichiers `.gguf` via dialogue natif, inférence locale via llama-cpp-2 (Metal GPU sur macOS Apple Silicon), cache du modèle chargé entre les messages, streaming token par token. Les modèles importés apparaissent comme provider "Local" dans le sélecteur.
+- **Verrouillage biométrique** (desktop uniquement) : lock screen avec Touch ID / Windows Hello, déverrouillage manuel au clic, bouton "Verrouiller" dans les paramètres de la sidebar, configuration du nom d'utilisateur au premier lancement.
 
 ## Mode dev (bypass auth local)
 Usage strictement local, jamais en production.
@@ -36,10 +39,18 @@ DEV_BYPASS_AUTH=true
 ```
 
 ## Prérequis
+
+### Mode web
 - Node.js 18+
 - npm
 - SQLite (embarqué via `sqlite3`) si mode SQLite
 - PostgreSQL (serveur externe) si mode Postgres
+
+### Mode desktop (Tauri)
+- Node.js 18+ et npm (pour le frontend)
+- Rust toolchain (`rustup` — https://rustup.rs)
+- `cmake` (requis pour la compilation de llama-cpp-2)
+- Xcode Command Line Tools sur macOS
 
 ## Installation
 ```bash
@@ -143,10 +154,28 @@ npm run build
 npm run preview
 ```
 
+### Desktop (Tauri)
+```bash
+# Développement (lance le frontend Vite + l'app Tauri)
+cargo tauri dev
+
+# Build de production (bundle natif macOS/Windows/Linux)
+cargo tauri build
+```
+
+Ces commandes doivent être lancées depuis la racine du projet (là où se trouve `src-tauri/`).
+
 ## Base de données
+
+### Mode web
 - `DB_CLIENT=sqlite` : fichier local `database/ChatData.db`.
 - `DB_CLIENT=postgres` : schéma et index créés automatiquement au démarrage.
 - Tables principales : `users`, `api_keys`, `chat_history`, `password_resets`, `email_verifications`, `projects`, `threads`, `messages`.
+
+### Mode desktop (Tauri)
+Base SQLite locale stockée dans le répertoire de données de l'application (`~/Library/Application Support/React ChatGPT/ChatData.db` sur macOS).
+Tables : `users`, `api_keys`, `projects`, `threads`, `messages`, `local_models`.
+FTS5 virtuel `messages_fts` avec triggers de synchronisation automatique (insert/delete).
 
 ## Déploiement
 Pour o2switch/cPanel (Node.js app + SSH), suivre :
@@ -160,6 +189,9 @@ curl -i http://localhost:3000/healthz
 - Si dépendance provider manquante, relancer `npm install` dans `backend/`.
 - Si CORS bloque, vérifier `APP_URL` et `CORS_ALLOWED_ORIGINS`.
 - Si mail KO, vérifier `SMTP_*` et credentials.
+- Si `cargo tauri dev` échoue à compiler llama-cpp-2, vérifier que `cmake` est installé (`brew install cmake` sur macOS).
+- Si la biométrie ne se déclenche pas, vérifier que Touch ID est configuré sur la machine (l’app se déverrouille automatiquement si la biométrie n’est pas disponible).
+- Les modèles GGUF importés sont copiés dans `~/Library/Application Support/React ChatGPT/models/` sur macOS. Un modèle portant le même nom de fichier ne peut pas être importé deux fois.
 
 ## Licence
 MIT

@@ -45,16 +45,14 @@ const chatLimiter = rateLimit({
   },
 });
 
-const attachmentSchema = z
-  .object({
-    id: z.string().optional(),
-    type: z.string().optional(),
-    name: z.string().optional(),
-    mimeType: z.string().optional(),
-    dataUrl: z.string().optional(),
-    fileUri: z.string().optional(),
-  })
-  .passthrough();
+const attachmentSchema = z.object({
+  id: z.string().optional(),
+  type: z.string().optional(),
+  name: z.string().optional(),
+  mimeType: z.string().optional(),
+  dataUrl: z.string().optional(),
+  fileUri: z.string().optional(),
+});
 
 const chatMessageSchema = z
   .object({

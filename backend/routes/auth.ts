@@ -91,7 +91,7 @@ const { validateBody, validateQuery } = require('../middlewares/validate');
 const { createDatabaseStore } = require('../rateLimitStore');
 
 const registerSchema = z.object({
-  username: z.string().min(1).max(100),
+  username: z.string().min(1).max(100).regex(/^[\w\s\-.]+$/i, 'Invalid username characters'),
   email: z.string().email(),
   password: z.string().min(8).max(128),
 });
@@ -135,8 +135,8 @@ const registerLimiter = rateLimit({
 });
 
 const passwordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 60 * 60 * 1000,
+  max: 3,
   standardHeaders: true,
   legacyHeaders: false,
   store: createDatabaseStore(),

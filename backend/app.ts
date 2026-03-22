@@ -60,7 +60,6 @@ const corsOptions = {
   allowedHeaders: [
     'Content-Type',
     'Authorization',
-    'X-Dev-User-Id',
     'X-Dev-User-Name',
     'X-Dev-User-Email',
     'X-Request-Id',
@@ -106,6 +105,10 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   referrerPolicy: { policy: 'no-referrer' },
 }));
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false, limit: '15mb' }));
@@ -168,7 +171,7 @@ app.get('/healthz', (_req, res) => {
   });
 });
 
-const csrfExcludedPaths = new Set(['/healthz', '/login', '/register', '/reset-password-request', '/verify-email', '/api/billing/webhook', '/api/billing/create-checkout-session', '/api/billing/create-portal-session']);
+const csrfExcludedPaths = new Set(['/healthz', '/login', '/register', '/reset-password-request', '/verify-email', '/api/billing/webhook']);
 app.use((req, res, next) => {
   if (csrfExcludedPaths.has(req.path)) return next();
   return doubleCsrfProtection(req, res, next);

@@ -13,8 +13,11 @@ const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 
-const deriveKey = (secret: string): Buffer => {
-  return crypto.scryptSync(secret, 'react-chatgpt-salt', KEY_LENGTH);
+const deriveKey = (secret: string, salt?: string): Buffer => {
+  // Use configurable salt; fallback to legacy value for backward-compat with existing ciphertext.
+  // TODO: remove fallback once all API keys have been re-encrypted with ENCRYPTION_SALT.
+  const effectiveSalt = salt ?? process.env.ENCRYPTION_SALT ?? 'react-chatgpt-salt';
+  return crypto.scryptSync(secret, effectiveSalt, KEY_LENGTH);
 };
 
 const encrypt = (plaintext: string, secret: string): string => {

@@ -312,9 +312,6 @@ exports.getSubscription = async (req, res) => {
     return res.json({
       plan: row.plan_id,
       status: row.status,
-      stripe_customer_id: row.stripe_customer_id,
-      stripe_subscription_id: row.stripe_subscription_id,
-      current_period_start: row.current_period_start,
       current_period_end: row.current_period_end,
       cancel_at_period_end: !!row.cancel_at_period_end,
       limits: {

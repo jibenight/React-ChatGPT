@@ -23,13 +23,16 @@ export const authStore = {
       _isAuthenticated = !!userStore.userData?.id;
     } catch {
       _isAuthenticated = false;
+      userStore.clearUser();
+    } finally {
+      _isLoading = false;
     }
-    _isLoading = false;
   },
 
   onLogin(userData: any) {
-    userStore.setUserData(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    const safe = { id: userData.id || userData.userId, username: userData.username, email: userData.email };
+    userStore.setUserData(safe);
+    localStorage.setItem('user', JSON.stringify(safe));
     _isAuthenticated = true;
   },
 

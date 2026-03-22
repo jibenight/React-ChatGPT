@@ -5,7 +5,14 @@ const { clearAuthCookie } = require('./authController');
 const { encrypt, decrypt } = require('../utils/encryption');
 const logger = require('../logger');
 const { SUPPORTED_PROVIDERS } = require('../constants');
+const Stripe = require('stripe');
 require('dotenv').config();
+
+const getStripe = () => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia' });
+};
 
 const saltRounds = 10;
 const allowedProviders = SUPPORTED_PROVIDERS;
@@ -191,6 +198,25 @@ exports.deleteAccount = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Cancel Stripe subscription if one exists (best-effort, don't block deletion on failure)
+    try {
+      const sub = await new Promise<any>((resolve, reject) => {
+        db.get(
+          'SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ? AND stripe_subscription_id IS NOT NULL',
+          [userId],
+          (err, row) => { if (err) reject(err); else resolve(row); },
+        );
+      });
+      if (sub?.stripe_subscription_id) {
+        const stripe = getStripe();
+        if (stripe) {
+          await stripe.subscriptions.cancel(sub.stripe_subscription_id);
+        }
+      }
+    } catch (stripeErr) {
+      logger.warn({ err: stripeErr, userId }, 'Failed to cancel Stripe subscription on account deletion');
     }
 
     await db.transaction(async txn => {

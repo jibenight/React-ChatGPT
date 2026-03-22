@@ -403,16 +403,16 @@ const ensureSqliteSchema = sqliteDb => {
     );
 
     sqliteDb.run(
-      'CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);',
       err => {
-        if (err) logger.error({ err: err.message }, 'Failed to create index idx_password_resets_token');
+        if (err) logger.error({ err: err.message }, 'Failed to create unique index idx_password_resets_token');
       },
     );
 
     sqliteDb.run(
-      'CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token);',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token);',
       err => {
-        if (err) logger.error({ err: err.message }, 'Failed to create index idx_email_verifications_token');
+        if (err) logger.error({ err: err.message }, 'Failed to create unique index idx_email_verifications_token');
       },
     );
 
@@ -726,8 +726,8 @@ const ensurePostgresSchema = async pool => {
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_user_provider ON api_keys(user_id, provider);',
     'CREATE INDEX IF NOT EXISTS idx_threads_user ON threads(user_id);',
     'CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id);',
-    'CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);',
-    'CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token);',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token);',
     'CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON messages(thread_id, created_at);',
     'CREATE INDEX IF NOT EXISTS idx_threads_project ON threads(project_id);',
     'CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id);',

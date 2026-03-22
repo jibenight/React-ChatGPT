@@ -5,7 +5,8 @@ const logger = require('./logger');
 
 const envSchema = z.object({
   SECRET_KEY: z.string().min(1, 'SECRET_KEY is required'),
-  ENCRYPTION_KEY: z.string().min(1, 'ENCRYPTION_KEY is required'),
+  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters'),
+  ENCRYPTION_SALT: z.string().optional(),
   PORT: z.string().default('3001'),
   DB_CLIENT: z.enum(['sqlite', 'postgres']).default('sqlite'),
   LOG_LEVEL: z.string().default('info'),

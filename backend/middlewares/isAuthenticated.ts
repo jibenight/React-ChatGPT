@@ -76,16 +76,13 @@ const isAuthenticated = async (req, res, next) => {
     }
   }
 
-  const authHeader = req.headers['authorization'];
-  const bearerToken = authHeader && authHeader.split(' ')[1];
-  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME] || null;
-  const token = bearerToken || cookieToken;
+  const token = req.cookies?.[AUTH_COOKIE_NAME] || null;
 
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  jwt.verify(token, secretKey, async (err, decoded) => {
+  jwt.verify(token, secretKey, { algorithms: ['HS256'] }, async (err, decoded) => {
     if (err) {
       return res.status(401).json({ error: 'Unauthorized' });
     }

@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const db = require('../models/database');
@@ -157,6 +156,9 @@ const sendVerificationEmail = (req, email, token) => {
   return transporter.sendMail(mailOptions);
 };
 
+const escapeHtml = (str: string): string =>
+  str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 const emailFingerprint = email => {
   if (!email) return 'unknown';
   try {
@@ -220,7 +222,7 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     cleanupExpiredTokens();
-    const verifyToken = uuidv4();
+    const verifyToken = crypto.randomBytes(32).toString('hex');
 
     const userId = await db.transaction(async txn => {
       const insertedId = await new Promise<any>((resolve, reject) => {
@@ -322,7 +324,7 @@ exports.resetPasswordRequest = (req, res) => {
       return res.status(200).json({ message: 'Reset email sent' });
     }
 
-    const resetToken = uuidv4();
+    const resetToken = crypto.randomBytes(32).toString('hex');
     db.run(
       'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)',
       [email, resetToken, futureDbDateTime(1)],
@@ -425,8 +427,8 @@ exports.resetPassword = async (req, res) => {
       });
       await new Promise<void>((resolve, reject) => {
         txn.run(
-          'DELETE FROM password_resets WHERE token = ?',
-          [token],
+          'DELETE FROM password_resets WHERE email = ?',
+          [row.email],
           function (err) {
             if (err) reject(err);
             else resolve();
@@ -460,7 +462,7 @@ exports.resendVerification = (req, res) => {
       return res.status(200).json({ message: 'Verification email sent' });
     }
 
-    const verifyToken = uuidv4();
+    const verifyToken = crypto.randomBytes(32).toString('hex');
     db.run(
       'DELETE FROM email_verifications WHERE email = ?',
       [email],

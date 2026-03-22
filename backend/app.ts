@@ -17,6 +17,7 @@ const projectsApi = require('./routes/projects');
 const threadsApi = require('./routes/threads');
 const chatApiRoute = require('./routes/chatApi');
 const searchApi = require('./routes/search');
+const billingApi = require('./routes/billing');
 
 const parseAllowedOrigins = () => {
   const rawOrigins = process.env.CORS_ALLOWED_ORIGINS || process.env.APP_URL || '';
@@ -108,6 +109,8 @@ app.use(helmet({
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false, limit: '15mb' }));
+// Stripe webhook needs raw body — must be registered before express.json()
+app.use('/api/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '15mb' }));
 let requestCounter = 0;
 app.use(
@@ -165,7 +168,7 @@ app.get('/healthz', (_req, res) => {
   });
 });
 
-const csrfExcludedPaths = new Set(['/healthz', '/login', '/register', '/reset-password-request', '/verify-email']);
+const csrfExcludedPaths = new Set(['/healthz', '/login', '/register', '/reset-password-request', '/verify-email', '/api/billing/webhook', '/api/billing/create-checkout-session', '/api/billing/create-portal-session']);
 app.use((req, res, next) => {
   if (csrfExcludedPaths.has(req.path)) return next();
   return doubleCsrfProtection(req, res, next);
@@ -177,6 +180,7 @@ app.use('/', projectsApi);
 app.use('/', threadsApi);
 app.use('/api/chat', chatApiRoute);
 app.use('/', searchApi);
+app.use('/', billingApi);
 
 if (process.env.NODE_ENV !== 'production') {
   const swaggerUi = require('swagger-ui-express');

@@ -82,6 +82,7 @@
 const express = require('express');
 const threads = express.Router();
 const isAuthenticated = require('../middlewares/isAuthenticated');
+const { enforcePlanLimits } = require('../middlewares/planLimits');
 const threadController = require('../controllers/threadController');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
@@ -122,7 +123,7 @@ const threadLimiter = rateLimit({
 });
 
 threads.get('/api/threads', isAuthenticated, threadLimiter, asyncHandler(threadController.listThreads));
-threads.post('/api/threads', isAuthenticated, threadLimiter, validateBody(createThreadSchema), asyncHandler(threadController.createThreadRoot));
+threads.post('/api/threads', isAuthenticated, threadLimiter, enforcePlanLimits('thread'), validateBody(createThreadSchema), asyncHandler(threadController.createThreadRoot));
 threads.get(
   '/api/threads/:threadId/messages',
   isAuthenticated,

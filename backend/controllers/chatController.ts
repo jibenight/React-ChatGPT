@@ -7,6 +7,7 @@ const DOMPurify = require('isomorphic-dompurify');
 const { parseAttachments, parseDataUrl, uploadGeminiAttachments } = require('./attachmentHelper');
 const { resolveChatProviderError } = require('./chatErrors');
 const { routeToProvider } = require('./providers');
+const usageController = require('./usageController');
 
 const sanitize = (input: any) => {
   if (typeof input !== 'string') return '';
@@ -169,6 +170,11 @@ exports.sendMessage = async (req, res) => {
         txn.run('UPDATE threads SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
           [activeThreadId, userId], err => { if (err) reject(err); else resolve(); });
       });
+    });
+
+    // --- Track daily usage ---
+    usageController.incrementDailyUsage(userId).catch((err) => {
+      logger.warn({ err: err.message }, 'Failed to increment daily usage');
     });
 
     if (wantsStream) {

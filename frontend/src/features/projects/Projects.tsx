@@ -4,9 +4,11 @@ import * as tauri from '@/tauriClient';
 import { Link } from 'react-router-dom';
 import ProjectListSkeleton from '@/components/ui/ProjectListSkeleton';
 import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 function Projects() {
   const { t } = useTranslation();
+  const { checkAndPrompt } = usePlanLimits();
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [threads, setThreads] = useState<any[]>([]);
@@ -86,6 +88,7 @@ function Projects() {
 
   const handleCreate = async () => {
     if (!newProject.name.trim()) return;
+    if (!checkAndPrompt('project')) return;
     try {
       const created = await tauri.createProject(newProject) as any;
       setNewProject({

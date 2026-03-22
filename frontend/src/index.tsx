@@ -9,10 +9,21 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { UserProvider } from './UserContext';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import LockScreen from '@/components/LockScreen';
+import UpgradeModal from '@/features/billing/UpgradeModal';
+import { usePlanStore } from '@/stores/planStore';
 import { checkStatus } from '@choochmeque/tauri-plugin-biometry-api';
 import { getUser } from '@/tauriClient';
 
+const isTauri = '__TAURI_INTERNALS__' in window;
+
 const UserGuide = lazy(() => import('./features/info/UserGuide'));
+const PricingPage = lazy(() => import('./features/billing/PricingPage'));
+const LandingPage = lazy(() => import('./features/landing/LandingPage'));
+const LoginPage = lazy(() => import('./features/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./features/auth/RegisterPage'));
+const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage'));
+const BillingSuccess = lazy(() => import('./features/billing/BillingSuccess'));
+const PrivateRoute = lazy(() => import('./features/auth/PrivateRoute'));
 
 const applyInitialTheme = () => {
   if (typeof window === 'undefined') return;
@@ -28,12 +39,11 @@ const applyInitialTheme = () => {
 
 applyInitialTheme();
 
-const isTauri = '__TAURI_INTERNALS__' in window;
-
 function AppGate() {
   const [unlocked, setUnlocked] = useState(!isTauri);
   const [checking, setChecking] = useState(isTauri);
   const [username, setUsername] = useState('');
+  const fetchPlan = usePlanStore(s => s.fetchPlan);
 
   const handleUnlocked = useCallback(() => setUnlocked(true), []);
   const handleLock = useCallback(() => setUnlocked(false), []);
@@ -49,6 +59,21 @@ function AppGate() {
       .finally(() => setChecking(false));
   }, []);
 
+  // Charger le plan dès que l'utilisateur est authentifié (web uniquement)
+  useEffect(() => {
+    if (isTauri) return;
+    const storedUser = localStorage.getItem('user');
+    let isLoggedIn = false;
+    try {
+      isLoggedIn = !!(storedUser && (JSON.parse(storedUser)?.id ?? false));
+    } catch {
+      // JSON invalide : considérer comme non connecté
+    }
+    if (isLoggedIn) {
+      fetchPlan().catch(() => null);
+    }
+  }, [fetchPlan]);
+
   // Listen for lock event from sidebar logout button
   useEffect(() => {
     if (!isTauri) return;
@@ -57,18 +82,49 @@ function AppGate() {
   }, [handleLock]);
 
   if (checking) return null;
-  if (!unlocked)
-    return <LockScreen onUnlocked={handleUnlocked} currentUsername={username} />;
 
+  // Tauri desktop: biometric lock screen + app routes (no auth pages needed)
+  if (isTauri) {
+    if (!unlocked) {
+      return <LockScreen onUnlocked={handleUnlocked} currentUsername={username} />;
+    }
+    return (
+      <Router>
+        <Suspense fallback={<div>{i18n.t('common:loading')}</div>}>
+          <Routes>
+            <Route path='/' element={<App />} />
+            <Route path='/chat' element={<App />} />
+            <Route path='/projects' element={<App />} />
+            <Route path='/guide' element={<UserGuide />} />
+            <Route path='/pricing' element={<PricingPage />} />
+          </Routes>
+          <UpgradeModal />
+        </Suspense>
+      </Router>
+    );
+  }
+
+  // Web: public routes + protected routes with auth guard
   return (
     <Router>
       <Suspense fallback={<div>{i18n.t('common:loading')}</div>}>
         <Routes>
-          <Route path='/' element={<App />} />
-          <Route path='/chat' element={<App />} />
-          <Route path='/projects' element={<App />} />
+          {/* Public routes */}
+          <Route path='/' element={<LandingPage />} />
+          <Route path='/login' element={<LoginPage />} />
+          <Route path='/register' element={<RegisterPage />} />
+          <Route path='/reset-password' element={<ResetPasswordPage />} />
+          <Route path='/pricing' element={<PricingPage />} />
           <Route path='/guide' element={<UserGuide />} />
+
+          {/* Protected routes */}
+          <Route element={<PrivateRoute />}>
+            <Route path='/chat' element={<App />} />
+            <Route path='/projects' element={<App />} />
+            <Route path='/billing/success' element={<BillingSuccess />} />
+          </Route>
         </Routes>
+        <UpgradeModal />
       </Suspense>
     </Router>
   );

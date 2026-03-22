@@ -24,7 +24,7 @@ i18n
     },
     fallbackLng: 'fr',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'chat', 'projects', 'profile', 'provider', 'guide'],
+    ns: ['common', 'auth', 'chat', 'projects', 'profile', 'provider', 'guide', 'billing'],
     interpolation: {
       escapeValue: false,
     },

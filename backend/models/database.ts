@@ -152,6 +152,66 @@ const ensureSqliteSchema = sqliteDb => {
     );
   `;
 
+  const createPlansTableQuery = `
+    CREATE TABLE IF NOT EXISTS plans (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      stripe_price_id_monthly TEXT,
+      stripe_price_id_yearly TEXT,
+      max_projects INTEGER,
+      max_threads_per_project INTEGER,
+      max_messages_per_day INTEGER,
+      max_providers INTEGER,
+      collaboration_enabled INTEGER DEFAULT 0,
+      local_model_limit INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createSubscriptionsTableQuery = `
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE,
+      plan_id TEXT NOT NULL DEFAULT 'free',
+      stripe_customer_id TEXT,
+      stripe_subscription_id TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      current_period_start DATETIME,
+      current_period_end DATETIME,
+      cancel_at_period_end INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      FOREIGN KEY (plan_id) REFERENCES plans (id)
+    );
+  `;
+
+  const createDesktopLicensesTableQuery = `
+    CREATE TABLE IF NOT EXISTS desktop_licenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      license_key TEXT NOT NULL UNIQUE,
+      user_id INTEGER,
+      email TEXT NOT NULL,
+      plan_id TEXT NOT NULL DEFAULT 'pro',
+      activated_at DATETIME,
+      expires_at DATETIME,
+      stripe_payment_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+    );
+  `;
+
+  const createUsageDailyTableQuery = `
+    CREATE TABLE IF NOT EXISTS usage_daily (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      message_count INTEGER DEFAULT 0,
+      UNIQUE(user_id, date),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
+  `;
+
   sqliteDb.serialize(() => {
     sqliteDb.run('PRAGMA foreign_keys = ON;');
 
@@ -218,6 +278,26 @@ const ensureSqliteSchema = sqliteDb => {
       else logger.info('Table "project_members" created or already exists');
     });
 
+    sqliteDb.run(createPlansTableQuery, err => {
+      if (err) logger.error({ err: err.message }, 'Failed to create table "plans"');
+      else logger.info('Table "plans" created or already exists');
+    });
+
+    sqliteDb.run(createSubscriptionsTableQuery, err => {
+      if (err) logger.error({ err: err.message }, 'Failed to create table "subscriptions"');
+      else logger.info('Table "subscriptions" created or already exists');
+    });
+
+    sqliteDb.run(createDesktopLicensesTableQuery, err => {
+      if (err) logger.error({ err: err.message }, 'Failed to create table "desktop_licenses"');
+      else logger.info('Table "desktop_licenses" created or already exists');
+    });
+
+    sqliteDb.run(createUsageDailyTableQuery, err => {
+      if (err) logger.error({ err: err.message }, 'Failed to create table "usage_daily"');
+      else logger.info('Table "usage_daily" created or already exists');
+    });
+
     sqliteDb.run(
       'CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id);',
       err => {
@@ -275,6 +355,16 @@ const ensureSqliteSchema = sqliteDb => {
           'ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0;',
           alterErr => {
             if (alterErr) logger.error({ err: alterErr.message }, 'Failed to add column "email_verified" to users');
+          },
+        );
+      }
+      const hasPlanId = columns.some(col => col.name === 'plan_id');
+      if (!hasPlanId) {
+        sqliteDb.run(
+          "ALTER TABLE users ADD COLUMN plan_id TEXT DEFAULT 'free';",
+          alterErr => {
+            if (alterErr) logger.error({ err: alterErr.message }, 'Failed to add column "plan_id" to users');
+            else logger.info('Column "plan_id" added to "users"');
           },
         );
       }
@@ -344,6 +434,73 @@ const ensureSqliteSchema = sqliteDb => {
       'CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id);',
       err => {
         if (err) logger.error({ err: err.message }, 'Failed to create index idx_projects_user');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_subscriptions_user');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer ON subscriptions(stripe_customer_id);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_subscriptions_stripe_customer');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_sub ON subscriptions(stripe_subscription_id);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_subscriptions_stripe_sub');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_desktop_licenses_key ON desktop_licenses(license_key);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_desktop_licenses_key');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_desktop_licenses_user ON desktop_licenses(user_id);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_desktop_licenses_user');
+      },
+    );
+
+    sqliteDb.run(
+      'CREATE INDEX IF NOT EXISTS idx_usage_daily_user_date ON usage_daily(user_id, date);',
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to create index idx_usage_daily_user_date');
+      },
+    );
+
+    // Seed default plans
+    sqliteDb.run(
+      `INSERT OR IGNORE INTO plans (id, name, max_projects, max_threads_per_project, max_messages_per_day, max_providers, collaboration_enabled, local_model_limit)
+       VALUES ('free', 'Free', 3, 5, 50, 3, 0, 1);`,
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to seed plan "free"');
+      },
+    );
+
+    sqliteDb.run(
+      `INSERT OR IGNORE INTO plans (id, name, max_projects, max_threads_per_project, max_messages_per_day, max_providers, collaboration_enabled, local_model_limit)
+       VALUES ('pro', 'Pro', NULL, NULL, NULL, NULL, 0, NULL);`,
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to seed plan "pro"');
+      },
+    );
+
+    sqliteDb.run(
+      `INSERT OR IGNORE INTO plans (id, name, max_projects, max_threads_per_project, max_messages_per_day, max_providers, collaboration_enabled, local_model_limit)
+       VALUES ('team', 'Team', NULL, NULL, NULL, NULL, 1, NULL);`,
+      err => {
+        if (err) logger.error({ err: err.message }, 'Failed to seed plan "team"');
       },
     );
 
@@ -610,6 +767,70 @@ const ensurePostgresSchema = async pool => {
     'CREATE INDEX IF NOT EXISTS idx_threads_user_last_msg ON threads(user_id, last_message_at DESC);',
     'CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);',
     'CREATE INDEX IF NOT EXISTS idx_email_verifications_email ON email_verifications(email);',
+    `CREATE TABLE IF NOT EXISTS plans (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      stripe_price_id_monthly TEXT,
+      stripe_price_id_yearly TEXT,
+      max_projects INTEGER,
+      max_threads_per_project INTEGER,
+      max_messages_per_day INTEGER,
+      max_providers INTEGER,
+      collaboration_enabled INTEGER DEFAULT 0,
+      local_model_limit INTEGER,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL UNIQUE,
+      plan_id TEXT NOT NULL DEFAULT 'free',
+      stripe_customer_id TEXT,
+      stripe_subscription_id TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      current_period_start TIMESTAMPTZ,
+      current_period_end TIMESTAMPTZ,
+      cancel_at_period_end INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      FOREIGN KEY (plan_id) REFERENCES plans (id)
+    );`,
+    `CREATE TABLE IF NOT EXISTS desktop_licenses (
+      id SERIAL PRIMARY KEY,
+      license_key TEXT NOT NULL UNIQUE,
+      user_id INTEGER,
+      email TEXT NOT NULL,
+      plan_id TEXT NOT NULL DEFAULT 'pro',
+      activated_at TIMESTAMPTZ,
+      expires_at TIMESTAMPTZ,
+      stripe_payment_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS usage_daily (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      message_count INTEGER DEFAULT 0,
+      UNIQUE(user_id, date),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );`,
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_id TEXT DEFAULT 'free';",
+    'CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer ON subscriptions(stripe_customer_id);',
+    'CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_sub ON subscriptions(stripe_subscription_id);',
+    'CREATE INDEX IF NOT EXISTS idx_desktop_licenses_key ON desktop_licenses(license_key);',
+    'CREATE INDEX IF NOT EXISTS idx_desktop_licenses_user ON desktop_licenses(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_usage_daily_user_date ON usage_daily(user_id, date);',
+    `INSERT INTO plans (id, name, max_projects, max_threads_per_project, max_messages_per_day, max_providers, collaboration_enabled, local_model_limit)
+     VALUES ('free', 'Free', 3, 5, 50, 3, 0, 1)
+     ON CONFLICT (id) DO NOTHING;`,
+    `INSERT INTO plans (id, name, max_projects, max_threads_per_project, max_messages_per_day, max_providers, collaboration_enabled, local_model_limit)
+     VALUES ('pro', 'Pro', NULL, NULL, NULL, NULL, 0, NULL)
+     ON CONFLICT (id) DO NOTHING;`,
+    `INSERT INTO plans (id, name, max_projects, max_threads_per_project, max_messages_per_day, max_providers, collaboration_enabled, local_model_limit)
+     VALUES ('team', 'Team', NULL, NULL, NULL, NULL, 1, NULL)
+     ON CONFLICT (id) DO NOTHING;`,
   ];
 
   for (const query of schemaQueries) {

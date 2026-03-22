@@ -29,6 +29,7 @@ const express = require('express');
 const router = express.Router();
 const chatController = require('../controllers/chatController');
 const isAuthenticated = require('../middlewares/isAuthenticated');
+const { enforcePlanLimits } = require('../middlewares/planLimits');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const { createDatabaseStore } = require('../rateLimitStore');
@@ -85,6 +86,7 @@ router.post(
   '/message',
   chatLimiter,
   isAuthenticated,
+  enforcePlanLimits('message'),
   validateChatMessage,
   chatController.sendMessage,
 );

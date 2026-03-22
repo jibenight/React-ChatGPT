@@ -59,7 +59,17 @@ const isAuthenticated = async (req, res, next) => {
       const email = headerEmail ? String(headerEmail).toLowerCase() : 'dev@local';
       const username = headerName ? String(headerName) : 'Dev User';
       const user = await ensureDevUser(email, username);
-      req.user = { id: user.id, isDev: true };
+      const planRow = await new Promise<any>((resolve) => {
+        db.get(
+          `SELECT s.plan_id, p.max_projects, p.max_threads_per_project, p.max_messages_per_day,
+                  p.max_providers, p.collaboration_enabled
+           FROM subscriptions s JOIN plans p ON s.plan_id = p.id
+           WHERE s.user_id = ? AND s.status = 'active'`,
+          [user.id],
+          (err, row) => resolve(err ? null : row),
+        );
+      });
+      req.user = { id: user.id, isDev: true, plan: planRow || null };
       return next();
     } catch (err) {
       return res.status(500).json({ error: 'Internal server error' });
@@ -75,12 +85,23 @@ const isAuthenticated = async (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  jwt.verify(token, secretKey, (err, decoded) => {
+  jwt.verify(token, secretKey, async (err, decoded) => {
     if (err) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    req.user = { id: decoded.id };
+    const planRow = await new Promise<any>((resolve) => {
+      db.get(
+        `SELECT s.plan_id, p.max_projects, p.max_threads_per_project, p.max_messages_per_day,
+                p.max_providers, p.collaboration_enabled
+         FROM subscriptions s JOIN plans p ON s.plan_id = p.id
+         WHERE s.user_id = ? AND s.status = 'active'`,
+        [decoded.id],
+        (dbErr, row) => resolve(dbErr ? null : row),
+      );
+    });
+
+    req.user = { id: decoded.id, plan: planRow || null };
     next();
   });
 };

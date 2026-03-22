@@ -42,6 +42,7 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "sqlite3": "^5.1.6",
+    "stripe": "^20.4.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1",

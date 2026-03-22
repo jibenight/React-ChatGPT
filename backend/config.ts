@@ -12,6 +12,12 @@ const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
   CORS_ALLOWED_ORIGINS: z.string().optional(),
   APP_URL: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRO_MONTHLY_PRICE_ID: z.string().optional(),
+  STRIPE_PRO_YEARLY_PRICE_ID: z.string().optional(),
+  STRIPE_TEAM_MONTHLY_PRICE_ID: z.string().optional(),
+  STRIPE_TEAM_YEARLY_PRICE_ID: z.string().optional(),
 });
 
 const validateEnv = () => {

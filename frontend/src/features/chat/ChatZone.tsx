@@ -11,6 +11,7 @@ import { useChatSearch, MobileSearchPanel } from './ChatSearchBar';
 import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
 import type { ChatMessage, ChatRole, FailedRequest } from './chatTypes';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 const normalizeContent = (content: unknown): string => {
   if (typeof content === 'string') return content;
@@ -86,6 +87,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const { userData } = useUser();
   const activeUserId = userData?.id || userData?.userId;
+  const { checkAndPrompt } = usePlanLimits();
 
   const { draftKey, initialDraft, clearDraft } = useDraft({
     userId: activeUserId,
@@ -190,6 +192,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
       setError(t('chat:userNotConnected'));
       return;
     }
+    if (!checkAndPrompt('message')) return;
 
     const provider = selectedOption?.provider || 'openai';
     const model = selectedOption?.model;

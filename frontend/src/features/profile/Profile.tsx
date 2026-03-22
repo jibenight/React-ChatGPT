@@ -4,10 +4,17 @@ import { useUser } from '../../UserContext';
 import { useForm } from 'react-hook-form';
 import * as tauri from '@/tauriClient';
 import { useAppStore } from '../../stores/appStore';
+import SubscriptionStatus from '@/features/billing/SubscriptionStatus';
+import { usePlanStore } from '@/stores/planStore';
 
 function Profil() {
   const { t } = useTranslation();
   const setProfil = useAppStore(s => s.setProfil);
+  const fetchPlan = usePlanStore(s => s.fetchPlan);
+
+  useEffect(() => {
+    fetchPlan();
+  }, [fetchPlan]);
   const { userData, setUserData } = useUser();
   const [isReadOnly, setIsReadOnly] = useState(true);
   const [apiStatus, setApiStatus] = useState({
@@ -488,6 +495,13 @@ function Profil() {
               )}
             </section>
           </div>
+
+          <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none'>
+            <h3 className='mb-4 text-lg font-semibold text-gray-900 dark:text-foreground'>
+              {t('billing:subscription')}
+            </h3>
+            <SubscriptionStatus />
+          </section>
 
           <section className='rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/40 dark:bg-card/60 dark:shadow-none'>
             <div className='flex items-center justify-between'>

@@ -84,6 +84,7 @@
 const express = require('express');
 const projects = express.Router();
 const isAuthenticated = require('../middlewares/isAuthenticated');
+const { enforcePlanLimits } = require('../middlewares/planLimits');
 const projectController = require('../controllers/projectController');
 const threadController = require('../controllers/threadController');
 const rateLimit = require('express-rate-limit');
@@ -134,7 +135,7 @@ const projectLimiter = rateLimit({
 
 // ── Project CRUD ────────────────────────────────────────────────────
 projects.get('/api/projects', isAuthenticated, projectLimiter, asyncHandler(projectController.listProjects));
-projects.post('/api/projects', isAuthenticated, projectLimiter, validateBody(createProjectSchema), asyncHandler(projectController.createProject));
+projects.post('/api/projects', isAuthenticated, projectLimiter, enforcePlanLimits('project'), validateBody(createProjectSchema), asyncHandler(projectController.createProject));
 projects.get('/api/projects/:projectId', isAuthenticated, projectLimiter, validateParams(projectIdParam), asyncHandler(projectController.getProject));
 projects.patch('/api/projects/:projectId', isAuthenticated, projectLimiter, validateParams(projectIdParam), validateBody(updateProjectSchema), asyncHandler(projectController.updateProject));
 projects.delete('/api/projects/:projectId', isAuthenticated, projectLimiter, validateParams(projectIdParam), asyncHandler(projectController.deleteProject));
@@ -151,6 +152,7 @@ projects.post(
   '/api/projects/:projectId/members',
   isAuthenticated,
   projectLimiter,
+  enforcePlanLimits('collaboration'),
   validateParams(projectIdParam),
   validateBody(addMemberSchema),
   asyncHandler(projectController.addMember),
@@ -183,6 +185,7 @@ projects.post(
   '/api/projects/:projectId/threads',
   isAuthenticated,
   projectLimiter,
+  enforcePlanLimits('thread'),
   validateParams(projectIdParam),
   asyncHandler(threadController.createThread),
 );

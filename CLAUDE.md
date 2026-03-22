@@ -75,27 +75,25 @@ Run a single test file: `npx vitest run path/to/file.test.ts` (from `frontend/` 
 
 ### Frontend — Svelte 5 (primary: `frontend-svelte/`)
 - Framework: SvelteKit with `adapter-static`, `ssr = false` (SPA mode, Tauri-compatible).
-- Layout: `routes/+layout.svelte` — root layout with Sidebar, TopBar, and full-screen overlays (Profile, Settings).
-- Pages: `routes/+page.svelte` (chat), `routes/projects/` (projects), `routes/guide/` (user guide).
-- Components in `lib/components/`: `chat/` (ChatZone, ChatMessage, ChatComposer, AiOption, MarkdownRenderer), `layout/` (Sidebar, TopBar, SidebarProjectList, SidebarThreadList), `overlays/` (ProfileOverlay, SettingsOverlay), `ui/` (Button, Modal, Dropdown, Skeleton, Toaster).
+- Routing: **SvelteKit layout groups** for auth separation:
+  - `routes/+layout.svelte` — root layout: initializes `authStore`, renders Toaster + UpgradeModal.
+  - `routes/(public)/+layout.svelte` — public pages (no sidebar). Redirects logged-in users → `/chat`.
+  - `routes/(app)/+layout.svelte` — protected pages (Sidebar + TopBar + overlays). Redirects anonymous users → `/login`.
+- Public pages (`(public)/`): `/` (landing), `/login`, `/register`, `/reset-password`, `/verify-email`, `/pricing`, `/guide`.
+- Protected pages (`(app)/`): `/chat`, `/projects`, `/billing/success`.
+- Components in `lib/components/`: `billing/` (UpgradeModal, SubscriptionStatus, BillingPortal), `chat/` (ChatZone, ChatMessage, ChatComposer, AiOption, MarkdownRenderer), `common/` (MatrixBackground), `layout/` (Sidebar, TopBar, SidebarProjectList, SidebarThreadList), `overlays/` (ProfileOverlay, SettingsOverlay), `ui/` (Button, Modal, Dropdown, Skeleton, Toaster).
 - State: Svelte 5 runes in `lib/stores/`:
-  - `app.svelte.ts` — `$state` runes: selectedOption, projectMode, persisted to localStorage.
-  - `user.svelte.ts` — authenticated user session.
+  - `auth.svelte.ts` — centralized auth: `isAuthenticated`, `isLoading`, `isTauri`, `init()`, `onLogin()`, `onLogout()`.
+  - `app.svelte.ts` — selectedOption, projectMode, persisted to localStorage.
+  - `plan.svelte.ts` — subscription data, plan limits, upgrade modal, `fetchPlan()`, `checkAndPrompt()`.
+  - `user.svelte.ts` — authenticated user session (web + Tauri dual).
   - `theme.svelte.ts` — dark/light theme.
 - UI libs: bits-ui (replaces Radix), lucide-svelte, svelte-sonner.
-- HTTP: `lib/tauri.ts` (Tauri IPC client, framework-agnostic). `lib/stream-chat.ts` (SSE streaming, framework-agnostic).
-- i18n: `lib/i18n/` — i18next with 7 languages.
-- **Not yet ported**: auth pages, billing UI, landing page, plan store → see React legacy.
+- HTTP: `lib/api.ts` (web fetch with `credentials: 'include'`). `lib/tauri.ts` (Tauri IPC, framework-agnostic). `lib/stream-chat.ts` (SSE streaming, framework-agnostic).
+- i18n: `lib/i18n/` — i18next with 7 languages, flat keys (`i18n.t('keyName')`).
 
 ### Frontend — React 19 (legacy: `frontend/`)
-- Entry: `frontend/src/index.tsx` — `AppGate` handles web vs Tauri routing.
-- Contains billing/auth pages not yet ported to Svelte:
-  - `features/auth/` — LoginPage, RegisterPage, ResetPasswordPage, PrivateRoute.
-  - `features/billing/` — PricingPage, BillingSuccess, UpgradeModal, SubscriptionStatus, BillingPortal.
-  - `features/landing/` — LandingPage (web only).
-- State: Zustand `stores/appStore.ts`, `stores/planStore.ts`. User session via React Context (`UserContext.tsx`).
-- HTTP: `apiClient.ts` (axios with `withCredentials: true`).
-- Auth guard: `PrivateRoute.tsx` — redirects to `/login` if unauthenticated.
+- Kept for reference only. All features have been ported to Svelte.
 
 ### Backend
 - Entry: `backend/app.ts` — middleware stack, route registration, hourly token cleanup.
@@ -201,34 +199,27 @@ GET   /api/billing/subscription              auth required
 POST  /api/billing/activate-license          auth required
 ```
 
-### Frontend routes
+### Frontend routes (Svelte)
 
-Svelte (primary):
+Public — `(public)` layout group, no sidebar:
 ```
-/                  ChatZone.svelte           main chat page
-/projects          projects/+page.svelte     project management
-/guide             guide/+page.svelte        user guide
-```
-
-React (legacy — auth/billing pages):
-```
-/                  LandingPage        public
-/login             LoginPage          public
-/register          RegisterPage       public
-/reset-password    ResetPasswordPage  public
-/pricing           PricingPage        public
-/guide             UserGuide          public
-/chat              App                PrivateRoute
-/projects          App                PrivateRoute
-/billing/success   BillingSuccess     PrivateRoute
+/                  Landing page            redirects to /chat if logged in
+/login             Login form              redirects to /chat if logged in
+/register          Registration form       redirects to /chat if logged in
+/reset-password    Reset password          request or confirm (?token=)
+/verify-email      Email verification      ?token= from email link
+/pricing           Plan comparison         accessible to all
+/guide             User guide              accessible to all
 ```
 
-Tauri (desktop — behind biometric lock, no auth pages):
+Protected — `(app)` layout group, sidebar + auth guard:
 ```
-/ or /chat         ChatZone.svelte / App
-/projects          projects/ / App
-/guide             guide/ / UserGuide
+/chat              Chat zone               redirects to /login if not auth
+/projects          Project management      redirects to /login if not auth
+/billing/success   Post-checkout confirm   redirects to /login if not auth
 ```
+
+Tauri — always authenticated, skips public pages → /chat directly.
 
 ## Important patterns
 

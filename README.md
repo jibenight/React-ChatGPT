@@ -55,36 +55,43 @@ Backend (Express 4 + TypeScript)
 ├── frontend-svelte/    Svelte 5 + SvelteKit + Tailwind 4 (PRIMARY frontend)
 │   └── src/
 │       ├── routes/
-│       │   ├── +layout.svelte   Root layout (Sidebar + TopBar + overlays)
-│       │   ├── +page.svelte     Chat zone (default route)
-│       │   ├── projects/        Project management page
-│       │   └── guide/           User guide page
+│       │   ├── +layout.svelte         Root layout (auth init, Toaster, UpgradeModal)
+│       │   ├── (public)/              Public pages — no sidebar, no auth required
+│       │   │   ├── +layout.svelte     Redirects logged-in users → /chat
+│       │   │   ├── +page.svelte       Landing page (/)
+│       │   │   ├── login/             /login
+│       │   │   ├── register/          /register
+│       │   │   ├── reset-password/    /reset-password
+│       │   │   ├── verify-email/      /verify-email?token=xxx
+│       │   │   ├── pricing/           /pricing
+│       │   │   └── guide/             /guide
+│       │   └── (app)/                 Protected pages — sidebar, auth required
+│       │       ├── +layout.svelte     Auth guard + Sidebar + TopBar + overlays
+│       │       ├── chat/              /chat (main app)
+│       │       ├── projects/          /projects
+│       │       └── billing/success/   /billing/success
 │       ├── lib/
 │       │   ├── components/
+│       │   │   ├── billing/     UpgradeModal, SubscriptionStatus, BillingPortal
 │       │   │   ├── chat/        ChatZone, ChatMessage, ChatComposer, AiOption, MarkdownRenderer
+│       │   │   ├── common/      MatrixBackground
 │       │   │   ├── layout/      Sidebar, TopBar, SidebarProjectList, SidebarThreadList
 │       │   │   ├── overlays/    ProfileOverlay, SettingsOverlay (full-screen)
 │       │   │   └── ui/          Button, Modal, Dropdown, Skeleton, Toaster
 │       │   ├── stores/          Svelte 5 runes ($state, $derived, $effect)
+│       │   │   ├── auth.svelte.ts    isAuthenticated, isLoading, isTauri — auth guard
 │       │   │   ├── app.svelte.ts     selectedOption, projectMode (localStorage)
+│       │   │   ├── plan.svelte.ts    subscription, plan limits, upgrade modal
 │       │   │   ├── user.svelte.ts    authenticated user session
 │       │   │   └── theme.svelte.ts   dark/light theme
-│       │   ├── i18n/            i18next setup (FR, EN, ES, DE, PT, JA, KO)
-│       │   ├── tauri.ts         Tauri IPC client (shared with React)
+│       │   ├── i18n/            i18next (FR, EN, ES, DE, PT, JA, KO)
+│       │   ├── api.ts           Web fetch helper (credentials: include)
+│       │   ├── tauri.ts         Tauri IPC client (framework-agnostic)
 │       │   └── stream-chat.ts   SSE streaming logic (framework-agnostic)
 │       └── app.css              Tailwind 4 entry
 │
-├── frontend/           React 19 + Vite 5 + Tailwind 4 (LEGACY — billing/auth pages)
-│   └── src/
-│       ├── features/
-│       │   ├── auth/       Login, Register, ResetPassword, PrivateRoute
-│       │   ├── billing/    PricingPage, BillingSuccess, UpgradeModal, SubscriptionStatus
-│       │   ├── landing/    LandingPage (web only)
-│       │   ├── chat/       Chat interface (legacy)
-│       │   ├── projects/   Project management (legacy)
-│       │   └── profile/    User settings (legacy)
-│       ├── stores/         Zustand (appStore, planStore)
-│       └── components/     Radix UI, assistant-ui, common (Modal, LockScreen)
+├── frontend/           React 19 + Vite 5 + Tailwind 4 (LEGACY — kept for reference)
+│   └── src/             All features duplicated in frontend-svelte/
 │
 ├── backend/            Express 4 + TypeScript
 │   ├── app.ts              Middleware stack, route registration
@@ -419,12 +426,11 @@ On limit exceeded, returns HTTP 403:
 }
 ```
 
-**Frontend (React legacy)** — `stores/planStore.ts` (Zustand):
-- `fetchPlan()` calls `GET /api/billing/subscription` on app mount (web only; Tauri defaults to `pro`).
-- `openUpgrade(reason)` / `closeUpgrade()` control the `UpgradeModal`.
-- `handlePlanLimitError(data)` is called from API error handlers on 403 responses.
-
-> The Svelte frontend does not yet have a plan store. The backend middleware (`planLimits.ts`) enforces limits regardless of the frontend used.
+**Frontend (Svelte)** — `stores/plan.svelte.ts` (Svelte 5 runes):
+- `planStore.fetchPlan()` calls `GET /api/billing/subscription` on app mount (web only; Tauri defaults to `pro`).
+- `planStore.openUpgrade(reason)` / `planStore.closeUpgrade()` control the `UpgradeModal`.
+- `planStore.checkAndPrompt(feature)` checks limits and opens the upgrade modal if exceeded.
+- Integrated in `ChatZone.svelte` (message limit) and `projects/+page.svelte` (project limit).
 
 ### Desktop license activation
 
@@ -439,39 +445,45 @@ POST /api/billing/activate-license  { license_key }
 
 ## Frontend pages
 
-### Svelte (primary) — `frontend-svelte/`
+### Route architecture — `frontend-svelte/`
 
-| Path | Component | Status |
-|---|---|---|
-| `/` | `ChatZone.svelte` | Main chat page |
-| `/projects` | `projects/+page.svelte` | Project management |
-| `/guide` | `guide/+page.svelte` | User guide |
+```
+(public) layout group — no sidebar, no auth required
+  /                    Landing page (hero, features, pricing, FAQ)
+  /login               Login form → redirects to /chat on success
+  /register            Registration form → "check your email" on success
+  /reset-password      Request reset (email) or confirm reset (?token=xxx)
+  /verify-email        Email verification (?token=xxx) — 3 states: loading/success/error
+  /pricing             Plan comparison (Free/Pro/Team) with Stripe checkout
+  /guide               User guide / documentation
 
-> Auth, billing, landing, and pricing pages are **not yet ported** to Svelte. See React legacy below.
+(app) layout group — sidebar + TopBar + overlays, auth required
+  /chat                Main chat interface (default after login)
+  /projects            Project management
+  /billing/success     Post-checkout confirmation → auto-redirect to /chat
+```
 
-### React (legacy) — `frontend/`
+### Auth guards
 
-| Path | Component | Access |
-|---|---|---|
-| `/` | `LandingPage` | Public |
-| `/login` | `LoginPage` | Public |
-| `/register` | `RegisterPage` | Public |
-| `/reset-password` | `ResetPasswordPage` | Public |
-| `/pricing` | `PricingPage` | Public |
-| `/guide` | `UserGuide` | Public |
-| `/chat` | `App` | Protected (PrivateRoute) |
-| `/projects` | `App` | Protected (PrivateRoute) |
-| `/billing/success` | `BillingSuccess` | Protected (PrivateRoute) |
+| Situation | Behavior |
+|---|---|
+| Anonymous user → `/chat` or `/projects` | Redirect → `/login` |
+| Anonymous user → `/` | Sees landing page |
+| Logged-in user → `/` or `/login` or `/register` | Redirect → `/chat` |
+| Logged-in user → `/pricing` or `/guide` | Stays (public, no redirect) |
+| Tauri desktop → any public page | Redirect → `/chat` (always authenticated) |
+| `VITE_DEV_BYPASS_AUTH=true` | Always authenticated, skips guards |
 
-### Desktop (Tauri)
+### User flow
 
-| Path | Component | Notes |
-|---|---|---|
-| `/` or `/chat` | `App` / `ChatZone.svelte` | Behind biometric lock screen |
-| `/projects` | `App` / `projects/+page.svelte` | Behind biometric lock screen |
-| `/guide` | `UserGuide` / `guide/+page.svelte` | — |
-
-React `PrivateRoute` checks `userData.id` (Context) or `localStorage('user').id`, and redirects to `/login` if not authenticated. Dev bypass: `VITE_DEV_BYPASS_AUTH=true`.
+```
+New visitor → / (landing)
+  → "Get started" → /register
+  → Fills form → POST /register → "Check your email"
+  → Clicks email link → /verify-email?token=xxx → "Email verified!"
+  → "Go to login" → /login → POST /login → /chat
+  → Chat with sidebar, projects, AI providers
+```
 
 ---
 
@@ -574,49 +586,59 @@ This section provides structured context for AI models (Claude, Codex, Copilot, 
 
 ### Project summary
 
-This is a production-ready, full-stack AI chatbot monorepo. The backend is Express 4 with TypeScript, targeting SQLite (default) or PostgreSQL via a unified adapter. The **primary frontend is Svelte 5 (SvelteKit)** in `frontend-svelte/`, using SPA mode (`adapter-static`, `ssr = false`), Svelte 5 runes (`$state`, `$derived`, `$effect`), bits-ui, lucide-svelte, and svelte-sonner. A legacy React 19 frontend in `frontend/` is kept for reference and contains billing/auth pages not yet ported to Svelte. There is also a Tauri 2 desktop shell compatible with both frontends.
+This is a production-ready, full-stack AI chatbot monorepo. The backend is Express 4 with TypeScript, targeting SQLite (default) or PostgreSQL via a unified adapter. The **primary frontend is Svelte 5 (SvelteKit)** in `frontend-svelte/`, using SPA mode (`adapter-static`, `ssr = false`), Svelte 5 runes (`$state`, `$derived`, `$effect`), bits-ui, lucide-svelte, and svelte-sonner. A legacy React 19 frontend in `frontend/` is kept for reference only. There is also a Tauri 2 desktop shell.
 
-The project includes a complete SaaS billing system built on Stripe: Free / Pro ($8/month) / Team ($6/user/month) plans, plus a one-time Desktop Lifetime license ($49). Plan limits are enforced at the backend middleware level (`planLimits.ts`). The billing UI (pricing, upgrade modal, subscription status) currently lives only in the React legacy frontend and needs to be ported to Svelte.
+The project uses **SvelteKit layout groups** for routing: `(public)` for unauthenticated pages (landing, login, register, pricing, guide) and `(app)` for authenticated pages (chat, projects, billing). Auth guards in the layout files handle redirects automatically. A centralized `authStore` manages authentication state across the app.
+
+The project includes a complete SaaS billing system built on Stripe: Free / Pro ($8/month) / Team ($6/user/month) plans, plus a one-time Desktop Lifetime license ($49). Plan limits are enforced at the backend middleware level (`planLimits.ts`) and surfaced to the user via `planStore` + `UpgradeModal` in the Svelte frontend.
 
 ### Codebase map
 
 ```
 frontend-svelte/src/                 ← PRIMARY FRONTEND (Svelte 5 / SvelteKit)
   routes/
-    +layout.svelte                   — root layout: Sidebar + TopBar + overlays
-    +page.svelte                     — chat zone (default /)
-    projects/+page.svelte            — project management
-    guide/+page.svelte               — user guide
+    +layout.svelte                   — root layout: auth init, Toaster, UpgradeModal
+    (public)/                        — public pages (no sidebar, no auth)
+      +layout.svelte                 — redirects logged-in users → /chat
+      +page.svelte                   — landing page (/)
+      login/                         — /login
+      register/                      — /register
+      reset-password/                — /reset-password
+      verify-email/                  — /verify-email?token=xxx
+      pricing/                       — /pricing
+      guide/                         — /guide
+    (app)/                           — protected pages (sidebar + auth guard)
+      +layout.svelte                 — auth guard + Sidebar + TopBar + overlays
+      chat/                          — /chat (main app)
+      projects/                      — /projects
+      billing/success/               — /billing/success
   lib/
     stores/
-      app.svelte.ts                  — $state runes: selectedOption, projectMode (localStorage)
-      user.svelte.ts                 — authenticated user session
+      auth.svelte.ts                 — isAuthenticated, isLoading, isTauri — centralized auth
+      app.svelte.ts                  — selectedOption, projectMode (localStorage)
+      plan.svelte.ts                 — subscription, plan limits, upgrade modal, feature checks
+      user.svelte.ts                 — authenticated user session (web + Tauri dual)
       theme.svelte.ts                — dark/light theme
     components/
+      billing/                       — UpgradeModal, SubscriptionStatus, BillingPortal
       chat/                          — ChatZone, ChatMessage, ChatComposer, AiOption, MarkdownRenderer
+      common/                        — MatrixBackground
       layout/                        — Sidebar, TopBar, SidebarProjectList, SidebarThreadList
       overlays/                      — ProfileOverlay, SettingsOverlay (full-screen)
       ui/                            — Button, Modal, Dropdown, Skeleton, Toaster
+    api.ts                           — web fetch helper (credentials: include)
+    tauri.ts                         — Tauri IPC client (framework-agnostic)
+    stream-chat.ts                   — SSE streaming (framework-agnostic)
     i18n/                            — i18next (FR, EN, ES, DE, PT, JA, KO)
-    tauri.ts                         — Tauri IPC client (framework-agnostic, shared)
-    stream-chat.ts                   — SSE streaming (framework-agnostic, shared)
 
-frontend/src/                        ← LEGACY FRONTEND (React 19 — billing/auth pages)
-  features/
-    auth/                            — LoginPage, RegisterPage, ResetPasswordPage, PrivateRoute
-    billing/                         — PricingPage, BillingSuccess, UpgradeModal, SubscriptionStatus
-    landing/                         — LandingPage (web only)
-    chat/, projects/, profile/       — legacy equivalents (superseded by Svelte)
-  stores/
-    appStore.ts                      — Zustand: selectedOption, projectMode
-    planStore.ts                     — Zustand: subscription, plan limits, upgrade modal
+frontend/src/                        ← LEGACY (React 19 — kept for reference only)
 
 backend/                             ← SHARED BACKEND (Express 4 + TypeScript)
   app.ts                             — Express setup, middleware order, route mounting
-  routes/                            — thin routers (validation + auth middleware)
+  routes/                            — thin routers (auth, users, projects, threads, chat, billing)
   controllers/                       — business logic, CommonJS exports.name pattern
   middlewares/
-    isAuthenticated                  — reads JWT from HttpOnly cookie, attaches req.user
+    isAuthenticated                  — reads JWT from HttpOnly cookie, attaches req.user + plan
     planLimits                       — enforcePlanLimits('message'|'project'|'thread'|'provider'|'collaboration')
     validate                         — Zod schema middleware
   models/database.ts                 — DB adapter: run/get/all/serialize, ? -> $N for postgres
@@ -631,16 +653,14 @@ backend/                             ← SHARED BACKEND (Express 4 + TypeScript)
 - Plan limit errors return HTTP 403 with `{ error: 'plan_limit_exceeded', limit, current, allowed, plan, upgrade_url }`.
 
 **Svelte frontend (primary):**
-- Svelte 5 runes: `$state`, `$derived`, `$effect` in `.svelte.ts` store files.
+- Svelte 5 runes: `$state`, `$derived`, `$effect` in `.svelte.ts` store files. Do NOT use Svelte 4 `writable()`/`readable()`.
 - Stores export objects with getters/setters: `appStore.profil`, `appStore.setProfil(v)`.
 - Components in `$lib/components/`, stores in `$lib/stores/`, `$lib` alias for `frontend-svelte/src/lib`.
 - UI: bits-ui (replaces Radix), lucide-svelte (replaces lucide-react), svelte-sonner (replaces sonner).
-- Custom chat components (no @assistant-ui equivalent for Svelte).
-- `tauri.ts` and `stream-chat.ts` are framework-agnostic TypeScript files shared with React.
-
-**React frontend (legacy):**
-- ESM imports with `@/` alias pointing to `frontend/src/`.
-- Zustand stores, React Context, Radix UI primitives, @assistant-ui/react.
+- Routing: SvelteKit layout groups — `(public)` for unauthenticated, `(app)` for authenticated.
+- Auth: `authStore` in root layout `init()`, `(public)` layout redirects logged-in users, `(app)` layout redirects anonymous users.
+- `tauri.ts` and `stream-chat.ts` are framework-agnostic TypeScript files.
+- `api.ts` provides `apiGet()`/`apiPost()` for web fetch with `credentials: 'include'`.
 
 **Shared conventions:**
 - Chat streaming uses `fetch` + manual SSE line parsing + `AbortController`. Do not replace with `EventSource` (custom headers are required).
@@ -653,12 +673,17 @@ backend/                             ← SHARED BACKEND (Express 4 + TypeScript)
 
 **Auth (web)**
 ```
-User submits login form
-  -> POST /login (email, password)
-  -> isAuthenticated sets HttpOnly cookie
-  -> frontend stores { id, username, email } in localStorage('user')
-  -> UserContext reads localStorage on mount
-  -> planStore.fetchPlan() called in AppGate on mount if user exists
+New visitor → / (landing page, public)
+  → clicks "Get started" → /register
+  → POST /register → "Check your email"
+  → clicks email link → /verify-email?token=xxx → GET /verify-email → "Verified!"
+  → /login → POST /login → backend sets HttpOnly JWT cookie
+  → authStore.onLogin(userData) → localStorage + userStore
+  → goto('/chat') → (app) layout loads sidebar, planStore.fetchPlan()
+
+Returning user → / → authStore.isAuthenticated=true → redirect /chat
+Anonymous on /chat → authStore.isAuthenticated=false → redirect /login
+Tauri desktop → authStore.isTauri=true → always authenticated → /chat directly
 ```
 
 **Chat message**
@@ -694,20 +719,13 @@ User clicks "Upgrade to Pro"
 - Never string-interpolate variables into SQL — always use parameterized queries with `?`.
 - The `threads.id` column is `TEXT` (UUID-style), not `INTEGER`. Do not assume numeric IDs for threads.
 - Svelte stores use runes (`$state`, `$derived`), not writable/readable stores from Svelte 4. Do not use `writable()`.
-- `tauri.ts` and `stream-chat.ts` are framework-agnostic — they work in both Svelte and React. Changes to these files affect both frontends.
-- Tauri desktop skips auth pages entirely. Billing/plan features are not yet in the Svelte frontend.
+- `tauri.ts` and `stream-chat.ts` are framework-agnostic — changes affect both frontends.
+- Routing uses SvelteKit layout groups: new public pages go in `(public)/`, new protected pages go in `(app)/`. The auth guard is in the layout, not in individual pages.
+- The root layout only initializes `authStore` — sidebar and TopBar live in `(app)/+layout.svelte`.
+- Tauri desktop sets `authStore.isTauri = true` → always authenticated, skips all public pages.
 - Chat drafts are keyed in localStorage as `chat_draft:{userId}:{threadId}:{projectId}` — do not change this key format.
 - The Stripe webhook route (`/api/billing/webhook`) requires the raw request body for signature verification. Ensure `express.raw()` is applied before `express.json()` for this route only.
 - `ENCRYPTION_KEY` must remain constant after first API key is stored. Changing it corrupts stored keys.
-
-### What still needs to be ported to Svelte
-
-The following features exist only in the React legacy frontend (`frontend/`) and need to be ported to `frontend-svelte/`:
-- Auth pages: LoginPage, RegisterPage, ResetPasswordPage, PrivateRoute
-- Billing UI: PricingPage, BillingSuccess, UpgradeModal, SubscriptionStatus, BillingPortal
-- Landing page: LandingPage
-- Plan store: planStore (Zustand → Svelte 5 runes)
-- API client: apiClient.ts (axios → fetch or shared utility)
 
 ### Testing
 

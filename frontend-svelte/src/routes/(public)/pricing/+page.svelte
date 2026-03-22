@@ -1,5 +1,6 @@
 <script lang="ts">
   import { planStore } from '$lib/stores/plan.svelte';
+  import { authStore } from '$lib/stores/auth.svelte';
   import { i18n } from '$lib/i18n';
   import type { TranslationKey } from '$lib/i18n';
 
@@ -78,6 +79,9 @@
 
   let currentPlanKey = $derived(planStore.planName);
 
+  // Lien retour conditionnel selon l'état d'auth
+  let backHref = $derived(authStore.isAuthenticated ? '/chat' : '/');
+
   async function handleSubscribe(tierKey: string) {
     if (isTauri || tierKey === 'free' || tierKey === currentPlanKey) return;
     loadingPlan = tierKey;
@@ -102,7 +106,7 @@
     <!-- Retour -->
     <div class="mb-2">
       <a
-        href="/"
+        href={backHref}
         class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:text-muted-foreground dark:hover:text-foreground"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,8 +242,6 @@
               {i18n.t('billingCurrentPlan')}
             {:else if tier.key === 'free'}
               {i18n.t('billingFree')}
-            {:else if tier.key === 'pro'}
-              {i18n.t('billingSubscribe')}
             {:else}
               {i18n.t('billingSubscribe')}
             {/if}

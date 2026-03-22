@@ -391,4 +391,16 @@ export default {
   guideSettingsTitle: 'Paramètres',
   guideSettings1: 'Basculez entre le thème clair et sombre depuis les paramètres (icône engrenage).',
   guideSettings2: 'Sur l\'application de bureau (Tauri), vous pouvez verrouiller l\'écran avec votre biométrie.',
+
+  // verify-email
+  verifyEmailTitle: 'Vérification de l\'email',
+  verifyEmailSuccess: 'Adresse e-mail vérifiée !',
+  verifyEmailSuccessDesc: 'Votre adresse e-mail a été vérifiée avec succès.',
+  verifyEmailError: 'Lien invalide ou expiré',
+  verifyEmailErrorDesc: 'Ce lien de vérification n\'est plus valide.',
+  verifyEmailLoading: 'Vérification en cours...',
+  resendVerification: 'Renvoyer le lien',
+  verifyEmailResent: 'Un nouveau lien a été envoyé.',
+  goToLogin: 'Aller à la connexion',
+  goToChat: 'Accéder au chat',
 } as const;

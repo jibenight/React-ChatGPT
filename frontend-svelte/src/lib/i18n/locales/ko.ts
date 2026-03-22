@@ -373,4 +373,16 @@ export default {
   footerRegister: '가입',
   footerGithub: 'GitHub',
   footerCopyright: '© {year} MultiAI. 모든 권리 보유.',
+
+  // verify-email
+  verifyEmailTitle: '이메일 인증',
+  verifyEmailSuccess: '이메일 주소가 인증되었습니다!',
+  verifyEmailSuccessDesc: '이메일 주소가 성공적으로 인증되었습니다.',
+  verifyEmailError: '유효하지 않거나 만료된 링크',
+  verifyEmailErrorDesc: '이 인증 링크는 더 이상 유효하지 않습니다.',
+  verifyEmailLoading: '인증 중...',
+  resendVerification: '링크 재전송',
+  verifyEmailResent: '새 링크가 전송되었습니다.',
+  goToLogin: '로그인으로 이동',
+  goToChat: '채팅으로 이동',
 } as const;

@@ -281,6 +281,18 @@ export default {
   guideSettings1: 'Wechsle zwischen hellem und dunklem Thema in den Einstellungen (Zahnrad-Symbol).',
   guideSettings2: 'In der Desktop-App (Tauri) kannst du den Bildschirm mit deiner Biometrie sperren.',
 
+  // verify-email
+  verifyEmailTitle: 'E-Mail-Verifizierung',
+  verifyEmailSuccess: 'E-Mail-Adresse verifiziert!',
+  verifyEmailSuccessDesc: 'Deine E-Mail-Adresse wurde erfolgreich verifiziert.',
+  verifyEmailError: 'Ungültiger oder abgelaufener Link',
+  verifyEmailErrorDesc: 'Dieser Verifizierungslink ist nicht mehr gültig.',
+  verifyEmailLoading: 'Verifizierung...',
+  resendVerification: 'Link erneut senden',
+  verifyEmailResent: 'Ein neuer Link wurde gesendet.',
+  goToLogin: 'Zur Anmeldung',
+  goToChat: 'Zum Chat',
+
   // auth pages
   loginTitle: 'Anmelden',
   loginButton: 'Anmelden',

@@ -1,6 +1,10 @@
 <script lang="ts">
   import { X, MessageSquare, Key, FolderOpen, Settings, Zap } from 'lucide-svelte';
+  import { authStore } from '$lib/stores/auth.svelte';
   import { i18n } from '$lib/i18n';
+
+  // Lien retour conditionnel selon l'état d'auth
+  let backHref = $derived(authStore.isAuthenticated ? '/chat' : '/');
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
@@ -15,7 +19,7 @@
         </p>
       </div>
       <a
-        href="/"
+        href={backHref}
         class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted"
       >
         <X class="h-3.5 w-3.5" />

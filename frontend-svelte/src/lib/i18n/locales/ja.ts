@@ -373,4 +373,16 @@ export default {
   footerRegister: '登録',
   footerGithub: 'GitHub',
   footerCopyright: '© {year} MultiAI. 全著作権所有。',
+
+  // verify-email
+  verifyEmailTitle: 'メール認証',
+  verifyEmailSuccess: 'メールアドレスが確認されました！',
+  verifyEmailSuccessDesc: 'メールアドレスの認証が完了しました。',
+  verifyEmailError: '無効または期限切れのリンク',
+  verifyEmailErrorDesc: 'この認証リンクはもう有効ではありません。',
+  verifyEmailLoading: '認証中...',
+  resendVerification: 'リンクを再送',
+  verifyEmailResent: '新しいリンクが送信されました。',
+  goToLogin: 'ログインへ',
+  goToChat: 'チャットへ',
 } as const;

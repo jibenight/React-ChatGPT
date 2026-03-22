@@ -81,30 +81,30 @@
   }
 </script>
 
-<div class="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
+<div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
   <MatrixBackground />
 
-  <div class="relative z-10 w-full max-w-sm mx-4">
-    <div class="bg-background/80 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-xl p-8">
+  <div class="relative z-10 mx-4 w-full max-w-sm">
+    <div class="rounded-2xl border border-border bg-background/80 p-8 shadow-xl backdrop-blur-md dark:bg-background/90">
 
       {#if token}
         <!-- Formulaire de réinitialisation avec token -->
         {#if resetSuccess}
           <div class="text-center">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+            <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 class="text-lg font-semibold text-foreground mb-2">{i18n.t('loginSuccess')}</h2>
-            <p class="text-sm text-muted-foreground mb-6">{i18n.t('resetPassword')}</p>
+            <h2 class="mb-2 text-lg font-semibold text-foreground">{i18n.t('loginSuccess')}</h2>
+            <p class="mb-6 text-sm text-muted-foreground">{i18n.t('resetPassword')}</p>
             <a href="/login" class="text-sm font-medium text-primary hover:underline">
               {i18n.t('loginButton')}
             </a>
           </div>
         {:else}
           <div class="mb-8 text-center">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+            <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <span class="text-2xl">✦</span>
             </div>
             <h1 class="text-2xl font-bold text-foreground">{i18n.t('resetPassword')}</h1>
@@ -112,7 +112,7 @@
 
           <form onsubmit={handleResetSubmit} class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-foreground mb-1.5" for="new-password">
+              <label class="mb-1.5 block text-sm font-medium text-foreground" for="new-password">
                 {i18n.t('newPassword')}
               </label>
               <input
@@ -121,12 +121,12 @@
                 bind:value={newPassword}
                 placeholder={i18n.t('passwordPlaceholder')}
                 autocomplete="new-password"
-                class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-foreground mb-1.5" for="confirm-password">
+              <label class="mb-1.5 block text-sm font-medium text-foreground" for="confirm-password">
                 {i18n.t('confirmPassword')}
               </label>
               <input
@@ -135,18 +135,18 @@
                 bind:value={confirmPwd}
                 placeholder={i18n.t('passwordPlaceholder')}
                 autocomplete="new-password"
-                class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
             {#if resetError}
-              <p class="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{resetError}</p>
+              <p class="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{resetError}</p>
             {/if}
 
             <button
               type="submit"
               disabled={resetLoading}
-              class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {resetLoading ? i18n.t('loading') : i18n.t('resetPassword')}
             </button>
@@ -157,20 +157,20 @@
         <!-- Formulaire de demande de réinitialisation -->
         {#if reqSuccess}
           <div class="text-center">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+            <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 class="text-lg font-semibold text-foreground mb-2">{i18n.t('emailSent')}</h2>
-            <p class="text-sm text-muted-foreground mb-6">{i18n.t('checkEmail')}</p>
+            <h2 class="mb-2 text-lg font-semibold text-foreground">{i18n.t('emailSent')}</h2>
+            <p class="mb-6 text-sm text-muted-foreground">{i18n.t('checkEmail')}</p>
             <a href="/login" class="text-sm font-medium text-primary hover:underline">
               {i18n.t('login')}
             </a>
           </div>
         {:else}
           <div class="mb-8 text-center">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+            <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <span class="text-2xl">✦</span>
             </div>
             <h1 class="text-2xl font-bold text-foreground">{i18n.t('resetPasswordRequest')}</h1>
@@ -179,7 +179,7 @@
 
           <form onsubmit={handleRequestSubmit} class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-foreground mb-1.5" for="req-email">
+              <label class="mb-1.5 block text-sm font-medium text-foreground" for="req-email">
                 {i18n.t('email')}
               </label>
               <input
@@ -188,18 +188,18 @@
                 bind:value={reqEmail}
                 placeholder={i18n.t('emailPlaceholder')}
                 autocomplete="email"
-                class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
             {#if reqError}
-              <p class="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{reqError}</p>
+              <p class="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{reqError}</p>
             {/if}
 
             <button
               type="submit"
               disabled={reqLoading}
-              class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {reqLoading ? i18n.t('loading') : i18n.t('submit')}
             </button>

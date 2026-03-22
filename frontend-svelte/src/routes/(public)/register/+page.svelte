@@ -67,19 +67,19 @@
   }
 </script>
 
-<div class="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
+<div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
   <MatrixBackground />
 
-  <div class="relative z-10 w-full max-w-sm mx-4">
+  <div class="relative z-10 mx-4 w-full max-w-sm">
     {#if success}
-      <div class="bg-background/80 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-xl p-8 text-center">
-        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-green-500/10 mb-4">
+      <div class="rounded-2xl border border-border bg-background/80 p-8 text-center shadow-xl backdrop-blur-md dark:bg-background/90">
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
           <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-foreground mb-2">{i18n.t('registerSuccess')}</h1>
-        <p class="text-sm text-muted-foreground mb-6">{i18n.t('checkEmail')}</p>
+        <h1 class="mb-2 text-xl font-bold text-foreground">{i18n.t('registerSuccess')}</h1>
+        <p class="mb-6 text-sm text-muted-foreground">{i18n.t('checkEmail')}</p>
         <button
           onclick={() => goto('/login')}
           class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
@@ -88,9 +88,9 @@
         </button>
       </div>
     {:else}
-      <div class="bg-background/80 dark:bg-background/90 backdrop-blur-md border border-border rounded-2xl shadow-xl p-8">
+      <div class="rounded-2xl border border-border bg-background/80 p-8 shadow-xl backdrop-blur-md dark:bg-background/90">
         <div class="mb-8 text-center">
-          <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
             <span class="text-2xl">✦</span>
           </div>
           <h1 class="text-2xl font-bold text-foreground">{i18n.t('registerTitle')}</h1>
@@ -98,7 +98,7 @@
 
         <form onsubmit={handleSubmit} class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-foreground mb-1.5" for="username">
+            <label class="mb-1.5 block text-sm font-medium text-foreground" for="username">
               {i18n.t('usernameLabel')}
             </label>
             <input
@@ -107,12 +107,12 @@
               bind:value={username}
               placeholder={i18n.t('usernamePlaceholder')}
               autocomplete="username"
-              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-foreground mb-1.5" for="email">
+            <label class="mb-1.5 block text-sm font-medium text-foreground" for="email">
               {i18n.t('email')}
             </label>
             <input
@@ -121,12 +121,12 @@
               bind:value={email}
               placeholder={i18n.t('emailPlaceholder')}
               autocomplete="email"
-              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-foreground mb-1.5" for="password">
+            <label class="mb-1.5 block text-sm font-medium text-foreground" for="password">
               {i18n.t('password')}
             </label>
             <input
@@ -135,12 +135,12 @@
               bind:value={password}
               placeholder={i18n.t('passwordPlaceholder')}
               autocomplete="new-password"
-              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-foreground mb-1.5" for="confirm-password">
+            <label class="mb-1.5 block text-sm font-medium text-foreground" for="confirm-password">
               {i18n.t('confirmPassword')}
             </label>
             <input
@@ -149,18 +149,18 @@
               bind:value={confirmPassword}
               placeholder={i18n.t('passwordPlaceholder')}
               autocomplete="new-password"
-              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+              class="w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           {#if error}
-            <p class="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>
+            <p class="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
           {/if}
 
           <button
             type="submit"
             disabled={loading}
-            class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? i18n.t('registering') : i18n.t('registerButton')}
           </button>
@@ -168,7 +168,7 @@
 
         <p class="mt-6 text-center text-sm text-muted-foreground">
           {i18n.t('alreadyAccount')}
-          <a href="/login" class="font-medium text-primary hover:underline ml-1">
+          <a href="/login" class="ml-1 font-medium text-primary hover:underline">
             {i18n.t('loginButton')}
           </a>
         </p>

@@ -9,14 +9,13 @@
   let sessionId = $derived($page.url.searchParams.get('session_id'));
 
   onMount(() => {
-    // Rafraîchir le plan pour prendre en compte le nouvel abonnement
     planStore.fetchPlan().catch(() => null);
 
     const interval = setInterval(() => {
       countdown -= 1;
       if (countdown <= 0) {
         clearInterval(interval);
-        goto('/', { replaceState: true });
+        goto('/chat', { replaceState: true });
       }
     }, 1000);
 
@@ -64,7 +63,7 @@
 
     <button
       type="button"
-      onclick={() => goto('/', { replaceState: true })}
+      onclick={() => goto('/chat', { replaceState: true })}
       class="mt-4 inline-flex rounded-full bg-teal-500 px-6 py-2 text-sm font-semibold text-white transition hover:bg-teal-600"
     >
       {i18n.t('chat')}

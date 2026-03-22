@@ -373,4 +373,16 @@ export default {
   footerRegister: 'Registrarse',
   footerGithub: 'GitHub',
   footerCopyright: '© {year} MultiAI. Todos los derechos reservados.',
+
+  // verify-email
+  verifyEmailTitle: 'Verificación de email',
+  verifyEmailSuccess: '¡Correo verificado!',
+  verifyEmailSuccessDesc: 'Tu dirección de correo ha sido verificada con éxito.',
+  verifyEmailError: 'Enlace inválido o caducado',
+  verifyEmailErrorDesc: 'Este enlace de verificación ya no es válido.',
+  verifyEmailLoading: 'Verificando...',
+  resendVerification: 'Reenviar enlace',
+  verifyEmailResent: 'Se ha enviado un nuevo enlace.',
+  goToLogin: 'Ir a iniciar sesión',
+  goToChat: 'Ir al chat',
 } as const;

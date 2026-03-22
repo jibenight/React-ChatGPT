@@ -391,4 +391,16 @@ export default {
   guideSettingsTitle: 'Settings',
   guideSettings1: 'Switch between light and dark theme from settings (gear icon).',
   guideSettings2: 'On the desktop app (Tauri), you can lock the screen with your biometrics.',
+
+  // verify-email
+  verifyEmailTitle: 'Email verification',
+  verifyEmailSuccess: 'Email address verified!',
+  verifyEmailSuccessDesc: 'Your email address has been successfully verified.',
+  verifyEmailError: 'Invalid or expired link',
+  verifyEmailErrorDesc: 'This verification link is no longer valid.',
+  verifyEmailLoading: 'Verifying...',
+  resendVerification: 'Resend link',
+  verifyEmailResent: 'A new link has been sent.',
+  goToLogin: 'Go to sign in',
+  goToChat: 'Go to chat',
 } as const;

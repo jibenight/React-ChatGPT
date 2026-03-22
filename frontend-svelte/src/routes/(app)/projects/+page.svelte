@@ -74,7 +74,6 @@
 
   async function handleCreate() {
     if (!newProject.name.trim()) return;
-    // Vérifier la limite de projets avant de créer
     if (!planStore.checkAndPrompt('project')) return;
     try {
       const created = await tauri.createProject(newProject) as Project;
@@ -142,7 +141,7 @@
   function openInChat(projectId: number, threadId?: string) {
     appStore.setSelectedProjectId(projectId);
     if (threadId) appStore.setSelectedThreadId(threadId);
-    goto('/');
+    goto('/chat');
   }
 
   onMount(() => {
@@ -161,7 +160,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a
-          href="/"
+          href="/chat"
           class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground"
         >
           <X class="h-3.5 w-3.5" />

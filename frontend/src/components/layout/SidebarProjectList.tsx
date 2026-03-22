@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { FolderOpen, ChevronRight } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
@@ -10,6 +11,7 @@ function SidebarProjectList({
   activeProject,
   onOpenPanel,
 }: SidebarProjectListProps) {
+  const { t } = useTranslation();
   const projectMode = useAppStore((s) => s.projectMode);
 
   if (!projectMode) return null;
@@ -22,7 +24,7 @@ function SidebarProjectList({
     >
       <FolderOpen className='h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-muted-foreground' />
       <span className='truncate font-semibold'>
-        {activeProject?.name || 'Aucun projet sélectionné'}
+        {activeProject?.name || t('projects:noProjectSelected')}
       </span>
       <ChevronRight className='ml-auto h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-muted-foreground' />
     </button>

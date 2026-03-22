@@ -5,6 +5,7 @@
   import * as tauri from '$lib/tauri';
   import { appStore } from '$lib/stores/app.svelte';
   import ThreadListSkeleton from '$lib/components/ui/ThreadListSkeleton.svelte';
+  import { i18n } from '$lib/i18n';
 
   type Project = {
     id: number;
@@ -75,12 +76,12 @@
     try {
       const created = await tauri.createProject(newProject) as Project;
       newProject = { name: '', description: '', instructions: '', context_data: '' };
-      status = { type: 'success', text: 'Projet cree.' };
+      status = { type: 'success', text: i18n.t('projectCreated') };
       await loadProjects();
       if (created?.id) selectProject(created);
     } catch (err) {
       console.error(err);
-      status = { type: 'error', text: 'Impossible de creer le projet.' };
+      status = { type: 'error', text: i18n.t('createProjectError') };
     }
   }
 
@@ -88,11 +89,11 @@
     if (!selectedProject) return;
     try {
       await tauri.updateProject(selectedProject.id, editProject);
-      status = { type: 'success', text: 'Projet mis a jour.' };
+      status = { type: 'success', text: i18n.t('projectUpdated') };
       await loadProjects();
     } catch (err) {
       console.error(err);
-      status = { type: 'error', text: 'Impossible de mettre a jour le projet.' };
+      status = { type: 'error', text: i18n.t('updateProjectError') };
     }
   }
 
@@ -102,11 +103,11 @@
       await tauri.deleteProject(selectedProject.id);
       selectedProject = null;
       threads = [];
-      status = { type: 'success', text: 'Projet supprime.' };
+      status = { type: 'success', text: i18n.t('projectDeleted') };
       await loadProjects();
     } catch (err) {
       console.error(err);
-      status = { type: 'error', text: 'Impossible de supprimer le projet.' };
+      status = { type: 'error', text: i18n.t('deleteProjectError') };
     }
   }
 
@@ -117,7 +118,7 @@
       await loadThreads(selectedProject.id);
     } catch (err) {
       console.error(err);
-      status = { type: 'error', text: 'Impossible de supprimer la conversation.' };
+      status = { type: 'error', text: i18n.t('deleteThreadError') };
     }
   }
 
@@ -125,13 +126,13 @@
     if (!selectedProject) return;
     try {
       await tauri.updateThread(threadId, { title: editingThreadTitle });
-      status = { type: 'success', text: 'Conversation renommee.' };
+      status = { type: 'success', text: i18n.t('renameThreadSuccess') };
       editingThreadId = null;
       editingThreadTitle = '';
       await loadThreads(selectedProject.id);
     } catch (err) {
       console.error(err);
-      status = { type: 'error', text: 'Impossible de renommer la conversation.' };
+      status = { type: 'error', text: i18n.t('renameThreadError') };
     }
   }
 
@@ -151,9 +152,9 @@
     <!-- Header -->
     <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground">Projets</p>
-        <h1 class="text-3xl font-semibold text-gray-900 dark:text-foreground">Espace projets</h1>
-        <p class="text-sm text-gray-500 dark:text-muted-foreground">Gerer les instructions et le contexte de chaque projet.</p>
+        <p class="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground">{i18n.t('projects')}</p>
+        <h1 class="text-3xl font-semibold text-gray-900 dark:text-foreground">{i18n.t('projectView')}</h1>
+        <p class="text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('manageProjectContext')}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a
@@ -161,7 +162,7 @@
           class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground"
         >
           <X class="h-3.5 w-3.5" />
-          Fermer
+          {i18n.t('close')}
         </a>
       </div>
     </div>
@@ -182,30 +183,30 @@
     <div class="grid gap-6 lg:grid-cols-[1.1fr_1.4fr]">
       <!-- Create project -->
       <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-foreground">Creer un projet</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-foreground">{i18n.t('createProject')}</h2>
         <div class="mt-4 grid gap-4">
           <input
             bind:value={newProject.name}
             type="text"
-            placeholder="Nom du projet"
+            placeholder={i18n.t('projectName')}
             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30"
           />
           <input
             bind:value={newProject.description}
             type="text"
-            placeholder="Description courte (optionnel)"
+            placeholder={i18n.t('noDescription')}
             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30"
           />
           <textarea
             bind:value={newProject.instructions}
             rows={4}
-            placeholder="Instructions pour l'IA (optionnel)"
+            placeholder={i18n.t('instructionsOptional')}
             class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30"
           ></textarea>
           <textarea
             bind:value={newProject.context_data}
             rows={4}
-            placeholder="Donnees de contexte (optionnel)"
+            placeholder={i18n.t('contextData')}
             class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30"
           ></textarea>
           <button
@@ -213,14 +214,14 @@
             onclick={handleCreate}
             class="inline-flex items-center justify-center rounded-full bg-teal-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-600"
           >
-            Creer le projet
+            {i18n.t('createProject')}
           </button>
         </div>
       </section>
 
       <!-- Project list + detail -->
       <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-foreground">Vos projets</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-foreground">{i18n.t('projects')}</h2>
         <div class="mt-4 grid gap-3">
           {#if loadingProjects}
             <div class="space-y-2">
@@ -229,7 +230,7 @@
               {/each}
             </div>
           {:else if projects.length === 0}
-            <p class="text-sm text-gray-500 dark:text-muted-foreground">Aucun projet pour le moment.</p>
+            <p class="text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('noProjectsYet')}</p>
           {:else}
             {#each projects as project (project.id)}
               <div
@@ -246,7 +247,7 @@
                 >
                   <p class="font-semibold">{project.name}</p>
                   <p class="text-xs text-gray-500 dark:text-muted-foreground">
-                    {project.description || 'Aucune description'}
+                    {project.description || i18n.t('noDescription')}
                   </p>
                 </button>
                 <button
@@ -254,7 +255,7 @@
                   onclick={() => openInChat(project.id)}
                   class="mt-2 inline-flex text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
                 >
-                  Ouvrir dans le chat
+                  {i18n.t('openInChat')}
                 </button>
               </div>
             {/each}
@@ -263,13 +264,13 @@
 
         {#if selectedProject}
           <div class="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-border dark:bg-card/60">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-foreground">Modifier le projet</h3>
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-foreground">{i18n.t('editProject')}</h3>
             <button
               type="button"
               onclick={() => openInChat(selectedProject!.id)}
               class="mt-2 inline-flex text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
             >
-              Ouvrir le projet dans le chat
+              {i18n.t('openInChat')}
             </button>
             <div class="mt-3 grid gap-3">
               <input
@@ -298,26 +299,26 @@
                   onclick={handleUpdate}
                   class="rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600"
                 >
-                  Enregistrer
+                  {i18n.t('save')}
                 </button>
                 <button
                   type="button"
                   onclick={() => { confirmProjectDelete = true; }}
                   class="rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10"
                 >
-                  Supprimer le projet
+                  {i18n.t('deleteProject')}
                 </button>
               </div>
             </div>
 
             <!-- Conversations -->
             <div class="mt-6 border-t border-gray-200 pt-4 dark:border-border">
-              <h4 class="text-sm font-semibold text-gray-700 dark:text-foreground">Conversations</h4>
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-foreground">{i18n.t('conversations')}</h4>
               <div class="mt-3 space-y-2">
                 {#if loadingThreads}
                   <ThreadListSkeleton />
                 {:else if threads.length === 0}
-                  <p class="text-xs text-gray-500 dark:text-muted-foreground">Aucune conversation pour ce projet.</p>
+                  <p class="text-xs text-gray-500 dark:text-muted-foreground">{i18n.t('noConversationsForProject')}</p>
                 {:else}
                   {#each threads as thread (thread.id)}
                     <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs dark:border-border dark:bg-card">
@@ -325,12 +326,12 @@
                         <input
                           bind:value={editingThreadTitle}
                           type="text"
-                          placeholder="Titre de conversation"
+                          placeholder={i18n.t('conversationTitle')}
                           class="mr-3 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30"
                         />
                       {:else}
                         <span class="font-semibold text-gray-700 dark:text-foreground">
-                          {thread.title || 'Conversation sans titre'}
+                          {thread.title || i18n.t('untitledConversation')}
                         </span>
                       {/if}
                       <div class="flex items-center gap-2">
@@ -340,14 +341,14 @@
                             onclick={() => handleRenameThread(thread.id)}
                             class="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
                           >
-                            Enregistrer
+                            {i18n.t('save')}
                           </button>
                           <button
                             type="button"
                             onclick={() => { editingThreadId = null; editingThreadTitle = ''; }}
                             class="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground"
                           >
-                            Annuler
+                            {i18n.t('cancel')}
                           </button>
                         {:else}
                           <button
@@ -355,21 +356,21 @@
                             onclick={() => openInChat(selectedProject!.id, thread.id)}
                             class="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200"
                           >
-                            Ouvrir
+                            {i18n.t('open')}
                           </button>
                           <button
                             type="button"
                             onclick={() => { editingThreadId = thread.id; editingThreadTitle = thread.title || ''; }}
                             class="text-xs font-semibold text-gray-600 hover:text-gray-800 dark:text-muted-foreground dark:hover:text-foreground"
                           >
-                            Renommer
+                            {i18n.t('rename')}
                           </button>
                           <button
                             type="button"
                             onclick={() => { confirmThreadDelete = { open: true, threadId: thread.id }; }}
                             class="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                           >
-                            Supprimer
+                            {i18n.t('delete')}
                           </button>
                         {/if}
                       </div>
@@ -388,15 +389,15 @@
   {#if confirmThreadDelete.open}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none">
-        <h4 class="text-base font-semibold text-gray-900 dark:text-foreground">Supprimer la conversation</h4>
-        <p class="mt-2 text-sm text-gray-600 dark:text-muted-foreground">Cette action est irreversible.</p>
+        <h4 class="text-base font-semibold text-gray-900 dark:text-foreground">{i18n.t('deleteThread')}</h4>
+        <p class="mt-2 text-sm text-gray-600 dark:text-muted-foreground">{i18n.t('irreversibleAction')}</p>
         <div class="mt-5 flex justify-end gap-2">
           <button
             type="button"
             class="rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted"
             onclick={() => { confirmThreadDelete = { open: false, threadId: null }; }}
           >
-            Annuler
+            {i18n.t('cancel')}
           </button>
           <button
             type="button"
@@ -407,7 +408,7 @@
               if (target) handleDeleteThread(target);
             }}
           >
-            Supprimer
+            {i18n.t('delete')}
           </button>
         </div>
       </div>
@@ -418,9 +419,9 @@
   {#if confirmProjectDelete}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none">
-        <h4 class="text-base font-semibold text-gray-900 dark:text-foreground">Supprimer le projet</h4>
+        <h4 class="text-base font-semibold text-gray-900 dark:text-foreground">{i18n.t('deleteProject')}</h4>
         <p class="mt-2 text-sm text-gray-600 dark:text-muted-foreground">
-          Ce projet sera supprime et ses conversations detachees. Action irreversible.
+          {i18n.t('confirmDeleteProjectDetails')}
         </p>
         <div class="mt-5 flex justify-end gap-2">
           <button
@@ -428,14 +429,14 @@
             class="rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted"
             onclick={() => { confirmProjectDelete = false; }}
           >
-            Annuler
+            {i18n.t('cancel')}
           </button>
           <button
             type="button"
             class="rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700"
             onclick={() => { confirmProjectDelete = false; handleDelete(); }}
           >
-            Supprimer
+            {i18n.t('delete')}
           </button>
         </div>
       </div>

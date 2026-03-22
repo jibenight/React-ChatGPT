@@ -3,6 +3,7 @@
   import DOMPurify from 'dompurify';
   import * as tauri from '$lib/tauri';
   import { appStore } from '$stores/app.svelte';
+  import { i18n } from '$lib/i18n';
 
   interface SearchResult {
     id: number;
@@ -92,7 +93,7 @@
       bind:value={query}
       oninput={() => { open = true; }}
       onfocus={() => { if (query.trim().length >= 2) open = true; }}
-      placeholder="Rechercher dans les messages..."
+      placeholder={i18n.t('searchInMessages')}
       class="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-9 text-xs text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground dark:focus:border-teal-500"
     />
     {#if query}
@@ -110,15 +111,15 @@
     <div class="absolute left-4 right-4 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-border dark:bg-card">
       {#if loading}
         <p class="px-4 py-3 text-xs text-gray-500 dark:text-muted-foreground">
-          Recherche en cours...
+          {i18n.t('searching')}
         </p>
       {:else if results.length === 0}
         <p class="px-4 py-3 text-xs text-gray-500 dark:text-muted-foreground">
-          Aucun resultat
+          {i18n.t('noResults')}
         </p>
       {:else}
         <p class="border-b border-gray-100 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-gray-400 dark:border-border dark:text-muted-foreground">
-          {total} resultat{total > 1 ? 's' : ''}
+          {total} résultat{total > 1 ? 's' : ''}
         </p>
         {#each results as result (result.id)}
           <button
@@ -129,7 +130,7 @@
             <MessageSquare class="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-500 dark:text-teal-400" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs font-semibold text-gray-900 dark:text-foreground">
-                {result.thread_title || 'Conversation sans titre'}
+                {result.thread_title || i18n.t('untitledConversation')}
               </p>
               <p
                 class="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-gray-600 dark:text-muted-foreground"

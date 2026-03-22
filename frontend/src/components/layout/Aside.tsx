@@ -26,7 +26,7 @@ function Aside() {
   const selectedThreadId = useAppStore((s) => s.selectedThreadId);
   const setSelectedThreadId = useAppStore((s) => s.setSelectedThreadId);
 
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { userData } = useUser();
   const { theme, toggleTheme } = useTheme();
   const hasUserData = userData && userData.username;
@@ -162,13 +162,13 @@ function Aside() {
           </div>
         )}
         <p className='min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-foreground'>
-          {hasUserData ? userData.username : 'Chargement...'}
+          {hasUserData ? userData.username : t('common:loading')}
         </p>
         <button
           type='button'
           onClick={() => setShowSettings((prev) => !prev)}
           className='ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-card dark:hover:text-foreground'
-          title='Paramètres'
+          title={t('common:settings')}
         >
           <Settings className='h-4 w-4' />
         </button>
@@ -182,7 +182,7 @@ function Aside() {
         >
           <div className='flex items-center justify-between'>
             <span className='text-xs font-semibold text-gray-700 dark:text-foreground'>
-              {isDark ? 'Sombre' : 'Clair'}
+              {isDark ? t('common:themeDark') : t('common:themeLight')}
             </span>
             <button
               type='button'
@@ -228,7 +228,7 @@ function Aside() {
                 className='flex w-full items-center gap-2 rounded-md px-1 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:text-foreground dark:hover:bg-background'
               >
                 <Lock className='h-3.5 w-3.5' />
-                Verrouiller
+                {t('common:lock')}
               </button>
             </>
           )}
@@ -282,7 +282,7 @@ function Aside() {
             </div>
           )}
           <span className='truncate text-xs font-semibold text-gray-700 dark:text-foreground'>
-            {selectedOption?.name || 'Choisir le fournisseur IA'}
+            {selectedOption?.name || t('chat:chooseProvider')}
           </span>
           <ChevronRight className='ml-auto h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-muted-foreground' />
         </button>
@@ -295,7 +295,7 @@ function Aside() {
           className='flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground'
         >
           <User className='h-4 w-4' />
-          Profil
+          {t('profile:profile')}
         </button>
       </div>
 

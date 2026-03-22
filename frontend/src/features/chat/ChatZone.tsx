@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as tauri from '@/tauriClient';
 import { useExternalStoreRuntime } from '@assistant-ui/react';
 import { v4 as uuidv4 } from 'uuid';
@@ -82,6 +83,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
   const projectId = useAppStore(s => s.selectedProjectId);
   const onThreadChange = useAppStore(s => s.setSelectedThreadId);
 
+  const { t } = useTranslation();
   const { userData } = useUser();
   const activeUserId = userData?.id || userData?.userId;
 
@@ -143,7 +145,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
       .catch((err: any) => {
         setError(
           err.response?.data?.error ||
-            'Erreur lors du chargement de la conversation',
+            t('chat:loadConversationError'),
         );
         setHasMoreHistory(false);
       })
@@ -172,7 +174,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
     } catch (err: any) {
       setError(
         err.response?.data?.error ||
-          'Erreur lors du chargement des messages pr\u00e9c\u00e9dents',
+          t('chat:loadPreviousMessagesError'),
       );
     } finally {
       setLoadingMoreHistory(false);
@@ -185,7 +187,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
     const attachments = appendMessage?.attachments ?? [];
     if (!text.trim() && attachments.length === 0) return;
     if (!userData?.id && !userData?.userId) {
-      setError('Utilisateur non connect\u00e9');
+      setError(t('chat:userNotConnected'));
       return;
     }
 
@@ -302,11 +304,11 @@ function ChatZone({ sessionId }: { sessionId: string }) {
   const handleRetryLast = useCallback(async () => {
     if (!lastFailedRequest) return;
     if (lastFailedRequest.threadId !== (threadId || sessionId)) {
-      setError('La conversation a chang\u00e9. Relancez le message.');
+      setError(t('chat:conversationChanged'));
       return;
     }
     if (!userData?.id && !userData?.userId) {
-      setError('Utilisateur non connect\u00e9');
+      setError(t('chat:userNotConnected'));
       return;
     }
     setLoading(true);
@@ -452,7 +454,7 @@ function ChatZone({ sessionId }: { sessionId: string }) {
                 className='rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/50'
                 disabled={loading}
               >
-                {loading ? 'Nouvelle tentative...' : 'R\u00e9essayer'}
+                {loading ? t('common:retrying') : t('common:retry')}
               </button>
             )}
           </div>

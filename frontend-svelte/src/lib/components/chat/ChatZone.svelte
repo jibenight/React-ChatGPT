@@ -4,6 +4,7 @@
   import { streamChat, resolveChatError } from '$lib/stream-chat';
   import { appStore } from '$lib/stores/app.svelte';
   import { userStore } from '$lib/stores/user.svelte';
+  import { i18n } from '$lib/i18n';
   import ChatMessageList from './ChatMessageList.svelte';
   import ChatComposer from './ChatComposer.svelte';
   import type { ChatMessage, ChatRole, FailedRequest } from '$lib/types';
@@ -113,7 +114,7 @@
       })
       .catch((err: any) => {
         error =
-          err?.message || 'Erreur lors du chargement de la conversation';
+          err?.message || i18n.t('loadConversationError');
         hasMoreHistory = false;
       })
       .finally(() => {
@@ -143,7 +144,7 @@
       historyCursor = resolveHistoryCursor(data || []);
       hasMoreHistory = (data || []).length === HISTORY_PAGE_SIZE;
     } catch (err: any) {
-      error = err?.message || 'Erreur lors du chargement des messages precedents';
+      error = err?.message || i18n.t('loadPreviousMessagesError');
     } finally {
       loadingMoreHistory = false;
     }
@@ -155,7 +156,7 @@
 
     const userData = userStore.userData;
     if (!userData?.id && !userData?.userId) {
-      error = 'Utilisateur non connecté';
+      error = i18n.t('userNotConnected');
       return;
     }
 
@@ -242,12 +243,12 @@
     const threadId = appStore.selectedThreadId;
     const activeThreadId = threadId || sessionId;
     if (lastFailedRequest.threadId !== activeThreadId) {
-      error = 'La conversation a changé. Relancez le message.';
+      error = i18n.t('conversationChanged');
       return;
     }
     const userData = userStore.userData;
     if (!userData?.id && !userData?.userId) {
-      error = 'Utilisateur non connecté';
+      error = i18n.t('userNotConnected');
       return;
     }
 
@@ -327,7 +328,7 @@
             disabled={loading}
             class="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/50"
           >
-            {loading ? 'Nouvelle tentative...' : 'Réessayer'}
+            {loading ? i18n.t('retrying') : i18n.t('retry')}
           </button>
         {/if}
       </div>

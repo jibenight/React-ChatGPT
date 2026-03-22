@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/stores/appStore';
 
 function SidebarModeToggle() {
+  const { t } = useTranslation();
   const projectMode = useAppStore((s) => s.projectMode);
   const setProjectMode = useAppStore((s) => s.setProjectMode);
 
@@ -15,7 +17,7 @@ function SidebarModeToggle() {
             : 'text-gray-500 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
         }`}
       >
-        Projet
+        {t('projects:projectMode')}
       </button>
       <button
         type='button'
@@ -26,7 +28,7 @@ function SidebarModeToggle() {
             : 'text-gray-500 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
         }`}
       >
-        Libre
+        {t('projects:freeMode')}
       </button>
     </div>
   );

@@ -1,4 +1,4 @@
-import '@/i18n';
+import i18n from '@/i18n';
 import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -62,7 +62,7 @@ function AppGate() {
 
   return (
     <Router>
-      <Suspense fallback={<div>Chargement...</div>}>
+      <Suspense fallback={<div>{i18n.t('common:loading')}</div>}>
         <Routes>
           <Route path='/' element={<App />} />
           <Route path='/chat' element={<App />} />

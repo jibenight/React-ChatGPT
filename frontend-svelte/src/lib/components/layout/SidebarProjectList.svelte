@@ -1,6 +1,7 @@
 <script lang="ts">
   import { FolderOpen, ChevronDown, Settings } from 'lucide-svelte';
   import { appStore } from '$stores/app.svelte';
+  import { i18n } from '$lib/i18n';
 
   let { activeProject, projects, onSelectProject, onOpenSettings }: {
     activeProject: any;
@@ -10,7 +11,7 @@
   } = $props();
 
   let open = $state(false);
-  let dropdownRef: HTMLDivElement;
+  let dropdownRef = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
     if (!open) return;
@@ -38,7 +39,7 @@
     >
       <FolderOpen class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-muted-foreground" />
       <span class="flex-1 truncate text-left font-semibold">
-        {activeProject?.name || 'Aucun projet sélectionné'}
+        {activeProject?.name || i18n.t('noProjectSelected')}
       </span>
       <ChevronDown class="h-3.5 w-3.5 shrink-0 text-gray-400 transition dark:text-muted-foreground {open ? 'rotate-180' : ''}" />
     </button>
@@ -48,7 +49,7 @@
         <!-- Project list -->
         <div class="max-h-48 overflow-y-auto">
           {#if projects.length === 0}
-            <p class="px-3 py-2 text-xs text-gray-400 dark:text-muted-foreground">Aucun projet</p>
+            <p class="px-3 py-2 text-xs text-gray-400 dark:text-muted-foreground">{i18n.t('noProjects')}</p>
           {:else}
             {#each projects as project (project.id)}
               <button
@@ -73,7 +74,7 @@
             class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground"
           >
             <Settings class="h-3 w-3" />
-            Gérer les projets
+            {i18n.t('manage')} {i18n.t('projects')}
           </button>
         </div>
       </div>

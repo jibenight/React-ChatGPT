@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import * as tauri from '@/tauriClient';
 import type { Thread } from '@/types';
@@ -15,6 +16,7 @@ type UseThreadsReturn = {
 };
 
 export function useThreads(): UseThreadsReturn {
+  const { t } = useTranslation();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +29,11 @@ export function useThreads(): UseThreadsReturn {
       setThreads(result || []);
     } catch (err) {
       console.error(err);
-      setError('Erreur lors du chargement des conversations.');
+      setError(t('chat:loadThreadsError'));
     } finally {
       setLoadingThreads(false);
     }
-  }, []);
+  }, [t]);
 
   const createThread = useCallback(async (title?: string | null, projectId?: number | null): Promise<Thread | null> => {
     setError(null);
@@ -39,7 +41,7 @@ export function useThreads(): UseThreadsReturn {
     const tempId = `temp-${Date.now()}`;
     const optimisticThread: Thread = {
       id: tempId,
-      title: title || 'Nouvelle conversation',
+      title: title || t('chat:newConversation'),
       project_id: projectId || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -67,11 +69,11 @@ export function useThreads(): UseThreadsReturn {
     } catch (err) {
       console.error(err);
       setThreads(previousThreads);
-      setError('Erreur lors de la création de la conversation.');
-      toast.error('Erreur lors de la création de la conversation');
+      setError(t('chat:createThreadError'));
+      toast.error(t('chat:createThreadError'));
       return null;
     }
-  }, []);
+  }, [t]);
 
   const renameThread = useCallback(async (threadId: string, title: string) => {
     setError(null);
@@ -87,10 +89,10 @@ export function useThreads(): UseThreadsReturn {
     } catch (err) {
       console.error(err);
       setThreads(previousThreads);
-      setError('Erreur lors du renommage de la conversation.');
-      toast.error('Erreur lors du renommage de la conversation');
+      setError(t('chat:renameThreadError'));
+      toast.error(t('chat:renameThreadError'));
     }
-  }, []);
+  }, [t]);
 
   const deleteThread = useCallback(async (threadId: string) => {
     setError(null);
@@ -106,10 +108,10 @@ export function useThreads(): UseThreadsReturn {
     } catch (err) {
       console.error(err);
       setThreads(previousThreads);
-      setError('Erreur lors de la suppression de la conversation.');
-      toast.error('Erreur lors de la suppression de la conversation');
+      setError(t('chat:deleteThreadError'));
+      toast.error(t('chat:deleteThreadError'));
     }
-  }, []);
+  }, [t]);
 
   const assignThreadToProject = useCallback(async (threadId: string, projectId: number | null) => {
     setError(null);
@@ -117,9 +119,9 @@ export function useThreads(): UseThreadsReturn {
       await tauri.updateThread(threadId, { project_id: projectId });
     } catch (err) {
       console.error(err);
-      setError('Erreur lors de l\'assignation de la conversation au projet.');
+      setError(t('chat:assignThreadError'));
     }
-  }, []);
+  }, [t]);
 
   return {
     threads,

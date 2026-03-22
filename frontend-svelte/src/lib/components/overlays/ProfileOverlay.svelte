@@ -3,6 +3,7 @@
   import { X, User, KeyRound, ShieldAlert } from 'lucide-svelte';
   import * as tauri from '$lib/tauri';
   import { userStore } from '$lib/stores/user.svelte';
+  import { i18n } from '$lib/i18n';
 
   interface Props {
     onClose: () => void;
@@ -48,14 +49,14 @@
     { key: 'groq', label: 'Groq', placeholder: 'gsk_...' },
   ];
 
-  const navItems: { id: Section; label: string; icon: any; color: string }[] = [
-    { id: 'account', label: 'Compte', icon: User, color: 'text-teal-500' },
-    { id: 'apikeys', label: 'Clés API', icon: KeyRound, color: 'text-violet-500' },
-    { id: 'danger', label: 'Zone de danger', icon: ShieldAlert, color: 'text-red-400' },
-  ];
+  const navItems = $derived<{ id: Section; label: string; icon: any; color: string }[]>([
+    { id: 'account', label: i18n.t('profile'), icon: User, color: 'text-teal-500' },
+    { id: 'apikeys', label: i18n.t('apiKeys'), icon: KeyRound, color: 'text-violet-500' },
+    { id: 'danger', label: i18n.t('dangerZone'), icon: ShieldAlert, color: 'text-red-400' },
+  ]);
 
   const userData = $derived(userStore.userData);
-  const displayName = $derived(userData?.username || 'Utilisateur');
+  const displayName = $derived(userData?.username || i18n.t('user'));
   const displayEmail = $derived(userData?.email || '—');
   const initials = $derived(
     (displayName || 'U')
@@ -120,10 +121,10 @@
       await tauri.updateUsername(trimmed);
       userStore.setUserData({ ...userData, username: trimmed });
       usernameInput = '';
-      showActionMessage({ type: 'success', text: 'Nom d\'utilisateur mis à jour.' });
+      showActionMessage({ type: 'success', text: i18n.t('saveKeySuccess') });
     } catch (err) {
       console.error(err);
-      showActionMessage({ type: 'error', text: 'Impossible de mettre à jour le profil.' });
+      showActionMessage({ type: 'error', text: i18n.t('saveKeyError') });
     } finally {
       isSaving = false;
     }
@@ -137,10 +138,10 @@
       await tauri.saveApiKey(provider, value);
       setKeyValue(provider, '');
       apiStatus = { ...apiStatus, [provider]: true };
-      showActionMessage({ type: 'success', text: `Clé ${provider.toUpperCase()} enregistrée.` });
+      showActionMessage({ type: 'success', text: i18n.t('saveKeySuccess') });
     } catch (err) {
       console.error(err);
-      showActionMessage({ type: 'error', text: 'Impossible d\'enregistrer la clé API.' });
+      showActionMessage({ type: 'error', text: i18n.t('saveKeyError') });
     } finally {
       isSaving = false;
     }
@@ -151,10 +152,10 @@
     try {
       await tauri.deleteApiKey(provider);
       apiStatus = { ...apiStatus, [provider]: false };
-      showActionMessage({ type: 'success', text: `Clé ${provider.toUpperCase()} supprimée.` });
+      showActionMessage({ type: 'success', text: i18n.t('deleteKeySuccess', { provider: provider.toUpperCase() }) });
     } catch (err) {
       console.error(err);
-      showActionMessage({ type: 'error', text: `Impossible de supprimer la clé ${provider.toUpperCase()}.` });
+      showActionMessage({ type: 'error', text: i18n.t('deleteKeyError', { provider: provider.toUpperCase() }) });
     } finally {
       isDeleting = false;
     }
@@ -179,7 +180,7 @@
   <!-- ── Navigation gauche ── -->
   <nav
     class="flex w-52 shrink-0 flex-col border-r border-gray-100 bg-gray-50/80 px-3 py-5 dark:border-white/[0.06] dark:bg-slate-900/60"
-    aria-label="Navigation du profil"
+    aria-label={i18n.t('profileNav')}
   >
     <!-- Profile card mini -->
     <div class="mb-5 flex items-center gap-3 rounded-xl bg-white px-3 py-3 shadow-sm dark:bg-card">
@@ -218,10 +219,10 @@
         type="button"
         onclick={onClose}
         class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-200/70 hover:text-gray-900 dark:text-muted-foreground dark:hover:bg-white/[0.06]"
-        aria-label="Fermer le profil"
+        aria-label={i18n.t('closeProfile')}
       >
         <X class="h-4 w-4" />
-        Fermer
+        {i18n.t('close')}
       </button>
     </div>
   </nav>
@@ -242,9 +243,9 @@
     {#if activeSection === 'account'}
       <section class="flex-1 px-8 py-8" aria-labelledby="section-account">
         <header class="mb-6">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground">Informations</p>
-          <h3 id="section-account" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">Compte</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">Gérez vos informations personnelles.</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground">{i18n.t('information')}</p>
+          <h3 id="section-account" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">{i18n.t('account')}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('managePersonalInfo')}</p>
         </header>
 
         <!-- Profile card -->
@@ -262,12 +263,12 @@
 
         <!-- Edit username -->
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
-          <h4 class="mb-4 text-sm font-semibold text-gray-800 dark:text-foreground">Modifier le nom d'utilisateur</h4>
+          <h4 class="mb-4 text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('editProfile')}</h4>
           <div class="flex gap-3">
             <input
               type="text"
               bind:value={usernameInput}
-              placeholder="Nouveau nom d'utilisateur"
+              placeholder={i18n.t('username')}
               class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30"
             />
             <button
@@ -276,7 +277,7 @@
               disabled={!usernameInput.trim() || isSaving}
               class="rounded-xl bg-teal-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+              {isSaving ? i18n.t('saving') : i18n.t('save')}
             </button>
           </div>
         </div>
@@ -284,8 +285,8 @@
         <!-- API Status overview -->
         <div class="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
           <div class="flex items-center justify-between mb-4">
-            <h4 class="text-sm font-semibold text-gray-800 dark:text-foreground">Statut des fournisseurs</h4>
-            <span class="text-xs text-gray-400 dark:text-muted-foreground">{enabledCount} sur 5 configurés</span>
+            <h4 class="text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('providerStatus')}</h4>
+            <span class="text-xs text-gray-400 dark:text-muted-foreground">{i18n.t('providerStatusCount', { count: enabledCount })}</span>
           </div>
           <div class="grid grid-cols-5 gap-2">
             {#each apiProviders as provider}
@@ -299,7 +300,7 @@
             {/each}
           </div>
           <div class="mt-4 rounded-xl border border-teal-100 bg-teal-50/70 px-4 py-2.5 text-xs text-teal-700 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-200">
-            Vos clés API sont chiffrées et stockées en base de données.
+            {i18n.t('apiKeysEncrypted')}
           </div>
         </div>
       </section>
@@ -309,9 +310,9 @@
     {#if activeSection === 'apikeys'}
       <section class="flex-1 px-8 py-8" aria-labelledby="section-apikeys">
         <header class="mb-6">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground">Authentification</p>
-          <h3 id="section-apikeys" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">Clés API</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">Ajoutez vos clés pour accéder à chaque fournisseur IA.</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground">{i18n.t('authentication')}</p>
+          <h3 id="section-apikeys" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">{i18n.t('apiKeys')}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('addKeysDescription')}</p>
         </header>
 
         <div class="space-y-3">
@@ -326,7 +327,7 @@
                   <h4 class="text-sm font-semibold text-gray-800 dark:text-foreground">{provider.label}</h4>
                 </div>
                 <span class="text-xs font-medium {enabled ? 'text-emerald-600 dark:text-emerald-300' : 'text-gray-400 dark:text-muted-foreground'}">
-                  {enabled ? 'Configurée' : 'Non renseignée'}
+                  {enabled ? i18n.t('configured') : i18n.t('notConfigured')}
                 </span>
               </div>
               <div class="flex gap-2">
@@ -345,7 +346,7 @@
                   disabled={!getKeyValue(provider.key).trim() || isSaving}
                   class="rounded-xl bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {enabled ? 'Mettre à jour' : 'Enregistrer'}
+                  {enabled ? i18n.t('save') : i18n.t('save')}
                 </button>
               </div>
             </div>
@@ -358,14 +359,14 @@
     {#if activeSection === 'danger'}
       <section class="flex-1 px-8 py-8" aria-labelledby="section-danger">
         <header class="mb-6">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400 dark:text-red-300">Attention</p>
-          <h3 id="section-danger" class="mt-1 text-xl font-semibold text-red-700 dark:text-red-300">Zone de danger</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">Actions irréversibles sur vos clés API.</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400 dark:text-red-300">{i18n.t('warning')}</p>
+          <h3 id="section-danger" class="mt-1 text-xl font-semibold text-red-700 dark:text-red-300">{i18n.t('dangerZone')}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('dangerZoneDescription')}</p>
         </header>
 
         <div class="rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/40 dark:bg-card/60">
           <p class="mb-5 text-sm text-gray-600 dark:text-muted-foreground">
-            La suppression d'une clé est définitive. Vous devrez en saisir une nouvelle pour réutiliser le fournisseur.
+            {i18n.t('dangerZoneDetail')}
           </p>
           <div class="space-y-3">
             {#each apiProviders as provider}
@@ -383,7 +384,7 @@
                   disabled={!enabled || isDeleting}
                   class="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
                 >
-                  Supprimer
+                  {i18n.t('delete')}
                 </button>
               </div>
             {/each}
@@ -398,15 +399,15 @@
 {#if confirmDelete.open}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
     <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-card dark:shadow-none">
-      <h4 id="confirm-delete-title" class="text-lg font-semibold text-gray-900 dark:text-foreground">Supprimer la clé API</h4>
+      <h4 id="confirm-delete-title" class="text-lg font-semibold text-gray-900 dark:text-foreground">{i18n.t('deleteApiKey')}</h4>
       <p class="mt-2 text-sm text-gray-600 dark:text-muted-foreground">
-        Confirmer la suppression de la clé
+        {i18n.t('confirmDeleteKey')}
         <span class="font-semibold">{confirmDelete.provider?.toUpperCase()}</span>.
-        Cette action est irréversible.
+        {i18n.t('irreversibleAction')}
       </p>
       <div class="mt-6 flex justify-end gap-3">
-        <button type="button" onclick={closeDeleteConfirm} disabled={isDeleting} class="rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted">Annuler</button>
-        <button type="button" onclick={confirmDeleteKey} disabled={isDeleting} class="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{isDeleting ? 'Suppression...' : 'Supprimer'}</button>
+        <button type="button" onclick={closeDeleteConfirm} disabled={isDeleting} class="rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted">{i18n.t('cancel')}</button>
+        <button type="button" onclick={confirmDeleteKey} disabled={isDeleting} class="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{isDeleting ? i18n.t('deleting') : i18n.t('delete')}</button>
       </div>
     </div>
   </div>

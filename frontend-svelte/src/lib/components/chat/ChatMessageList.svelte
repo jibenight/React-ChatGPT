@@ -3,6 +3,7 @@
   import MessageListSkeleton from '$lib/components/ui/MessageListSkeleton.svelte';
   import ChatMessage from './ChatMessage.svelte';
   import type { ChatMessage as ChatMessageType } from '$lib/types';
+  import { i18n } from '$lib/i18n';
 
   interface Props {
     messages: ChatMessageType[];
@@ -34,12 +35,12 @@
     }
   });
 
-  const suggestions = [
-    { title: 'Résumer un texte', subtitle: 'copiez-collez un article ou un document' },
-    { title: 'Écrire un e-mail', subtitle: 'professionnel ou informel, en français' },
-    { title: 'Expliquer un concept', subtitle: 'de manière simple et claire' },
-    { title: 'Générer du code', subtitle: 'dans le langage de votre choix' },
-  ];
+  const suggestions = $derived([
+    { title: i18n.t('suggestSummarize'), subtitle: i18n.t('suggestSummarizeSubtitle') },
+    { title: i18n.t('suggestCode'), subtitle: i18n.t('suggestCodeSubtitle') },
+    { title: i18n.t('suggestExplain'), subtitle: i18n.t('suggestExplainSubtitle') },
+    { title: i18n.t('suggestTranslate'), subtitle: i18n.t('suggestTranslateSubtitle') },
+  ]);
 </script>
 
 <div bind:this={scrollContainer} class="flex flex-1 flex-col overflow-y-auto">
@@ -52,7 +53,7 @@
           disabled={loadingMoreHistory}
           class="rounded-full border border-gray-200 bg-white px-4 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted"
         >
-          {loadingMoreHistory ? 'Chargement...' : 'Charger les messages précédents'}
+          {loadingMoreHistory ? i18n.t('loading') : i18n.t('loadPreviousMessages')}
         </button>
       </div>
     {/if}
@@ -63,8 +64,8 @@
       <!-- Empty state: assistant-ui style -->
       <div class="flex h-full flex-col">
         <div class="pt-8 pb-4">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-foreground">Bonjour !</h1>
-          <p class="mt-1 text-lg text-gray-400 dark:text-muted-foreground">Comment puis-je vous aider aujourd'hui ?</p>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-foreground">{i18n.t('greeting')}</h1>
+          <p class="mt-1 text-lg text-gray-400 dark:text-muted-foreground">{i18n.t('howCanIHelp')}</p>
         </div>
 
         <div class="flex-1"></div>

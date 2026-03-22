@@ -1,3 +1,5 @@
+import { i18n } from '$lib/i18n';
+
 export type StreamChatResult = {
   reply: string;
   threadId: string | null;
@@ -16,7 +18,7 @@ export const streamChat = async (
   _signal: AbortSignal,
 ): Promise<StreamChatResult> => {
   if (!isTauri) {
-    throw new Error('Tauri non disponible pour le streaming');
+    throw new Error(i18n.t('tauriNotAvailable'));
   }
 
   const { invoke, Channel } = await import('@tauri-apps/api/core');
@@ -67,10 +69,10 @@ export const streamChat = async (
 
 export const resolveChatError = (
   err: any,
-  fallback = 'Erreur lors de la requete de chat',
+  fallback?: string,
 ): string => {
   if (err?.name === 'AbortError' || err?.name === 'CanceledError') {
-    return 'Generation annulee.';
+    return i18n.t('generationCancelled');
   }
   const message = typeof err === 'string' ? err : err?.message;
   if (typeof message === 'string' && message.trim()) {
@@ -78,9 +80,9 @@ export const resolveChatError = (
       /Aucune cle API configuree pour ([a-z0-9_-]+)/i,
     );
     if (missingKeyMatch?.[1]) {
-      return `Aucune cle API enregistree pour ${missingKeyMatch[1]}. Selectionnez un fournisseur configure dans le panneau de gauche.`;
+      return i18n.t('noApiKeyForProvider', { provider: missingKeyMatch[1] });
     }
     return message.length > 350 ? `${message.slice(0, 347)}...` : message;
   }
-  return fallback;
+  return fallback ?? i18n.t('chatRequestError');
 };

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { SearchControls } from './ChatSearchBar';
 import * as tauri from '@/tauriClient';
@@ -34,6 +35,7 @@ function ChatHeader({
   handlePrevMatch,
   handleNextMatch,
 }: ChatHeaderProps) {
+  const { t } = useTranslation();
   const [exportOpen, setExportOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -75,10 +77,10 @@ function ChatHeader({
       <div className='mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3'>
         <div className='space-y-1'>
           <p className='text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
-            Conversation
+            {t('chat:conversation')}
           </p>
           <h2 className='text-lg font-semibold text-gray-800 dark:text-foreground'>
-            Chat
+            {t('chat:chat')}
           </h2>
         </div>
         <div className='flex items-center gap-2'>
@@ -87,7 +89,7 @@ function ChatHeader({
             onClick={() => setShowMobileSearch(!showMobileSearch)}
             className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground sm:hidden'
           >
-            {showMobileSearch ? 'Fermer' : 'Recherche'}
+            {showMobileSearch ? t('common:close') : t('common:search')}
           </button>
           <div className='hidden sm:flex'>
             <SearchControls
@@ -106,7 +108,7 @@ function ChatHeader({
               type='button'
               onClick={() => setExportOpen(prev => !prev)}
               disabled={!canExport}
-              title='Exporter la conversation'
+              title={t('chat:exportConversation')}
               className='rounded-full border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
             >
               <Download size={16} />
@@ -118,14 +120,14 @@ function ChatHeader({
                   onClick={() => handleExport('md')}
                   className='flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-foreground dark:hover:bg-muted'
                 >
-                  Exporter en Markdown
+                  {t('chat:exportMarkdown')}
                 </button>
                 <button
                   type='button'
                   onClick={() => handleExport('json')}
                   className='flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-foreground dark:hover:bg-muted'
                 >
-                  Exporter en JSON
+                  {t('chat:exportJson')}
                 </button>
               </div>
             )}
@@ -136,7 +138,7 @@ function ChatHeader({
             disabled={messagesCount === 0}
             className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
           >
-            Effacer la conversation
+            {t('chat:clearConversation')}
           </button>
           <div className='flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-border dark:bg-card dark:text-foreground'>
             <span className='h-2 w-2 rounded-full bg-teal-400' />

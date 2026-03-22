@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function normalizeContent(content: unknown): string {
   if (typeof content === 'string') return content;
@@ -114,6 +115,7 @@ export function SearchControls({
   handlePrevMatch,
   handleNextMatch,
 }: SearchControlsProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={`flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm dark:border-border dark:bg-card dark:text-foreground ${sizeClass}`}
@@ -123,7 +125,7 @@ export function SearchControls({
         ref={inputRef}
         value={searchQuery}
         onChange={event => setSearchQuery(event.target.value)}
-        placeholder='Rechercher\u2026'
+        placeholder={t('chat:searchPlaceholder')}
         className='w-40 bg-transparent text-xs text-gray-600 placeholder:text-gray-400 outline-none dark:text-foreground dark:placeholder:text-muted-foreground'
       />
       {searchQuery && (
@@ -132,12 +134,12 @@ export function SearchControls({
           className='text-gray-400 transition hover:text-gray-600 dark:text-muted-foreground dark:hover:text-foreground'
           onClick={() => setSearchQuery('')}
         >
-          Effacer
+          {t('common:clear')}
         </button>
       )}
       {searchQuery && (
         <span className='rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 dark:bg-teal-500/10 dark:text-teal-200'>
-          {searchMatchesCount} trouv\u00e9{searchMatchesCount > 1 ? 's' : ''}
+          {searchMatchesCount} {t('chat:found', { count: searchMatchesCount })}
         </span>
       )}
       {searchQuery && searchMatchesCount > 0 && (
@@ -152,14 +154,14 @@ export function SearchControls({
             onClick={handlePrevMatch}
             className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground'
           >
-            Pr\u00e9c\u00e9dent
+            {t('common:previous')}
           </button>
           <button
             type='button'
             onClick={handleNextMatch}
             className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground'
           >
-            Suivant
+            {t('common:next')}
           </button>
         </div>
       )}
@@ -190,6 +192,7 @@ export function MobileSearchPanel({
   handlePrevMatch,
   handleNextMatch,
 }: MobileSearchPanelProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={`mx-auto w-full max-w-4xl px-4 pt-3 sm:hidden transition-all duration-200 ${
@@ -201,14 +204,14 @@ export function MobileSearchPanel({
       <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white/90 p-3 shadow-sm dark:border-border dark:bg-card/80'>
         <div className='mb-3 flex items-center justify-between'>
           <div className='text-xs font-semibold text-gray-600 dark:text-muted-foreground'>
-            Recherche
+            {t('common:search')}
           </div>
           <button
             type='button'
             onClick={() => setShowMobileSearch(false)}
             className='rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:text-foreground'
           >
-            Fermer
+            {t('common:close')}
           </button>
         </div>
         <SearchControls
@@ -223,12 +226,8 @@ export function MobileSearchPanel({
         />
         <div className='mt-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:border-border dark:bg-muted dark:text-muted-foreground'>
           {searchQuery
-            ? `${searchMatchesCount} r\u00e9sultat${
-                searchMatchesCount > 1 ? 's' : ''
-              } \u00b7 ${activeMatchIndex + 1}/${
-                searchMatchesCount || 0
-              } affich\u00e9`
-            : 'Entrez un mot-cl\u00e9 pour rechercher dans la conversation.'}
+            ? `${t('chat:resultCount', { count: searchMatchesCount })} · ${activeMatchIndex + 1}/${searchMatchesCount || 0} ${t('chat:displayed')}`
+            : t('chat:searchKeywordHint')}
         </div>
       </div>
     </div>

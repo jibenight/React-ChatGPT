@@ -14,9 +14,12 @@ i18n
     },
     fallbackLng: 'fr',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'chat', 'projects', 'profile'],
+    ns: ['common', 'auth', 'chat', 'projects', 'profile', 'provider', 'guide'],
     interpolation: {
       escapeValue: false,
+    },
+    react: {
+      useSuspense: false,
     },
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],

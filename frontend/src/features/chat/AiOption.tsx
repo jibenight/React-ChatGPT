@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { HardDrive } from 'lucide-react';
@@ -64,11 +65,21 @@ const providers = [
 
 const isTauri = '__TAURI_INTERNALS__' in window;
 
+const providerDescriptionKeys = {
+  openai: 'provider:openaiDescription',
+  gemini: 'provider:geminiDescription',
+  claude: 'provider:claudeDescription',
+  mistral: 'provider:mistralDescription',
+  groq: 'provider:groqDescription',
+  local: 'provider:localDescription',
+};
+
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 export default function Aioption({ selectedOption, setSelectedOption }) {
+  const { t } = useTranslation();
   const [localModels, setLocalModels] = useState([]);
 
   const fetchLocalModels = async () => {
@@ -192,7 +203,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
           {({ open }) => (
             <>
               <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-muted-foreground'>
-                Choisir le fournisseur
+                {t('provider:chooseProvider')}
               </Listbox.Label>
               <div className='relative mt-2'>
                 <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-card dark:text-foreground dark:ring-border'>
@@ -292,7 +303,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
           )}
         </Listbox>
         <p className='text-white mt-2 text-sm dark:text-muted-foreground'>
-          {selectedProvider.description}
+          {t(providerDescriptionKeys[selectedProvider.id] || '') || selectedProvider.description}
         </p>
       </div>
 
@@ -301,7 +312,7 @@ export default function Aioption({ selectedOption, setSelectedOption }) {
           {({ open }) => (
             <>
               <Listbox.Label className='block text-sm font-medium leading-6 text-gray-200 dark:text-muted-foreground'>
-                Choisir le modèle
+                {t('provider:chooseModel')}
               </Listbox.Label>
               <div className='relative mt-2'>
                 <Listbox.Button className='relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm sm:leading-6 dark:bg-card dark:text-foreground dark:ring-border'>

@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 
@@ -7,11 +8,13 @@ function classNames(...classes) {
 }
 
 export default function Dropdown() {
+  const { t } = useTranslation();
+
   return (
     <Menu as='div' className='relative inline-block text-center p-2 w-full'>
       <div>
         <Menu.Button className='inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-card dark:text-foreground dark:ring-border dark:hover:bg-muted'>
-          Options
+          {t('common:options')}
           <ChevronDownIcon
             className='-mr-1 h-5 w-5 text-gray-400 dark:text-muted-foreground'
             aria-hidden='true'
@@ -41,7 +44,7 @@ export default function Dropdown() {
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
-                  Paramètres du compte
+                  {t('common:accountSettings')}
                 </button>
               )}
             </Menu.Item>
@@ -56,7 +59,7 @@ export default function Dropdown() {
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
-                  Support
+                  {t('common:support')}
                 </button>
               )}
             </Menu.Item>
@@ -71,7 +74,7 @@ export default function Dropdown() {
                     'block w-full px-4 py-2 text-left text-sm'
                   )}
                 >
-                  Licence
+                  {t('common:license')}
                 </button>
               )}
             </Menu.Item>
@@ -87,7 +90,7 @@ export default function Dropdown() {
                       'block w-full px-4 py-2 text-left text-sm'
                     )}
                   >
-                    Déconnexion
+                    {t('auth:logout')}
                   </button>
                 )}
               </Menu.Item>

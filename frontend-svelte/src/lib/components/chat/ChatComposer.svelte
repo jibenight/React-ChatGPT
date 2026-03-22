@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ArrowUp, Square } from 'lucide-svelte';
+  import { i18n } from '$lib/i18n';
 
   interface SendPayload {
     content: string;
@@ -98,8 +99,8 @@
       <textarea
         bind:value={text}
         bind:this={textareaRef}
-        placeholder="Envoyer un message..."
-        aria-label="Message à envoyer"
+        placeholder={i18n.t('typeMessage')}
+        aria-label={i18n.t('typeMessage')}
         rows="1"
         class="flex-1 resize-none bg-transparent text-sm leading-[1.375rem] text-gray-900 outline-none placeholder:text-gray-400 dark:text-foreground dark:placeholder:text-muted-foreground"
         onkeydown={handleKeyDown}
@@ -112,8 +113,8 @@
           type="button"
           onclick={onCancel}
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white transition hover:bg-gray-700 dark:bg-foreground dark:text-background dark:hover:bg-foreground/80"
-          title="Annuler"
-          aria-label="Annuler la génération"
+          title={i18n.t('cancel')}
+          aria-label={i18n.t('cancel')}
         >
           <Square class="h-3.5 w-3.5" />
         </button>
@@ -123,8 +124,8 @@
           onclick={handleSubmit}
           disabled={disabled || !text.trim()}
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800 text-white transition hover:bg-gray-700 disabled:bg-gray-300 disabled:text-gray-500 dark:bg-foreground dark:text-background dark:hover:bg-foreground/80 dark:disabled:bg-muted dark:disabled:text-muted-foreground"
-          title="Envoyer"
-          aria-label="Envoyer le message"
+          title={i18n.t('send')}
+          aria-label={i18n.t('send')}
         >
           <ArrowUp class="h-4 w-4" />
         </button>

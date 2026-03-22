@@ -1,4 +1,5 @@
 import { invoke, Channel } from '@tauri-apps/api/core';
+import i18n from '@/i18n';
 
 export type StreamChatResult = {
   reply: string;
@@ -63,10 +64,10 @@ export const streamChat = async (
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const resolveChatError = (
   err: any,
-  fallback = 'Erreur lors de la requête de chat',
+  fallback = i18n.t('chat:chatRequestError'),
 ): string => {
   if (err?.name === 'AbortError' || err?.name === 'CanceledError') {
-    return 'Génération annulée.';
+    return i18n.t('chat:generationCancelled');
   }
   const message = typeof err === 'string' ? err : err?.message;
   if (typeof message === 'string' && message.trim()) {
@@ -74,7 +75,7 @@ export const resolveChatError = (
       /Aucune clé API configurée pour ([a-z0-9_-]+)/i,
     );
     if (missingKeyMatch?.[1]) {
-      return `Aucune clé API enregistrée pour ${missingKeyMatch[1]}. Sélectionnez un fournisseur configuré dans le panneau de gauche.`;
+      return i18n.t('chat:noApiKeyForProvider', { provider: missingKeyMatch[1] });
     }
     return message.length > 350 ? `${message.slice(0, 347)}...` : message;
   }

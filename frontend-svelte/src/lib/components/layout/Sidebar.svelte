@@ -2,6 +2,7 @@
   import { PanelLeftClose, User, Settings } from 'lucide-svelte';
   import { appStore } from '$stores/app.svelte';
   import { userStore } from '$stores/user.svelte';
+  import { i18n } from '$lib/i18n';
   import * as tauri from '$lib/tauri';
   import SidebarSearch from './SidebarSearch.svelte';
   import SidebarModeToggle from './SidebarModeToggle.svelte';
@@ -134,8 +135,8 @@
         type="button"
         onclick={() => appStore.setSidebarCollapsed(true)}
         class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-card dark:hover:text-foreground"
-        aria-label="Masquer la barre latérale"
-        title="Masquer la sidebar"
+        aria-label={i18n.t('close')}
+        title={i18n.t('close')}
       >
         <PanelLeftClose class="h-4 w-4" />
       </button>
@@ -143,7 +144,7 @@
         type="button"
         onclick={() => appStore.setProfil(true)}
         class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-card dark:hover:text-foreground"
-        title="Profil"
+        title={i18n.t('profile')}
       >
         <User class="h-4 w-4" />
       </button>
@@ -151,7 +152,7 @@
         type="button"
         onclick={() => appStore.setSettingsOpen(true)}
         class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-card dark:hover:text-foreground"
-        title="Paramètres"
+        title={i18n.t('settings')}
       >
         <Settings class="h-4 w-4" />
       </button>

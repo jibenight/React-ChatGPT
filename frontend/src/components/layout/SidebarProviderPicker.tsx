@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Aioption from '@/features/chat/AiOption';
 import { HardDrive, Loader2, User } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -14,6 +15,7 @@ interface SidebarProviderPickerProps {
 }
 
 function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
+  const { t } = useTranslation();
   const [importing, setImporting] = useState(false);
   const profil = useAppStore((s) => s.profil);
   const setProfil = useAppStore((s) => s.setProfil);
@@ -28,13 +30,13 @@ function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
           <div className='flex items-start justify-between gap-3'>
             <div>
               <p className='text-[10px] uppercase tracking-[0.26em] text-gray-500 dark:text-muted-foreground'>
-                Fournisseur IA
+                {t('provider:aiProvider')}
               </p>
               <h2 className='mt-1 text-base font-semibold text-gray-900 dark:text-foreground'>
-                Choisir le modèle
+                {t('provider:chooseModel')}
               </h2>
               <p className='mt-1 text-xs text-gray-500 dark:text-muted-foreground'>
-                Change rapidement selon ton besoin.
+                {t('provider:chooseModelDescription')}
               </p>
             </div>
             <button
@@ -42,7 +44,7 @@ function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
               onClick={onClose}
               className='rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-card dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
             >
-              Fermer
+              {t('common:close')}
             </button>
           </div>
           <div className='mt-3 rounded-lg border border-gray-200 bg-gray-50 p-2 dark:border-border dark:bg-card'>
@@ -63,7 +65,7 @@ function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
               )}
               <div className='min-w-0'>
                 <p className='truncate text-xs font-semibold text-gray-900 dark:text-foreground'>
-                  {selectedOption?.name || 'Aucun modèle sélectionné'}
+                  {selectedOption?.name || t('chat:noModelSelected')}
                 </p>
                 <p className='truncate text-[11px] text-gray-500 dark:text-muted-foreground'>
                   {selectedOption?.provider || 'openai'}
@@ -85,18 +87,18 @@ function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
               onClick={async () => {
                 try {
                   const path = await open({
-                    filters: [{ name: 'Modèles GGUF', extensions: ['gguf'] }],
+                    filters: [{ name: t('provider:ggufModels'), extensions: ['gguf'] }],
                     multiple: false,
                   });
                   if (!path) return;
                   setImporting(true);
                   if (typeof path !== 'string') return;
                   await importModel(path);
-                  toast.success('Modèle importé avec succès');
+                  toast.success(t('provider:importSuccess'));
                   window.dispatchEvent(new Event('local-models-changed'));
                 } catch (err) {
                   toast.error(
-                    err instanceof Error ? err.message : "Erreur lors de l'import",
+                    err instanceof Error ? err.message : t('provider:importError'),
                   );
                 } finally {
                   setImporting(false);
@@ -107,12 +109,12 @@ function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
               {importing ? (
                 <>
                   <Loader2 className='h-4 w-4 animate-spin' />
-                  Import en cours...
+                  {t('provider:importing')}
                 </>
               ) : (
                 <>
                   <HardDrive className='h-4 w-4' />
-                  Importer un modèle IA
+                  {t('provider:importModel')}
                 </>
               )}
             </button>
@@ -126,7 +128,7 @@ function SidebarProviderPicker({ onClose }: SidebarProviderPickerProps) {
             className='flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground'
           >
             <User className='h-4 w-4' />
-            Profil
+            {t('profile:profile')}
           </button>
         </div>
       </div>

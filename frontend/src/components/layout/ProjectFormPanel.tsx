@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAppStore } from '@/stores/appStore';
 import * as tauri from '@/tauriClient';
@@ -34,6 +35,7 @@ function ProjectFormPanel({
   onRefreshProjects,
   setConfirmThreadDelete,
 }: ProjectFormPanelProps) {
+  const { t } = useTranslation();
   const selectedProjectId = useAppStore((s) => s.selectedProjectId);
   const selectedThreadId = useAppStore((s) => s.selectedThreadId);
   const setSelectedThreadId = useAppStore((s) => s.setSelectedThreadId);
@@ -73,10 +75,10 @@ function ProjectFormPanel({
       <div className='flex items-center justify-between'>
         <div>
           <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
-            Projets
+            {t('projects:projects')}
           </p>
           <h3 className='text-base font-semibold text-gray-900 dark:text-foreground'>
-            Gestion des projets
+            {t('projects:projectManagement')}
           </h3>
         </div>
         <button
@@ -84,7 +86,7 @@ function ProjectFormPanel({
           onClick={onClose}
           className='rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-card dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
         >
-          Fermer
+          {t('common:close')}
         </button>
       </div>
 
@@ -94,21 +96,21 @@ function ProjectFormPanel({
           className='flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-border dark:bg-card dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
         >
           <span className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
-            Vue projets
+            {t('projects:projectView')}
           </span>
-          <span className='text-xs font-semibold text-teal-600 dark:text-teal-300'>Ouvrir</span>
+          <span className='text-xs font-semibold text-teal-600 dark:text-teal-300'>{t('common:open')}</span>
         </Link>
         <div className='rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-border dark:bg-card dark:text-foreground'>
           <div className='flex items-center justify-between'>
             <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
-              Projets
+              {t('projects:projects')}
             </p>
             <button
               type='button'
               onClick={() => setShowNewProject((prev) => !prev)}
               className='rounded-full border border-gray-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
             >
-              Nouveau
+              {t('common:new')}
             </button>
           </div>
 
@@ -123,7 +125,7 @@ function ProjectFormPanel({
                     name: event.target.value,
                   }))
                 }
-                placeholder='Nom du projet'
+                placeholder={t('projects:projectName')}
                 className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
               />
               <textarea
@@ -134,7 +136,7 @@ function ProjectFormPanel({
                     instructions: event.target.value,
                   }))
                 }
-                placeholder='Instructions (optionnel)'
+                placeholder={t('projects:instructionsOptional')}
                 rows={2}
                 className='w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
               />
@@ -146,7 +148,7 @@ function ProjectFormPanel({
                     context_data: event.target.value,
                   }))
                 }
-                placeholder='Données de contexte (optionnel)'
+                placeholder={t('projects:contextData')}
                 rows={2}
                 className='w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
               />
@@ -156,14 +158,14 @@ function ProjectFormPanel({
                   onClick={handleCreateProject}
                   className='flex-1 rounded-lg bg-teal-500 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-600'
                 >
-                  Créer
+                  {t('common:create')}
                 </button>
                 <button
                   type='button'
                   onClick={() => setShowNewProject(false)}
                   className='flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-400 dark:border-border dark:text-foreground dark:hover:border-border'
                 >
-                  Annuler
+                  {t('common:cancel')}
                 </button>
               </div>
             </div>
@@ -179,7 +181,7 @@ function ProjectFormPanel({
                   : 'text-gray-700 hover:bg-gray-100 dark:text-muted-foreground dark:hover:bg-muted/70'
               }`}
             >
-              Tous les projets
+              {t('projects:allProjects')}
             </button>
             {loadingProjects ? (
               <ProjectListSkeleton />
@@ -205,21 +207,21 @@ function ProjectFormPanel({
         <div className='rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-border dark:bg-card dark:text-foreground'>
           <div className='flex items-center justify-between'>
             <p className='text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-muted-foreground'>
-              Conversations
+              {t('projects:conversations')}
             </p>
             <button
               type='button'
               onClick={onCreateThread}
               className='rounded-full border border-gray-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-foreground dark:hover:border-border dark:hover:text-foreground'
             >
-              Nouveau
+              {t('common:new')}
             </button>
           </div>
           <input
             type='text'
             value={newThreadTitle}
             onChange={(event) => setNewThreadTitle(event.target.value)}
-            placeholder='Titre de conversation (optionnel)'
+            placeholder={t('chat:conversationTitleOptional')}
             className='mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
           />
           <div className='mt-3 space-y-2'>
@@ -227,7 +229,7 @@ function ProjectFormPanel({
               <ThreadListSkeleton />
             ) : threads.length === 0 ? (
               <p className='text-xs text-gray-500 dark:text-muted-foreground'>
-                Aucune conversation pour le moment
+                {t('chat:noConversationsYet')}
               </p>
             ) : (
               threads.map((thread) => (
@@ -244,7 +246,7 @@ function ProjectFormPanel({
                     onClick={() => setSelectedThreadId(thread.id)}
                     className='flex-1 text-left'
                   >
-                    {thread.title || 'Conversation sans titre'}
+                    {thread.title || t('chat:untitledConversation')}
                   </button>
                   <button
                     type='button'
@@ -256,7 +258,7 @@ function ProjectFormPanel({
                     }
                     className='ml-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400 hover:text-red-300'
                   >
-                    Supprimer
+                    {t('common:delete')}
                   </button>
                 </div>
               ))

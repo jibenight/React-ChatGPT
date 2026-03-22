@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as tauri from '@/tauriClient';
 import { Link } from 'react-router-dom';
 import ProjectListSkeleton from '@/components/ui/ProjectListSkeleton';
 import ThreadListSkeleton from '@/components/ui/ThreadListSkeleton';
 
 function Projects() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [threads, setThreads] = useState<any[]>([]);
@@ -92,14 +94,14 @@ function Projects() {
         instructions: '',
         context_data: '',
       });
-      setStatus({ type: 'success', text: 'Projet créé.' });
+      setStatus({ type: 'success', text: t('projects:projectCreated') });
       await loadProjects();
       if (created?.id) {
         setSelectedProject(created);
       }
     } catch (err) {
       console.error(err);
-      setStatus({ type: 'error', text: 'Impossible de créer le projet.' });
+      setStatus({ type: 'error', text: t('projects:createProjectError') });
     }
   };
 
@@ -107,7 +109,7 @@ function Projects() {
     if (!selectedProject) return;
     try {
       await tauri.updateProject(selectedProject.id, editProject);
-      setStatus({ type: 'success', text: 'Projet mis à jour.' });
+      setStatus({ type: 'success', text: t('projects:projectUpdated') });
       await loadProjects();
       const refreshed = projects.find(item => item.id === selectedProject.id);
       if (refreshed) {
@@ -115,7 +117,7 @@ function Projects() {
       }
     } catch (err) {
       console.error(err);
-      setStatus({ type: 'error', text: 'Impossible de mettre à jour le projet.' });
+      setStatus({ type: 'error', text: t('projects:updateProjectError') });
     }
   };
 
@@ -124,11 +126,11 @@ function Projects() {
     try {
       await tauri.deleteProject(selectedProject.id);
       setSelectedProject(null);
-      setStatus({ type: 'success', text: 'Projet supprimé.' });
+      setStatus({ type: 'success', text: t('projects:projectDeleted') });
       await loadProjects();
     } catch (err) {
       console.error(err);
-      setStatus({ type: 'error', text: 'Impossible de supprimer le projet.' });
+      setStatus({ type: 'error', text: t('projects:deleteProjectError') });
     }
   };
 
@@ -141,7 +143,7 @@ function Projects() {
       console.error(err);
       setStatus({
         type: 'error',
-        text: 'Impossible de supprimer la conversation.',
+        text: t('projects:deleteConversationError'),
       });
     }
   };
@@ -160,14 +162,14 @@ function Projects() {
     if (!selectedProject) return;
     try {
       await tauri.updateThread(threadId, { title: editingThreadTitle });
-      setStatus({ type: 'success', text: 'Conversation renommée.' });
+      setStatus({ type: 'success', text: t('chat:renameThreadSuccess') });
       handleCancelRenameThread();
       await loadThreads(selectedProject.id);
     } catch (err) {
       console.error(err);
       setStatus({
         type: 'error',
-        text: 'Impossible de renommer la conversation.',
+        text: t('projects:renameConversationError'),
       });
     }
   };
@@ -178,13 +180,13 @@ function Projects() {
         <div className='mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
             <p className='text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-muted-foreground'>
-              Projets
+              {t('projects:projects')}
             </p>
             <h1 className='text-3xl font-semibold text-gray-900 dark:text-foreground'>
-              Espace projets
+              {t('projects:projectSpace')}
             </h1>
             <p className='text-sm text-gray-500 dark:text-muted-foreground'>
-              Gérer les instructions et le contexte de chaque projet.
+              {t('projects:manageProjectContext')}
             </p>
           </div>
           <div className='flex flex-wrap items-center gap-2'>
@@ -196,7 +198,7 @@ function Projects() {
                 <path d='M18 6 6 18' />
                 <path d='m6 6 12 12' />
               </svg>
-              Fermer
+              {t('common:close')}
             </Link>
           </div>
         </div>
@@ -217,7 +219,7 @@ function Projects() {
           <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none'>
             <div className='flex items-center justify-between'>
               <h2 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
-              Créer un projet
+                {t('projects:createProject')}
               </h2>
             </div>
             <div className='mt-4 grid gap-4'>
@@ -230,7 +232,7 @@ function Projects() {
                     name: event.target.value,
                   }))
                 }
-                placeholder='Nom du projet'
+                placeholder={t('projects:projectName')}
                 className='w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <input
@@ -242,7 +244,7 @@ function Projects() {
                     description: event.target.value,
                   }))
                 }
-                placeholder='Description courte (optionnel)'
+                placeholder={t('projects:shortDescription')}
                 className='w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <textarea
@@ -254,7 +256,7 @@ function Projects() {
                     instructions: event.target.value,
                   }))
                 }
-                placeholder="Instructions pour l'IA (optionnel)"
+                placeholder={t('projects:aiInstructions')}
                 className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <textarea
@@ -266,7 +268,7 @@ function Projects() {
                     context_data: event.target.value,
                   }))
                 }
-                placeholder='Données de contexte (optionnel)'
+                placeholder={t('projects:contextData')}
                 className='w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
               />
               <button
@@ -274,7 +276,7 @@ function Projects() {
                 onClick={handleCreate}
                 className='inline-flex items-center justify-center rounded-full bg-teal-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-600'
               >
-                Créer le projet
+                {t('projects:createTheProject')}
               </button>
             </div>
           </section>
@@ -282,7 +284,7 @@ function Projects() {
           <section className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60 dark:shadow-none'>
             <div className='flex items-center justify-between'>
               <h2 className='text-lg font-semibold text-gray-900 dark:text-foreground'>
-                Vos projets
+                {t('projects:yourProjects')}
               </h2>
             </div>
             <div className='mt-4 grid gap-3'>
@@ -290,7 +292,7 @@ function Projects() {
                 <ProjectListSkeleton />
               ) : projects.length === 0 ? (
                 <p className='text-sm text-gray-500 dark:text-muted-foreground'>
-                  Aucun projet pour le moment.
+                  {t('projects:noProjectsYet')}
                 </p>
               ) : null}
               {!loadingProjects && projects.map(project => (
@@ -309,14 +311,14 @@ function Projects() {
                   >
                     <p className='font-semibold'>{project.name}</p>
                     <p className='text-xs text-gray-500 dark:text-muted-foreground'>
-                      {project.description || 'Aucune description'}
+                      {project.description || t('common:noDescription')}
                     </p>
                   </button>
                   <Link
                     to={`/chat?projectId=${project.id}`}
                     className='mt-2 inline-flex text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200'
                   >
-                    Ouvrir dans le chat
+                    {t('projects:openInChat')}
                   </Link>
                 </div>
               ))}
@@ -324,13 +326,13 @@ function Projects() {
             {selectedProject && (
               <div className='mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-border dark:bg-card/60'>
                 <h3 className='text-sm font-semibold text-gray-700 dark:text-foreground'>
-                  Modifier le projet
+                  {t('projects:editProject')}
                 </h3>
                 <Link
                   to={`/chat?projectId=${selectedProject.id}`}
                   className='mt-2 inline-flex text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200'
                 >
-                  Ouvrir le projet dans le chat
+                  {t('projects:openProjectInChat')}
                 </Link>
                 <div className='mt-3 grid gap-3'>
                   <input
@@ -383,14 +385,14 @@ function Projects() {
                       onClick={handleUpdate}
                       className='rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600'
                     >
-                      Enregistrer
+                      {t('common:save')}
                     </button>
                     <button
                       type='button'
                       onClick={() => setConfirmProjectDelete(true)}
                       className='rounded-full border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10'
                     >
-                      Supprimer le projet
+                      {t('projects:deleteProject')}
                     </button>
                   </div>
                 </div>
@@ -399,7 +401,7 @@ function Projects() {
                 <div className='mt-6 border-t border-gray-200 pt-4 dark:border-border'>
                   <div className='flex items-center justify-between'>
                     <h4 className='text-sm font-semibold text-gray-700 dark:text-foreground'>
-                      Conversations
+                      {t('projects:conversations')}
                     </h4>
                   </div>
                   <div className='mt-3 space-y-2'>
@@ -407,7 +409,7 @@ function Projects() {
                       <ThreadListSkeleton />
                     ) : threads.length === 0 ? (
                       <p className='text-xs text-gray-500 dark:text-muted-foreground'>
-                        Aucune conversation pour ce projet.
+                        {t('projects:noConversationsForProject')}
                       </p>
                     ) : (
                       threads.map(thread => {
@@ -424,12 +426,12 @@ function Projects() {
                                 onChange={event =>
                                   setEditingThreadTitle(event.target.value)
                                 }
-                                placeholder='Titre de conversation'
+                                placeholder={t('chat:conversationTitle')}
                                 className='mr-3 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 dark:border-border dark:bg-card dark:text-foreground dark:focus:ring-teal-400/30'
                               />
                             ) : (
                               <span className='font-semibold text-gray-700 dark:text-foreground'>
-                                {thread.title || 'Conversation sans titre'}
+                                {thread.title || t('chat:untitledConversation')}
                               </span>
                             )}
                             <div className='flex items-center gap-2'>
@@ -440,14 +442,14 @@ function Projects() {
                                     onClick={() => handleRenameThread(thread.id)}
                                     className='text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200'
                                   >
-                                    Enregistrer
+                                    {t('common:save')}
                                   </button>
                                   <button
                                     type='button'
                                     onClick={handleCancelRenameThread}
                                     className='text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
                                   >
-                                    Annuler
+                                    {t('common:cancel')}
                                   </button>
                                 </>
                               ) : (
@@ -456,14 +458,14 @@ function Projects() {
                                     to={`/chat?projectId=${selectedProject.id}&threadId=${thread.id}`}
                                     className='text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-300 dark:hover:text-teal-200'
                                   >
-                                    Ouvrir
+                                    {t('common:open')}
                                   </Link>
                                   <button
                                     type='button'
                                     onClick={() => handleStartRenameThread(thread)}
                                     className='text-xs font-semibold text-gray-600 hover:text-gray-800 dark:text-muted-foreground dark:hover:text-foreground'
                                   >
-                                    Renommer
+                                    {t('common:rename')}
                                   </button>
                                   <button
                                     type='button'
@@ -475,7 +477,7 @@ function Projects() {
                                     }
                                     className='text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200'
                                   >
-                                    Supprimer
+                                    {t('common:delete')}
                                   </button>
                                 </>
                               )}
@@ -499,10 +501,10 @@ function Projects() {
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
           <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none'>
             <h4 className='text-base font-semibold text-gray-900 dark:text-foreground'>
-              Supprimer la conversation
+              {t('projects:deleteConversation')}
             </h4>
             <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
-              Cette action est irréversible.
+              {t('common:irreversibleAction')}
             </p>
             <div className='mt-5 flex justify-end gap-2'>
               <button
@@ -512,7 +514,7 @@ function Projects() {
                   setConfirmThreadDelete({ open: false, threadId: null })
                 }
               >
-                Annuler
+                {t('common:cancel')}
               </button>
               <button
                 type='button'
@@ -525,7 +527,7 @@ function Projects() {
                   }
                 }}
               >
-                Supprimer
+                {t('common:delete')}
               </button>
             </div>
           </div>
@@ -537,11 +539,10 @@ function Projects() {
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
           <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none'>
             <h4 className='text-base font-semibold text-gray-900 dark:text-foreground'>
-              Supprimer le projet
+              {t('projects:deleteProject')}
             </h4>
             <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
-              Ce projet sera supprimé et ses conversations détachées. Action
-              irréversible.
+              {t('projects:confirmDeleteProjectDetails')}
             </p>
             <div className='mt-5 flex justify-end gap-2'>
               <button
@@ -549,7 +550,7 @@ function Projects() {
                 className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted'
                 onClick={() => setConfirmProjectDelete(false)}
               >
-                Annuler
+                {t('common:cancel')}
               </button>
               <button
                 type='button'
@@ -559,7 +560,7 @@ function Projects() {
                   handleDelete();
                 }}
               >
-                Supprimer
+                {t('common:delete')}
               </button>
             </div>
           </div>

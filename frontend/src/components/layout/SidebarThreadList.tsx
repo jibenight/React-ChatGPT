@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import * as tauri from '@/tauriClient';
@@ -27,6 +28,7 @@ function SidebarThreadList({
   confirmThreadDelete,
   setConfirmThreadDelete,
 }: SidebarThreadListProps) {
+  const { t } = useTranslation();
   const projectMode = useAppStore((s) => s.projectMode);
   const selectedProjectId = useAppStore((s) => s.selectedProjectId);
   const selectedThreadId = useAppStore((s) => s.selectedThreadId);
@@ -91,14 +93,14 @@ function SidebarThreadList({
         <div className='border-b border-gray-200 px-3 py-2 dark:border-border'>
           <div className='flex items-center justify-between'>
             <p className='text-xs uppercase tracking-[0.24em] text-gray-500 dark:text-muted-foreground'>
-              Conversations ({visibleThreads.length})
+              {t('chat:threadsCount', { count: visibleThreads.length })}
             </p>
             <div className='flex items-center gap-1'>
               <button
                 type='button'
                 onClick={() => setShowNewInput((prev) => !prev)}
                 className='flex h-6 w-6 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-muted-foreground dark:hover:bg-background dark:hover:text-foreground'
-                title='Nouvelle conversation'
+                title={t('chat:newConversation')}
               >
                 <Plus className='h-4 w-4' />
               </button>
@@ -111,7 +113,7 @@ function SidebarThreadList({
                   }}
                   className='rounded-full border border-gray-300 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
                 >
-                  {showThreadManager ? 'Fermer' : 'Gérer'}
+                  {showThreadManager ? t('common:close') : t('common:manage')}
                 </button>
               )}
             </div>
@@ -122,7 +124,7 @@ function SidebarThreadList({
                 type='text'
                 value={newThreadTitle}
                 onChange={(event) => setNewThreadTitle(event.target.value)}
-                placeholder='Titre (optionnel)'
+                placeholder={t('chat:titleOptional')}
                 autoFocus
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
@@ -142,7 +144,7 @@ function SidebarThreadList({
                 }}
                 className='rounded-md bg-teal-500/15 px-2.5 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-500/25 dark:text-teal-100'
               >
-                Créer
+                {t('common:create')}
               </button>
             </div>
           )}
@@ -153,7 +155,7 @@ function SidebarThreadList({
             <ThreadListSkeleton />
           ) : visibleThreads.length === 0 ? (
             <p className='px-2 text-xs text-gray-500 dark:text-muted-foreground'>
-              Aucune conversation pour le moment
+              {t('chat:noConversationsYet')}
             </p>
           ) : showThreadManager ? (
             visibleThreads.map((thread) => {
@@ -173,12 +175,12 @@ function SidebarThreadList({
                         type='text'
                         value={editingThreadTitle}
                         onChange={(event) => setEditingThreadTitle(event.target.value)}
-                        placeholder='Titre de conversation'
+                        placeholder={t('chat:conversationTitle')}
                         className='w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
                       />
                     ) : (
                       <span className='line-clamp-2'>
-                        {thread.title || 'Conversation sans titre'}
+                        {thread.title || t('chat:untitledConversation')}
                       </span>
                     )}
                   </div>
@@ -190,14 +192,14 @@ function SidebarThreadList({
                           onClick={() => handleRenameThread(thread.id)}
                           className='text-teal-600 transition hover:text-teal-700 dark:text-teal-200 dark:hover:text-teal-100'
                         >
-                          Enregistrer
+                          {t('common:save')}
                         </button>
                         <button
                           type='button'
                           onClick={handleCancelRenameThread}
                           className='text-gray-500 transition hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
                         >
-                          Annuler
+                          {t('common:cancel')}
                         </button>
                       </>
                     ) : (
@@ -207,14 +209,14 @@ function SidebarThreadList({
                           onClick={() => setSelectedThreadId(thread.id)}
                           className='text-teal-600 transition hover:text-teal-700 dark:text-teal-200 dark:hover:text-teal-100'
                         >
-                          Ouvrir
+                          {t('common:open')}
                         </button>
                         <button
                           type='button'
                           onClick={() => handleStartRenameThread(thread)}
                           className='text-gray-500 transition hover:text-gray-700 dark:text-muted-foreground dark:hover:text-foreground'
                         >
-                          Renommer
+                          {t('common:rename')}
                         </button>
                         <button
                           type='button'
@@ -226,7 +228,7 @@ function SidebarThreadList({
                           }
                           className='text-red-400 transition hover:text-red-300'
                         >
-                          Supprimer
+                          {t('common:delete')}
                         </button>
                       </>
                     )}
@@ -241,7 +243,7 @@ function SidebarThreadList({
                       }}
                       className='w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-gray-700 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 dark:border-border dark:bg-background dark:text-foreground'
                     >
-                      <option value=''>Sans projet</option>
+                      <option value=''>{t('common:withoutProject')}</option>
                       {projects.map((project) => (
                         <option key={project.id} value={project.id}>
                           {project.name}
@@ -269,7 +271,7 @@ function SidebarThreadList({
                     selectedThreadId === thread.id ? 'bg-teal-300' : 'bg-border'
                   }`}
                 />
-                <span className='truncate'>{thread.title || 'Conversation sans titre'}</span>
+                <span className='truncate'>{thread.title || t('chat:untitledConversation')}</span>
               </button>
             ))
           )}
@@ -280,10 +282,10 @@ function SidebarThreadList({
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4'>
           <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-card dark:shadow-none'>
             <h4 className='text-base font-semibold text-gray-900 dark:text-foreground'>
-              Supprimer la conversation
+              {t('chat:deleteThread')}
             </h4>
             <p className='mt-2 text-sm text-gray-600 dark:text-muted-foreground'>
-              Cette action est irréversible.
+              {t('common:irreversibleAction')}
             </p>
             <div className='mt-5 flex justify-end gap-2'>
               <button
@@ -291,7 +293,7 @@ function SidebarThreadList({
                 className='rounded-full border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-border dark:text-muted-foreground dark:hover:bg-muted'
                 onClick={() => setConfirmThreadDelete({ open: false, threadId: null })}
               >
-                Annuler
+                {t('common:cancel')}
               </button>
               <button
                 type='button'
@@ -304,7 +306,7 @@ function SidebarThreadList({
                   }
                 }}
               >
-                Supprimer
+                {t('common:delete')}
               </button>
             </div>
           </div>

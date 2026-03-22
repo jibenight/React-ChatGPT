@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { X, User, KeyRound, ShieldAlert } from 'lucide-svelte';
+  import { X, User, KeyRound, ShieldAlert, CreditCard } from 'lucide-svelte';
   import * as tauri from '$lib/tauri';
   import { userStore } from '$lib/stores/user.svelte';
+  import SubscriptionStatus from '$lib/components/billing/SubscriptionStatus.svelte';
   import { i18n } from '$lib/i18n';
 
   interface Props {
@@ -12,7 +13,7 @@
   let { onClose }: Props = $props();
 
   type ActionMessage = { type: 'success' | 'error'; text: string } | null;
-  type Section = 'account' | 'apikeys' | 'danger';
+  type Section = 'account' | 'apikeys' | 'billing' | 'danger';
 
   let activeSection = $state<Section>('account');
   let isSaving = $state(false);
@@ -52,6 +53,7 @@
   const navItems = $derived<{ id: Section; label: string; icon: any; color: string }[]>([
     { id: 'account', label: i18n.t('profile'), icon: User, color: 'text-teal-500' },
     { id: 'apikeys', label: i18n.t('apiKeys'), icon: KeyRound, color: 'text-violet-500' },
+    { id: 'billing', label: i18n.t('billingSubscriptionTitle'), icon: CreditCard, color: 'text-amber-500' },
     { id: 'danger', label: i18n.t('dangerZone'), icon: ShieldAlert, color: 'text-red-400' },
   ]);
 
@@ -351,6 +353,28 @@
               </div>
             </div>
           {/each}
+        </div>
+      </section>
+    {/if}
+
+    <!-- ═══ Abonnement ═══ -->
+    {#if activeSection === 'billing'}
+      <section class="flex-1 px-8 py-8" aria-labelledby="section-billing">
+        <header class="mb-6">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-500 dark:text-amber-400">{i18n.t('billingPlan')}</p>
+          <h3 id="section-billing" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">{i18n.t('billingSubscriptionTitle')}</h3>
+          <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('billingUpgradeDesc')}</p>
+        </header>
+
+        <SubscriptionStatus />
+
+        <div class="mt-4">
+          <a
+            href="/pricing"
+            class="inline-flex items-center gap-1.5 text-xs text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+          >
+            {i18n.t('billingPricing')} →
+          </a>
         </div>
       </section>
     {/if}

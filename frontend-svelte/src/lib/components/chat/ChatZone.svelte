@@ -4,6 +4,7 @@
   import { streamChat, resolveChatError } from '$lib/stream-chat';
   import { appStore } from '$lib/stores/app.svelte';
   import { userStore } from '$lib/stores/user.svelte';
+  import { planStore } from '$lib/stores/plan.svelte';
   import { i18n } from '$lib/i18n';
   import ChatMessageList from './ChatMessageList.svelte';
   import ChatComposer from './ChatComposer.svelte';
@@ -153,6 +154,9 @@
   async function handleSend(payload: { content: string; attachments: any[] }) {
     const text = payload.content;
     if (!text.trim()) return;
+
+    // Vérifier la limite de messages avant d'envoyer
+    if (!planStore.checkAndPrompt('message')) return;
 
     const userData = userStore.userData;
     if (!userData?.id && !userData?.userId) {

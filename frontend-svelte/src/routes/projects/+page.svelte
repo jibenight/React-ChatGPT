@@ -4,6 +4,7 @@
   import { X } from 'lucide-svelte';
   import * as tauri from '$lib/tauri';
   import { appStore } from '$lib/stores/app.svelte';
+  import { planStore } from '$lib/stores/plan.svelte';
   import ThreadListSkeleton from '$lib/components/ui/ThreadListSkeleton.svelte';
   import { i18n } from '$lib/i18n';
 
@@ -73,6 +74,8 @@
 
   async function handleCreate() {
     if (!newProject.name.trim()) return;
+    // Vérifier la limite de projets avant de créer
+    if (!planStore.checkAndPrompt('project')) return;
     try {
       const created = await tauri.createProject(newProject) as Project;
       newProject = { name: '', description: '', instructions: '', context_data: '' };

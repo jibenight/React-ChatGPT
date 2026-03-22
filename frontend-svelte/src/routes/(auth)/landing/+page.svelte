@@ -1,0 +1,306 @@
+<script lang="ts">
+  import { i18n } from '$lib/i18n/i18n.svelte';
+  import MatrixBackground from '$lib/components/common/MatrixBackground.svelte';
+  import type { TranslationKey } from '$lib/i18n/i18n.svelte';
+
+  type Feature = { icon: string; titleKey: TranslationKey; descKey: TranslationKey };
+  type Faq = { qKey: TranslationKey; aKey: TranslationKey };
+  type PricingRow = { key: TranslationKey };
+
+  const FEATURES: Feature[] = [
+    { icon: '⚡', titleKey: 'featuresMultiProvider', descKey: 'featuresMultiProviderDesc' },
+    { icon: '📁', titleKey: 'featuresProjects', descKey: 'featuresProjectsDesc' },
+    { icon: '🔍', titleKey: 'featuresSearch', descKey: 'featuresSearchDesc' },
+    { icon: '🖥️', titleKey: 'featuresDesktop', descKey: 'featuresDesktopDesc' },
+    { icon: '🔒', titleKey: 'featuresSecurity', descKey: 'featuresSecurityDesc' },
+    { icon: '🌍', titleKey: 'featuresI18n', descKey: 'featuresI18nDesc' },
+  ];
+
+  const FAQS: Faq[] = [
+    { qKey: 'faqByokQ', aKey: 'faqByokA' },
+    { qKey: 'faqSecurityQ', aKey: 'faqSecurityA' },
+    { qKey: 'faqOfflineQ', aKey: 'faqOfflineA' },
+    { qKey: 'faqProvidersQ', aKey: 'faqProvidersA' },
+  ];
+
+  const FREE_ROWS: PricingRow[] = [
+    { key: 'pricingFreature1Free' },
+    { key: 'pricingFreature2Free' },
+    { key: 'pricingFreature3Free' },
+  ];
+  const PRO_ROWS: PricingRow[] = [
+    { key: 'pricingFreature1Pro' },
+    { key: 'pricingFreature2Pro' },
+    { key: 'pricingFreature3Pro' },
+  ];
+  const TEAM_ROWS: PricingRow[] = [
+    { key: 'pricingFreature1Team' },
+    { key: 'pricingFreature2Team' },
+    { key: 'pricingFreature3Team' },
+  ];
+
+  let featuresEl: HTMLElement;
+  const year = new Date().getFullYear();
+
+  function scrollToFeatures() {
+    featuresEl?.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+
+<svelte:head>
+  <title>MultiAI — {i18n.t('heroTitle')}</title>
+</svelte:head>
+
+<div class="min-h-screen bg-background text-foreground">
+
+  <!-- Nav -->
+  <header class="fixed top-0 inset-x-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <span class="font-bold text-foreground">✦ MultiAI</span>
+      <nav class="flex items-center gap-3">
+        <a
+          href="/guide"
+          class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {i18n.t('footerGuide')}
+        </a>
+        <a
+          href="/login"
+          class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {i18n.t('footerLogin')}
+        </a>
+        <a
+          href="/register"
+          class="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          {i18n.t('registerButton')}
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative min-h-screen flex flex-col items-center justify-center text-center px-4 pt-14 overflow-hidden">
+    <MatrixBackground />
+    <div class="relative z-10 max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/60 backdrop-blur-sm px-4 py-1.5 text-xs text-muted-foreground mb-8">
+        <span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>
+        OpenAI · Gemini · Claude · Mistral · Groq
+      </div>
+
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
+        {i18n.t('heroTitle')}
+      </h1>
+
+      <p class="text-lg sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+        {i18n.t('heroSubtitle')}
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a
+          href="/register"
+          class="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+        >
+          {i18n.t('heroCta')}
+        </a>
+        <button
+          onclick={scrollToFeatures}
+          class="rounded-xl border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+        >
+          {i18n.t('heroSecondary')}
+        </button>
+      </div>
+    </div>
+
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-muted-foreground/50">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section bind:this={featuresEl} class="py-24 px-4">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-bold text-center text-foreground mb-4">
+        {i18n.t('featuresTitle')}
+      </h2>
+      <p class="text-center text-muted-foreground mb-16 max-w-xl mx-auto">
+        {i18n.t('featuresSubtitle')}
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {#each FEATURES as feature (feature.titleKey)}
+          <div class="group rounded-2xl border border-border bg-card p-6 hover:border-primary/50 hover:shadow-md transition-all">
+            <div class="text-3xl mb-4">{feature.icon}</div>
+            <h3 class="text-base font-semibold text-foreground mb-2">{i18n.t(feature.titleKey)}</h3>
+            <p class="text-sm text-muted-foreground leading-relaxed">{i18n.t(feature.descKey)}</p>
+          </div>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="py-24 px-4 bg-muted/30">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-3xl font-bold text-center text-foreground mb-4">
+        {i18n.t('pricingTitle')}
+      </h2>
+      <p class="text-center text-muted-foreground mb-16">
+        {i18n.t('pricingSubtitle')}
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Free -->
+        <div class="rounded-2xl border border-border bg-card p-8 flex flex-col">
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-foreground mb-1">{i18n.t('pricingFree')}</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-3xl font-bold text-foreground">0€</span>
+              <span class="text-sm text-muted-foreground">{i18n.t('pricingPerMonth')}</span>
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">{i18n.t('pricingFreePriceLabel')}</p>
+          </div>
+          <ul class="space-y-3 flex-1 mb-8">
+            {#each FREE_ROWS as row (row.key)}
+              <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                <span class="text-green-500 mt-0.5">✓</span>
+                {i18n.t(row.key)}
+              </li>
+            {/each}
+          </ul>
+          <a
+            href="/register"
+            class="block rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground text-center hover:bg-muted transition-colors"
+          >
+            {i18n.t('pricingCtaFree')}
+          </a>
+        </div>
+
+        <!-- Pro -->
+        <div class="rounded-2xl border-2 border-primary bg-card p-8 flex flex-col relative shadow-lg shadow-primary/10">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+            <span class="rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
+              {i18n.t('popular')}
+            </span>
+          </div>
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-foreground mb-1">{i18n.t('pricingPro')}</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-3xl font-bold text-foreground">{i18n.t('pricingProPrice')}€</span>
+              <span class="text-sm text-muted-foreground">{i18n.t('pricingPerMonth')}</span>
+            </div>
+          </div>
+          <ul class="space-y-3 flex-1 mb-8">
+            {#each PRO_ROWS as row (row.key)}
+              <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                <span class="text-primary mt-0.5">✓</span>
+                {i18n.t(row.key)}
+              </li>
+            {/each}
+          </ul>
+          <a
+            href="/register"
+            class="block rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground text-center hover:bg-primary/90 transition-colors"
+          >
+            {i18n.t('pricingCtaPro')}
+          </a>
+        </div>
+
+        <!-- Team -->
+        <div class="rounded-2xl border border-border bg-card p-8 flex flex-col">
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-foreground mb-1">{i18n.t('pricingTeam')}</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-3xl font-bold text-foreground">{i18n.t('pricingTeamPrice')}€</span>
+              <span class="text-sm text-muted-foreground">{i18n.t('pricingPerUserPerMonth')}</span>
+            </div>
+          </div>
+          <ul class="space-y-3 flex-1 mb-8">
+            {#each TEAM_ROWS as row (row.key)}
+              <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                <span class="text-green-500 mt-0.5">✓</span>
+                {i18n.t(row.key)}
+              </li>
+            {/each}
+          </ul>
+          <a
+            href="/register"
+            class="block rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground text-center hover:bg-muted transition-colors"
+          >
+            {i18n.t('pricingCtaTeam')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-24 px-4">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold text-center text-foreground mb-16">
+        {i18n.t('faqTitle')}
+      </h2>
+
+      <div class="space-y-4">
+        {#each FAQS as faq (faq.qKey)}
+          <details class="group rounded-2xl border border-border bg-card overflow-hidden">
+            <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none font-medium text-foreground hover:bg-muted/50 transition-colors">
+              {i18n.t(faq.qKey)}
+              <svg
+                class="h-4 w-4 text-muted-foreground flex-shrink-0 transition-transform group-open:rotate-180"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <p class="px-6 pb-5 text-sm text-muted-foreground leading-relaxed">
+              {i18n.t(faq.aKey)}
+            </p>
+          </details>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="py-20 px-4 bg-primary/5 border-y border-border">
+    <div class="max-w-2xl mx-auto text-center">
+      <h2 class="text-2xl font-bold text-foreground mb-4">{i18n.t('heroTitle')}</h2>
+      <p class="text-muted-foreground mb-8">{i18n.t('ctaSubtitle')}</p>
+      <a
+        href="/register"
+        class="inline-flex rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+      >
+        {i18n.t('heroCta')}
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-border py-10 px-4">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <span class="font-bold text-foreground">✦ MultiAI</span>
+      <nav class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <a href="/login" class="hover:text-foreground transition-colors">{i18n.t('footerLogin')}</a>
+        <a href="/register" class="hover:text-foreground transition-colors">{i18n.t('footerRegister')}</a>
+        <a href="/guide" class="hover:text-foreground transition-colors">{i18n.t('footerGuide')}</a>
+        <a
+          href="https://github.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-foreground transition-colors"
+        >
+          {i18n.t('footerGithub')}
+        </a>
+      </nav>
+      <p class="text-xs text-muted-foreground">
+        {i18n.t('footerCopyright', { year })}
+      </p>
+    </div>
+  </footer>
+</div>

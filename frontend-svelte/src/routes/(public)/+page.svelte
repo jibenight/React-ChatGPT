@@ -282,25 +282,137 @@
   </section>
 
   <!-- Footer -->
-  <footer class="border-t border-border px-4 py-10">
-    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-      <span class="font-bold text-foreground">✦ MultiAI</span>
-      <nav class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-        <a href="/login" class="transition-colors hover:text-foreground">{i18n.t('footerLogin')}</a>
-        <a href="/register" class="transition-colors hover:text-foreground">{i18n.t('footerRegister')}</a>
-        <a href="/guide" class="transition-colors hover:text-foreground">{i18n.t('footerGuide')}</a>
-        <a
-          href="https://github.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="transition-colors hover:text-foreground"
-        >
-          {i18n.t('footerGithub')}
-        </a>
-      </nav>
-      <p class="text-xs text-muted-foreground">
-        {i18n.t('footerCopyright', { year })}
-      </p>
+  <footer class="border-t border-border px-4 py-14">
+    <div class="mx-auto max-w-6xl">
+      <!-- Colonnes -->
+      <div class="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-4">
+        <!-- Produit -->
+        <div>
+          <h3 class="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
+            {i18n.t('footerProduct')}
+          </h3>
+          <ul class="space-y-2.5">
+            <li>
+              <button
+                onclick={scrollToFeatures}
+                class="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {i18n.t('footerFeatures')}
+              </button>
+            </li>
+            <li>
+              <a href="/pricing" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerPricing')}
+              </a>
+            </li>
+            <li>
+              <a href="/changelog" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerChangelog')}
+              </a>
+            </li>
+            <li>
+              <a href="/guide" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerGuide')}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Légal -->
+        <div>
+          <h3 class="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
+            {i18n.t('footerLegal')}
+          </h3>
+          <ul class="space-y-2.5">
+            <li>
+              <a href="/terms" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerTerms')}
+              </a>
+            </li>
+            <li>
+              <a href="/privacy" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerPrivacy')}
+              </a>
+            </li>
+            <li>
+              <a href="/cookies" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerCookies')}
+              </a>
+            </li>
+            <li>
+              <a href="/refund" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerRefund')}
+              </a>
+            </li>
+            <li>
+              <a href="/legal" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerMentions')}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Support -->
+        <div>
+          <h3 class="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
+            {i18n.t('footerSupport')}
+          </h3>
+          <ul class="space-y-2.5">
+            <li>
+              <a href="/contact" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerContactPage')}
+              </a>
+            </li>
+            <li>
+              <a href="/guide" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerGuide')}
+              </a>
+            </li>
+            <li>
+              <a href="/about" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerAbout')}
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {i18n.t('footerGithub')}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Compte -->
+        <div>
+          <h3 class="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
+            Compte
+          </h3>
+          <ul class="space-y-2.5">
+            <li>
+              <a href="/login" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerLogin')}
+              </a>
+            </li>
+            <li>
+              <a href="/register" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                {i18n.t('footerRegister')}
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Séparateur + copyright -->
+      <div class="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
+        <span class="font-bold text-foreground">✦ MultiAI</span>
+        <p class="text-xs text-muted-foreground">
+          {i18n.t('footerCopyright', { year })}
+        </p>
+      </div>
     </div>
   </footer>
 </div>

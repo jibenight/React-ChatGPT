@@ -16,7 +16,16 @@
   const theme = $derived(themeStore.theme);
 
   type Section = 'provider' | 'projects' | 'appearance' | 'lock';
-  let activeSection = $state<Section>('provider');
+  const validSections: Section[] = ['provider', 'projects', 'appearance', 'lock'];
+  const initialSection = validSections.includes(appStore.settingsSection as Section)
+    ? (appStore.settingsSection as Section)
+    : 'provider';
+  let activeSection = $state<Section>(initialSection);
+
+  // Reset section hint after reading it
+  $effect(() => {
+    if (appStore.settingsSection) appStore.setSettingsSection('');
+  });
 
   const navItems: { id: Section; label: string; icon: any; color: string; tauriOnly?: boolean }[] = [
     { id: 'provider', label: 'Fournisseur IA', icon: Bot, color: 'text-teal-500' },

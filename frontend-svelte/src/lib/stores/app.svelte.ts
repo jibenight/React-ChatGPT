@@ -30,6 +30,7 @@ let _projectMode = $state(persisted.projectMode);
 let _selectedProjectId = $state<number | null>(null);
 let _selectedThreadId = $state<string | null>(null);
 let _sidebarCollapsed = $state(false);
+let _settingsSection = $state('');
 
 $effect.root(() => {
   $effect(() => {
@@ -50,7 +51,10 @@ export const appStore = {
   setProfil(v: boolean) { if (v) _settingsOpen = false; _profil = v; },
 
   get settingsOpen() { return _settingsOpen; },
-  setSettingsOpen(v: boolean) { if (v) _profil = false; _settingsOpen = v; },
+  setSettingsOpen(v: boolean, section?: string) { if (v) _profil = false; _settingsOpen = v; if (section) _settingsSection = section; },
+
+  get settingsSection() { return _settingsSection; },
+  setSettingsSection(v: string) { _settingsSection = v; },
 
   get selectedOption() { return _selectedOption; },
   setSelectedOption(v: ProviderOption | null) { _selectedOption = v; },

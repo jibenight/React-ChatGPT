@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Send, Square } from 'lucide-svelte';
+  import { ArrowUp, Square } from 'lucide-svelte';
 
   interface SendPayload {
     content: string;
@@ -46,7 +46,6 @@
   }
 
   $effect(() => {
-    // persist draft whenever text changes
     if (draftKey) {
       try {
         if (text) {
@@ -57,6 +56,16 @@
       } catch {}
     }
   });
+
+  export function setDraft(value: string) {
+    text = value;
+    if (textareaRef) {
+      requestAnimationFrame(() => {
+        autoResize();
+        textareaRef?.focus();
+      });
+    }
+  }
 
   function handleSubmit() {
     const trimmed = text.trim();
@@ -81,12 +90,10 @@
   }
 </script>
 
-<div
-  class="border-t border-gray-200 bg-white px-4 py-3 dark:border-white/[0.06] dark:bg-background"
->
-  <div class="mx-auto max-w-4xl">
+<div class="px-6 pb-4">
+  <div class="mx-auto max-w-3xl">
     <div
-      class="relative flex items-end gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-white/[0.08] dark:bg-card"
+      class="flex items-center gap-3 rounded-3xl border border-gray-200 bg-white px-5 py-3 shadow-sm transition-shadow focus-within:shadow-md dark:border-border dark:bg-card"
     >
       <textarea
         bind:value={text}
@@ -94,7 +101,7 @@
         placeholder="Envoyer un message..."
         aria-label="Message à envoyer"
         rows="1"
-        class="flex-1 resize-none bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-foreground dark:placeholder:text-muted-foreground"
+        class="flex-1 resize-none bg-transparent text-sm leading-[1.375rem] text-gray-900 outline-none placeholder:text-gray-400 dark:text-foreground dark:placeholder:text-muted-foreground"
         onkeydown={handleKeyDown}
         oninput={autoResize}
         {disabled}
@@ -104,8 +111,9 @@
         <button
           type="button"
           onclick={onCancel}
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white transition hover:bg-gray-700 dark:bg-foreground dark:text-background dark:hover:bg-foreground/80"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white transition hover:bg-gray-700 dark:bg-foreground dark:text-background dark:hover:bg-foreground/80"
           title="Annuler"
+          aria-label="Annuler la génération"
         >
           <Square class="h-3.5 w-3.5" />
         </button>
@@ -114,18 +122,13 @@
           type="button"
           onclick={handleSubmit}
           disabled={disabled || !text.trim()}
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-500 text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800 text-white transition hover:bg-gray-700 disabled:bg-gray-300 disabled:text-gray-500 dark:bg-foreground dark:text-background dark:hover:bg-foreground/80 dark:disabled:bg-muted dark:disabled:text-muted-foreground"
           title="Envoyer"
+          aria-label="Envoyer le message"
         >
-          <Send class="h-3.5 w-3.5" />
+          <ArrowUp class="h-4 w-4" />
         </button>
       {/if}
     </div>
-
-    <p
-      class="mt-1.5 text-center text-[11px] text-gray-400 dark:text-muted-foreground"
-    >
-      Entrée pour envoyer · Maj+Entrée pour nouvelle ligne
-    </p>
   </div>
 </div>

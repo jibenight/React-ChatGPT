@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PanelLeftClose, User, Settings, ChevronRight, HardDrive } from 'lucide-svelte';
+  import { PanelLeftClose, User, Settings } from 'lucide-svelte';
   import { appStore } from '$stores/app.svelte';
   import { userStore } from '$stores/user.svelte';
   import * as tauri from '$lib/tauri';
@@ -7,9 +7,6 @@
   import SidebarModeToggle from './SidebarModeToggle.svelte';
   import SidebarProjectList from './SidebarProjectList.svelte';
   import SidebarThreadList from './SidebarThreadList.svelte';
-  import ProjectFormPanel from './ProjectFormPanel.svelte';
-
-  let showProjectPanel = $state(false);
 
   let projects = $state<any[]>([]);
   let threads = $state<any[]>([]);
@@ -20,8 +17,6 @@
   let activeProject = $derived(
     projects.find((p) => p.id === appStore.selectedProjectId),
   );
-
-  let providerAvatar = $derived(appStore.selectedOption?.avatar);
 
   async function fetchProjects() {
     loadingProjects = true;
@@ -47,19 +42,16 @@
     }
   }
 
-  // Load projects when user data is available
   $effect(() => {
     if (userStore.userData?.id) {
       fetchProjects();
     }
   });
 
-  // Load threads when project mode or project changes
   $effect(() => {
     fetchThreads(appStore.projectMode ? appStore.selectedProjectId : null);
   });
 
-  // Reset when project mode changes
   $effect(() => {
     if (!appStore.projectMode) {
       appStore.setSelectedProjectId(null);
@@ -105,41 +97,25 @@
   class:pointer-events-none={appStore.sidebarCollapsed}
   aria-hidden={appStore.sidebarCollapsed}
 >
-  <!-- Header compact -->
-  <div class="flex items-center gap-3 px-4 pt-3 pb-1">
-    {#if providerAvatar}
-      <video
-        src={providerAvatar}
-        autoplay
-        muted
-        loop
-        playsinline
-        class="h-7 w-7 rounded-md object-cover"
-      ></video>
-    {:else}
-      <div class="flex h-7 w-7 items-center justify-center rounded-md bg-teal-500/15">
-        <HardDrive class="h-4 w-4 text-teal-500" />
-      </div>
-    {/if}
-    <p class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-foreground">
-      {userStore.userData?.username || 'Chargement...'}
-    </p>
+  <!-- Mode toggle (Projet / Libre) -->
+  <div class="pt-3">
+    <SidebarModeToggle />
   </div>
+
+  <!-- Project selector (only in project mode) -->
+  <SidebarProjectList
+    {activeProject}
+    {projects}
+    onSelectProject={handleSelectProject}
+    onOpenSettings={() => appStore.setSettingsOpen(true, 'projects')}
+  />
 
   <!-- Search -->
   <SidebarSearch />
 
-  <!-- Mode toggle -->
-  <SidebarModeToggle />
-
-  <!-- Content: projects + threads -->
+  <!-- Conversations -->
   <div class="flex-1 min-h-0 px-4 pb-2 pt-2">
-    <div class="flex h-full min-h-0 flex-col gap-2">
-      <SidebarProjectList
-        {activeProject}
-        onOpenPanel={() => (showProjectPanel = true)}
-      />
-
+    <div class="flex h-full min-h-0 flex-col">
       <SidebarThreadList
         {threads}
         {projects}
@@ -149,47 +125,6 @@
         onRefreshThreads={refreshThreads}
       />
     </div>
-  </div>
-
-  <!-- Project form panel (slides in) -->
-  <ProjectFormPanel
-    show={showProjectPanel}
-    onClose={() => (showProjectPanel = false)}
-    {projects}
-    {loadingProjects}
-    {threads}
-    {loadingThreads}
-    onSelectProject={handleSelectProject}
-    onRefreshProjects={fetchProjects}
-    onRefreshThreads={refreshThreads}
-  />
-
-  <!-- Provider row compact -->
-  <div class="px-4 pb-2">
-    <button
-      type="button"
-      onclick={() => appStore.setSettingsOpen(true)}
-      class="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-gray-50 dark:hover:bg-card"
-    >
-      {#if providerAvatar}
-        <video
-          src={providerAvatar}
-          autoplay
-          muted
-          loop
-          playsinline
-          class="h-5 w-5 rounded-full object-cover"
-        ></video>
-      {:else}
-        <div class="flex h-5 w-5 items-center justify-center rounded-full bg-teal-500/15">
-          <HardDrive class="h-3 w-3 text-teal-500" />
-        </div>
-      {/if}
-      <span class="truncate text-xs font-semibold text-gray-700 dark:text-foreground">
-        {appStore.selectedOption?.name || 'Choisir le fournisseur IA'}
-      </span>
-      <ChevronRight class="ml-auto h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-muted-foreground" />
-    </button>
   </div>
 
   <!-- Bottom icons: collapse, profile, settings -->

@@ -26,6 +26,7 @@
   let lastFailedRequest = $state<FailedRequest | null>(null);
 
   let abortController: AbortController | null = null;
+  let composerRef: ChatComposer | null = $state(null);
 
   // Emit message count to parent layout
   $effect(() => {
@@ -339,12 +340,14 @@
     {hasMoreHistory}
     {loadingMoreHistory}
     onLoadMore={loadMoreHistory}
+    onSuggestion={(text) => composerRef?.setDraft(text)}
   />
 
   <ChatComposer
+    bind:this={composerRef}
     onSend={handleSend}
     onCancel={handleCancel}
     {loading}
-    disabled={!userData?.id && !userData?.userId}
+    disabled={false}
   />
 </div>

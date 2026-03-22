@@ -10,6 +10,7 @@
     hasMoreHistory: boolean;
     loadingMoreHistory: boolean;
     onLoadMore: () => void;
+    onSuggestion?: (text: string) => void;
   }
 
   let {
@@ -18,6 +19,7 @@
     hasMoreHistory,
     loadingMoreHistory,
     onLoadMore,
+    onSuggestion,
   }: Props = $props();
 
   let scrollContainer = $state<HTMLDivElement | null>(null);
@@ -31,10 +33,17 @@
       });
     }
   });
+
+  const suggestions = [
+    { title: 'Résumer un texte', subtitle: 'copiez-collez un article ou un document' },
+    { title: 'Écrire un e-mail', subtitle: 'professionnel ou informel, en français' },
+    { title: 'Expliquer un concept', subtitle: 'de manière simple et claire' },
+    { title: 'Générer du code', subtitle: 'dans le langage de votre choix' },
+  ];
 </script>
 
-<div bind:this={scrollContainer} class="flex-1 overflow-y-auto">
-  <div class="mx-auto max-w-4xl px-4 py-6">
+<div bind:this={scrollContainer} class="flex flex-1 flex-col overflow-y-auto">
+  <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-6">
     {#if hasMoreHistory}
       <div class="mb-4 flex justify-center">
         <button
@@ -51,32 +60,28 @@
     {#if loadingHistory}
       <MessageListSkeleton />
     {:else if messages.length === 0}
-      <div class="flex flex-col items-center justify-center py-24 text-center">
-        <div
-          class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-500/10"
-        >
-          <svg
-            class="h-8 w-8 text-teal-500"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"
-            />
-          </svg>
+      <!-- Empty state: assistant-ui style -->
+      <div class="flex h-full flex-col">
+        <div class="pt-8 pb-4">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-foreground">Bonjour !</h1>
+          <p class="mt-1 text-lg text-gray-400 dark:text-muted-foreground">Comment puis-je vous aider aujourd'hui ?</p>
         </div>
-        <h3
-          class="mb-1 text-base font-semibold text-gray-900 dark:text-foreground"
-        >
-          Démarrez une conversation
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-muted-foreground">
-          Posez une question ou demandez de l'aide pour commencer.
-        </p>
+
+        <div class="flex-1"></div>
+
+        <!-- Suggestion cards -->
+        <div class="grid grid-cols-2 gap-3 pb-4">
+          {#each suggestions as s}
+            <button
+              type="button"
+              onclick={() => onSuggestion?.(s.title + ' ' + s.subtitle)}
+              class="group rounded-2xl border border-gray-200 px-5 py-4 text-left transition hover:border-gray-300 hover:bg-gray-50 dark:border-border dark:hover:border-border dark:hover:bg-card"
+            >
+              <p class="text-sm font-semibold text-gray-900 dark:text-foreground">{s.title}</p>
+              <p class="mt-0.5 text-sm text-gray-400 dark:text-muted-foreground">{s.subtitle}</p>
+            </button>
+          {/each}
+        </div>
       </div>
     {:else}
       {#each messages as message (message.id)}

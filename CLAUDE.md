@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project overview
 
 Full-stack multi-provider AI chatbot (OpenAI, Gemini, Claude, Mistral, Groq) with a SaaS billing system (Stripe).
-Monorepo: `frontend/` (React 19 + Vite 5 + Tailwind 4) and `backend/` (Express 4 + SQLite/PostgreSQL).
-Also configurable as pnpm workspace (`pnpm dev` runs both apps in parallel).
+Monorepo: `frontend-svelte/` (Svelte 5 / SvelteKit — **primary frontend**), `frontend/` (React 19 — **legacy**, billing/auth pages not yet ported), and `backend/` (Express 4 + SQLite/PostgreSQL).
 Desktop version: Tauri 2 (macOS, Windows, Linux) with biometric lock and local GGUF inference.
+
+> **All new frontend work should go in `frontend-svelte/`**. The React frontend is kept for reference only.
 
 ## Quick start
 
@@ -19,7 +20,16 @@ npm run start:frontend   # frontend Vite dev server
 
 ## Build, lint, test commands
 
-### Frontend (`frontend/`)
+### Frontend Svelte (`frontend-svelte/`) — PRIMARY
+```bash
+npm run dev          # SvelteKit dev server
+npm run build        # production build (adapter-static)
+npm run preview      # preview production build
+npm run lint         # eslint
+npm run check        # svelte-check (TS + Svelte diagnostics)
+```
+
+### Frontend React (`frontend/`) — LEGACY
 ```bash
 npm run build        # vite build
 npm run lint         # eslint src
@@ -44,39 +54,48 @@ Run a single test file: `npx vitest run path/to/file.test.ts` (from `frontend/` 
 ## Code style
 
 - 2-space indentation, semicolons, single quotes.
-- Frontend: ESM imports, `.tsx` files, `@/` alias to `frontend/src`.
+- Svelte frontend: `.svelte` files, `$lib` alias to `frontend-svelte/src/lib`. Svelte 5 runes (`$state`, `$derived`, `$effect`). Do NOT use Svelte 4 `writable()`/`readable()`.
+- React frontend (legacy): ESM imports, `.tsx` files, `@/` alias to `frontend/src`.
 - Backend: CommonJS (`require`) in controllers/models, TS in routes; match existing style per file. Do not mix `require` and `import` in the same file unless already present.
-- React: function components + hooks only, Tailwind classes (no CSS-in-JS).
-- UI text is in French — use `t('ns:key')` from react-i18next, never hardcode French strings in JSX.
+- Svelte: components use `$props()`, `{#if}`, `{#each}`, `{@render}`. Tailwind classes (no CSS-in-JS).
+- React (legacy): function components + hooks only, Tailwind classes.
+- UI text is in French — use `t('ns:key')` from i18next, never hardcode French strings in templates/JSX.
 - TypeScript is non-strict (`strict: false`); keep typings minimal.
 
 ## Naming conventions
 
-- React components: `PascalCase` filenames and exports.
+- Svelte components: `PascalCase` filenames (e.g., `ChatZone.svelte`).
+- Svelte stores: `camelCase` with `.svelte.ts` suffix (e.g., `app.svelte.ts`). Export object with getters/setters.
+- React components (legacy): `PascalCase` filenames and exports.
 - Hooks/handlers: `camelCase` (e.g., `useUser`, `handleSend`).
 - Constants: `UPPER_SNAKE_CASE` for true constants.
 - Backend route handlers: `exports.<name> = ...`.
 
 ## Architecture
 
-### Frontend
-- Entry: `frontend/src/index.tsx` — `AppGate` handles web vs Tauri routing, biometric lock, and plan fetch on mount.
-- Layout: `frontend/src/App.tsx` — main chat UI (sidebar + chat panel).
-- Features organized by domain:
+### Frontend — Svelte 5 (primary: `frontend-svelte/`)
+- Framework: SvelteKit with `adapter-static`, `ssr = false` (SPA mode, Tauri-compatible).
+- Layout: `routes/+layout.svelte` — root layout with Sidebar, TopBar, and full-screen overlays (Profile, Settings).
+- Pages: `routes/+page.svelte` (chat), `routes/projects/` (projects), `routes/guide/` (user guide).
+- Components in `lib/components/`: `chat/` (ChatZone, ChatMessage, ChatComposer, AiOption, MarkdownRenderer), `layout/` (Sidebar, TopBar, SidebarProjectList, SidebarThreadList), `overlays/` (ProfileOverlay, SettingsOverlay), `ui/` (Button, Modal, Dropdown, Skeleton, Toaster).
+- State: Svelte 5 runes in `lib/stores/`:
+  - `app.svelte.ts` — `$state` runes: selectedOption, projectMode, persisted to localStorage.
+  - `user.svelte.ts` — authenticated user session.
+  - `theme.svelte.ts` — dark/light theme.
+- UI libs: bits-ui (replaces Radix), lucide-svelte, svelte-sonner.
+- HTTP: `lib/tauri.ts` (Tauri IPC client, framework-agnostic). `lib/stream-chat.ts` (SSE streaming, framework-agnostic).
+- i18n: `lib/i18n/` — i18next with 7 languages.
+- **Not yet ported**: auth pages, billing UI, landing page, plan store → see React legacy.
+
+### Frontend — React 19 (legacy: `frontend/`)
+- Entry: `frontend/src/index.tsx` — `AppGate` handles web vs Tauri routing.
+- Contains billing/auth pages not yet ported to Svelte:
   - `features/auth/` — LoginPage, RegisterPage, ResetPasswordPage, PrivateRoute.
   - `features/billing/` — PricingPage, BillingSuccess, UpgradeModal, SubscriptionStatus, BillingPortal.
-  - `features/chat/` — chat interface, SSE message streaming.
-  - `features/landing/` — LandingPage (web only, public route).
-  - `features/projects/` — project CRUD.
-  - `features/profile/` — user settings.
-  - `features/info/` — UserGuide.
-- UI components: `components/ui/` (Radix primitives), `components/assistant-ui/` (AI thread/message), `components/common/` (Modal, Dropdown, ErrorBoundary, LockScreen).
-- State:
-  - Zustand `stores/appStore.ts` persists `selectedOption` and `projectMode` to localStorage.
-  - Zustand `stores/planStore.ts` holds subscription data, plan limits, and upgrade modal state. Calls `GET /api/billing/subscription` on mount (web only; Tauri defaults to `pro`).
-  - User session via React Context (`UserContext.tsx`).
-- HTTP: `apiClient.ts` (axios with `withCredentials: true` for cookie auth). Streaming chat uses `fetch` with manual SSE parsing (not EventSource, to support custom headers).
-- Auth guard: `PrivateRoute.tsx` checks `userData.id` (Context) or `localStorage('user').id`; redirects to `/login` if unauthenticated. Dev bypass: `VITE_DEV_BYPASS_AUTH=true`.
+  - `features/landing/` — LandingPage (web only).
+- State: Zustand `stores/appStore.ts`, `stores/planStore.ts`. User session via React Context (`UserContext.tsx`).
+- HTTP: `apiClient.ts` (axios with `withCredentials: true`).
+- Auth guard: `PrivateRoute.tsx` — redirects to `/login` if unauthenticated.
 
 ### Backend
 - Entry: `backend/app.ts` — middleware stack, route registration, hourly token cleanup.
@@ -184,7 +203,14 @@ POST  /api/billing/activate-license          auth required
 
 ### Frontend routes
 
-Web:
+Svelte (primary):
+```
+/                  ChatZone.svelte           main chat page
+/projects          projects/+page.svelte     project management
+/guide             guide/+page.svelte        user guide
+```
+
+React (legacy — auth/billing pages):
 ```
 /                  LandingPage        public
 /login             LoginPage          public
@@ -199,10 +225,9 @@ Web:
 
 Tauri (desktop — behind biometric lock, no auth pages):
 ```
-/ or /chat         App
-/projects          App
-/guide             UserGuide
-/pricing           PricingPage  (Stripe disabled in Tauri context)
+/ or /chat         ChatZone.svelte / App
+/projects          projects/ / App
+/guide             guide/ / UserGuide
 ```
 
 ## Important patterns

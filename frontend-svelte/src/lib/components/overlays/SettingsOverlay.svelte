@@ -505,26 +505,29 @@
 
         <!-- Langue -->
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <Globe class="h-5 w-5 text-blue-400" />
-              <div>
-                <p class="text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('language')}</p>
-                <p class="text-xs text-gray-500 dark:text-muted-foreground">{i18n.t('interfaceLanguage')}</p>
-              </div>
+          <div class="flex items-center gap-3 mb-4">
+            <Globe class="h-5 w-5 text-blue-400" />
+            <div>
+              <p class="text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('language')}</p>
+              <p class="text-xs text-gray-500 dark:text-muted-foreground">{i18n.t('languageName')}</p>
             </div>
-            <div class="flex gap-2">
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {#each [
+              { code: 'fr', label: 'FR' },
+              { code: 'en', label: 'EN' },
+              { code: 'es', label: 'ES' },
+              { code: 'de', label: 'DE' },
+              { code: 'pt', label: 'PT' },
+              { code: 'ja', label: 'JA' },
+              { code: 'ko', label: 'KO' },
+            ] as lang}
               <button
-                class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {i18n.lang === 'fr' ? 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200' : 'border-gray-200 bg-gray-100 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:text-foreground'}"
+                class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {i18n.lang === lang.code ? 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200' : 'border-gray-200 bg-gray-100 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:text-foreground'}"
                 type="button"
-                onclick={() => i18n.setLang('fr')}
-              >FR</button>
-              <button
-                class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {i18n.lang === 'en' ? 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-200' : 'border-gray-200 bg-gray-100 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:border-border dark:bg-muted dark:text-muted-foreground dark:hover:text-foreground'}"
-                type="button"
-                onclick={() => i18n.setLang('en')}
-              >EN</button>
-            </div>
+                onclick={() => i18n.setLang(lang.code)}
+              >{lang.label}</button>
+            {/each}
           </div>
         </div>
       </section>

@@ -3,6 +3,11 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import fr from './locales/fr';
 import en from './locales/en';
+import es from './locales/es';
+import de from './locales/de';
+import pt from './locales/pt';
+import ja from './locales/ja';
+import ko from './locales/ko';
 
 i18n
   .use(LanguageDetector)
@@ -11,6 +16,11 @@ i18n
     resources: {
       fr,
       en,
+      es,
+      de,
+      pt,
+      ja,
+      ko,
     },
     fallbackLng: 'fr',
     defaultNS: 'common',

@@ -33,6 +33,7 @@ export default {
   themeLight: 'Light',
   language: 'Language',
   interfaceLanguage: 'Interface in English',
+  languageName: 'English',
 
   // auth
   logout: 'Log out',

@@ -33,6 +33,7 @@ export default {
   themeLight: 'Clair',
   language: 'Langue',
   interfaceLanguage: 'Interface en français',
+  languageName: 'Français',
 
   // auth
   logout: 'Déconnexion',

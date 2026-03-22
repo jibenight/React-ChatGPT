@@ -202,19 +202,29 @@ function Aside() {
             </button>
           </div>
           <div className='my-2.5 border-t border-gray-200 dark:border-border' />
-          <div className='flex items-center justify-between'>
+          <div className='flex flex-col gap-1.5'>
             <span className='text-xs font-semibold text-gray-700 dark:text-foreground'>
-              {i18n.language?.startsWith('fr') ? 'Français' : 'English'}
+              {t('common:language')} — {({ fr: 'Français', en: 'English', es: 'Español', de: 'Deutsch', pt: 'Português', ja: '日本語', ko: '한국어' })[i18n.language?.slice(0, 2)] ?? i18n.language}
             </span>
-            <button
-              type='button'
-              onClick={() =>
-                i18n.changeLanguage(i18n.language?.startsWith('fr') ? 'en' : 'fr')
-              }
-              className='rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-gray-600 transition hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
-            >
-              {i18n.language?.startsWith('fr') ? 'EN' : 'FR'}
-            </button>
+            <div className='flex flex-wrap gap-1'>
+              {(['fr', 'en', 'es', 'de', 'pt', 'ja', 'ko'] as const).map((lang) => {
+                const isActive = i18n.language?.startsWith(lang);
+                return (
+                  <button
+                    key={lang}
+                    type='button'
+                    onClick={() => i18n.changeLanguage(lang)}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide transition ${
+                      isActive
+                        ? 'border-teal-400/60 bg-teal-500/20 text-teal-700 dark:border-teal-400/40 dark:text-teal-300'
+                        : 'border-gray-300 bg-gray-100 text-gray-600 hover:border-gray-400 hover:text-gray-900 dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border dark:hover:text-foreground'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           {isTauri && (
             <>

@@ -1,10 +1,15 @@
 import fr from './locales/fr';
 import en from './locales/en';
+import es from './locales/es';
+import de from './locales/de';
+import pt from './locales/pt';
+import ja from './locales/ja';
+import ko from './locales/ko';
 
 type Translations = typeof fr;
 type TranslationKey = keyof Translations;
 
-const locales: Record<string, Translations> = { fr, en };
+const locales: Record<string, Translations> = { fr, en, es, de, pt, ja, ko };
 
 const STORAGE_KEY = 'i18n-lang';
 
@@ -14,7 +19,14 @@ function detectLanguage(): string {
     if (stored && locales[stored]) return stored;
   } catch {}
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'fr';
-  return nav.startsWith('fr') ? 'fr' : nav.startsWith('en') ? 'en' : 'fr';
+  if (nav.startsWith('fr')) return 'fr';
+  if (nav.startsWith('en')) return 'en';
+  if (nav.startsWith('es')) return 'es';
+  if (nav.startsWith('de')) return 'de';
+  if (nav.startsWith('pt')) return 'pt';
+  if (nav.startsWith('ja')) return 'ja';
+  if (nav.startsWith('ko')) return 'ko';
+  return 'fr';
 }
 
 let _lang = $state(detectLanguage());

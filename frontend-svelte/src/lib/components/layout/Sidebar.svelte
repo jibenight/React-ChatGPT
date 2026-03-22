@@ -91,7 +91,7 @@
 </script>
 
 <aside
-  class="relative flex shrink-0 flex-col overflow-hidden rounded-2xl bg-white text-gray-900 transition-all duration-300 ease-in-out dark:bg-sidebar dark:text-foreground"
+  class="relative flex shrink-0 flex-col overflow-hidden rounded-2xl bg-white text-gray-900 transition-all duration-300 ease-in-out dark:border dark:border-border dark:bg-sidebar dark:text-foreground"
   class:w-80={!appStore.sidebarCollapsed}
   class:w-0={appStore.sidebarCollapsed}
   class:opacity-0={appStore.sidebarCollapsed}

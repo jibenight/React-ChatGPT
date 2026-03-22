@@ -49,20 +49,20 @@
     />
 
     <!-- Page content (always mounted, hidden when overlay is active) -->
-    <div class="flex-1 min-h-0 relative rounded-2xl bg-white overflow-hidden dark:bg-background" class:hidden={showOverlay}>
+    <div class="flex-1 min-h-0 relative rounded-2xl bg-white overflow-hidden dark:border dark:border-border dark:bg-background" class:hidden={showOverlay}>
       {@render children()}
     </div>
 
     <!-- Profile overlay (replaces chat zone visually) -->
     {#if appStore.profil}
-      <div class="flex-1 min-h-0 relative rounded-2xl bg-white overflow-hidden dark:bg-background">
+      <div class="flex-1 min-h-0 relative rounded-2xl bg-white overflow-hidden dark:border dark:border-border dark:bg-card">
         <ProfileOverlay onClose={() => appStore.setProfil(false)} />
       </div>
     {/if}
 
     <!-- Settings overlay (replaces chat zone visually) -->
     {#if appStore.settingsOpen}
-      <div class="flex-1 min-h-0 relative rounded-2xl bg-white overflow-hidden dark:bg-background">
+      <div class="flex-1 min-h-0 relative rounded-2xl bg-white overflow-hidden dark:border dark:border-border dark:bg-card">
         <SettingsOverlay onClose={() => appStore.setSettingsOpen(false)} />
       </div>
     {/if}

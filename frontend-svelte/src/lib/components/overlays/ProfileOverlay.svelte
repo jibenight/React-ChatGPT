@@ -179,7 +179,7 @@
 <div class="flex h-full overflow-hidden">
   <!-- ── Navigation gauche ── -->
   <nav
-    class="flex w-52 shrink-0 flex-col border-r border-gray-100 bg-gray-50/80 px-3 py-5 dark:border-white/[0.06] dark:bg-slate-900/60"
+    class="flex w-52 shrink-0 flex-col border-r border-gray-100 bg-gray-50/80 px-3 py-5 dark:border-white/10 dark:bg-white/[0.04]"
     aria-label={i18n.t('profileNav')}
   >
     <!-- Profile card mini -->
@@ -249,7 +249,7 @@
         </header>
 
         <!-- Profile card -->
-        <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <div class="flex items-center gap-5">
             <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-teal-500 text-xl font-semibold text-white shadow">
               {initials || 'U'}
@@ -262,7 +262,7 @@
         </div>
 
         <!-- Edit username -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <h4 class="mb-4 text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('editProfile')}</h4>
           <div class="flex gap-3">
             <input
@@ -283,7 +283,7 @@
         </div>
 
         <!-- API Status overview -->
-        <div class="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <div class="flex items-center justify-between mb-4">
             <h4 class="text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('providerStatus')}</h4>
             <span class="text-xs text-gray-400 dark:text-muted-foreground">{i18n.t('providerStatusCount', { count: enabledCount })}</span>
@@ -318,7 +318,7 @@
         <div class="space-y-3">
           {#each apiProviders as provider}
             {@const enabled = (apiStatus as any)[provider.key]}
-            <div class="rounded-2xl border bg-white p-5 shadow-sm transition dark:bg-card/60 {enabled
+            <div class="rounded-2xl border bg-white p-5 shadow-sm transition dark:bg-white/[0.06] {enabled
               ? 'border-emerald-200 dark:border-emerald-500/30'
               : 'border-gray-200 dark:border-border'}">
               <div class="flex items-center justify-between mb-3">
@@ -364,7 +364,7 @@
           <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('dangerZoneDescription')}</p>
         </header>
 
-        <div class="rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/40 dark:bg-card/60">
+        <div class="rounded-2xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-500/40 dark:bg-white/[0.06]">
           <p class="mb-5 text-sm text-gray-600 dark:text-muted-foreground">
             {i18n.t('dangerZoneDetail')}
           </p>

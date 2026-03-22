@@ -52,7 +52,7 @@
   let showOverlay = $derived(appStore.profil || appStore.settingsOpen);
 </script>
 
-<header class="z-10 shrink-0 rounded-2xl bg-white dark:bg-card">
+<header class="z-10 shrink-0 rounded-2xl bg-white dark:border dark:border-border dark:bg-card">
   <div class="flex w-full items-center gap-2 px-4 py-3">
     <!-- Sidebar toggle (visible when collapsed) -->
     {#if appStore.sidebarCollapsed}

@@ -190,7 +190,7 @@
 <div class="flex h-full overflow-hidden">
   <!-- ── Navigation gauche ── -->
   <nav
-    class="flex w-52 shrink-0 flex-col border-r border-gray-100 bg-gray-50/80 px-3 py-5 dark:border-white/[0.06] dark:bg-slate-900/60"
+    class="flex w-52 shrink-0 flex-col border-r border-gray-100 bg-gray-50/80 px-3 py-5 dark:border-white/10 dark:bg-white/[0.04]"
     aria-label={i18n.t('navSettings')}
   >
     <div class="mb-5 px-2">
@@ -244,7 +244,7 @@
         </header>
 
         <!-- Provider pills -->
-        <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <p class="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-gray-400 dark:text-muted-foreground">{i18n.t('currentProvider')}</p>
           <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label={i18n.t('aiProvider')}>
             {#each providerModels as p}
@@ -271,7 +271,7 @@
         </div>
 
         <!-- Model cards -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <p class="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-gray-400 dark:text-muted-foreground">{i18n.t('selectedModel')}</p>
           <div class="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label={i18n.t('selectedModel')}>
             {#each currentModels as m}
@@ -311,7 +311,7 @@
             <h3 id="section-projects" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">{i18n.t('projects')}</h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('manageProjectContext')}</p>
           </div>
-          <div class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm dark:border-border dark:bg-card/60">
+          <div class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm dark:border-border dark:bg-white/[0.06]">
             <span class="text-sm font-medium text-gray-700 dark:text-foreground">{i18n.t('projectMode')}</span>
             <button
               type="button"
@@ -329,7 +329,7 @@
         <!-- Master-detail -->
         <div class="grid grid-cols-[1fr_1.5fr] gap-5 items-start">
           <!-- Liste projets -->
-          <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-border dark:bg-card/60">
+          <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-border dark:bg-white/[0.06]">
             <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-border">
               <p class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-400 dark:text-muted-foreground">{i18n.t('projects')}</p>
               <button
@@ -385,7 +385,7 @@
           </div>
 
           <!-- Formulaire détail / création -->
-          <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+          <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
             {#if showNewProject}
               <div class="mb-4 flex items-center justify-between">
                 <h4 class="text-sm font-semibold text-gray-800 dark:text-foreground">{i18n.t('newProject')}</h4>
@@ -455,7 +455,7 @@
         </header>
 
         <!-- Thème -->
-        <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="mb-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <p class="mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-gray-400 dark:text-muted-foreground">{i18n.t('customizeTheme')}</p>
           <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-label={i18n.t('appearance')}>
             <!-- Clair -->
@@ -504,7 +504,7 @@
         </div>
 
         <!-- Langue -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <div class="flex items-center gap-3 mb-4">
             <Globe class="h-5 w-5 text-blue-400" />
             <div>
@@ -541,7 +541,7 @@
           <h3 id="section-lock" class="mt-1 text-xl font-semibold text-gray-900 dark:text-foreground">{i18n.t('lockScreenHeader')}</h3>
           <p class="mt-1 text-sm text-gray-500 dark:text-muted-foreground">{i18n.t('lockScreenSubtitle')}</p>
         </header>
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card/60">
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-border dark:bg-white/[0.06]">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 dark:bg-muted">

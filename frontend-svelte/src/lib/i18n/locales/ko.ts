@@ -296,7 +296,7 @@ export default {
   passwordRequired: '비밀번호가 필요합니다.',
   confirmPassword: '비밀번호 확인',
   usernameLabel: '사용자 이름',
-  usernamePlaceholder: 'your_handle',
+  usernamePlaceholder: 'hong.gildong',
   usernameRequired: '사용자 이름이 필요합니다.',
   forgotPassword: '비밀번호를 잊으셨나요?',
   alreadyAccount: '이미 계정이 있으신가요?',
@@ -310,6 +310,10 @@ export default {
   emailTaken: '이 이메일 주소는 이미 사용 중입니다.',
   passwordTooShort: '비밀번호는 최소 8자 이상이어야 합니다.',
   passwordMismatch: '비밀번호가 일치하지 않습니다.',
+  passwordWeak: '비밀번호에는 대문자, 소문자, 숫자가 각각 1개 이상 포함되어야 합니다.',
+  oauthDenied: '인증이 거부되었습니다.',
+  oauthFailed: '인증에 실패했습니다. 다시 시도해 주세요.',
+  oauthEmailConflict: '이 이메일은 이미 다른 계정에 연결되어 있습니다.',
   resetPasswordRequest: '비밀번호 재설정',
   resetPasswordConfirm: '새 비밀번호',
   resetPassword: '재설정',
@@ -317,6 +321,10 @@ export default {
   loginSuccess: '비밀번호가 재설정되었습니다!',
   login: '로그인',
   submit: '전송',
+  orContinueWith: '또는 다음으로 계속',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
   heroTitle: '모든 AI 모델을 한 곳에서',
   heroSubtitle: 'OpenAI, Gemini, Claude, Mistral, Groq를 연결하세요. 대화를 프로젝트로 구성하고 한 번의 클릭으로 모델을 전환하세요.',
   heroCta: '무료로 시작하기',
@@ -629,4 +637,12 @@ export default {
   changelogV10Item3: '기록이 있는 대화 스레드',
   changelogV10Item4: 'API 키의 AES-256 암호화',
   changelogV10Item5: '확인이 있는 이메일 인증',
+
+  // search results
+  searchResultCount: '{count}개 결과',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: '일일 {count}개 메시지 제한에 도달했습니다.',
+  planLimitProjects: '프로젝트 {count}개 제한에 도달했습니다.',
+  planLimitThreads: '대화 {count}개 제한에 도달했습니다.',
 } as const;

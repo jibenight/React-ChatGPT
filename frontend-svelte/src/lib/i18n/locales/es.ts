@@ -296,7 +296,7 @@ export default {
   passwordRequired: 'La contraseña es obligatoria.',
   confirmPassword: 'Confirmar contraseña',
   usernameLabel: 'Nombre de usuario',
-  usernamePlaceholder: 'tu_usuario',
+  usernamePlaceholder: 'juan.garcia',
   usernameRequired: 'El nombre de usuario es obligatorio.',
   forgotPassword: '¿Olvidaste tu contraseña?',
   alreadyAccount: '¿Ya tienes una cuenta?',
@@ -310,6 +310,10 @@ export default {
   emailTaken: 'Esta dirección de correo ya está en uso.',
   passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
   passwordMismatch: 'Las contraseñas no coinciden.',
+  passwordWeak: 'La contraseña debe contener al menos una mayúscula, una minúscula y un dígito.',
+  oauthDenied: 'La autorización fue denegada.',
+  oauthFailed: 'La autenticación falló, inténtalo de nuevo.',
+  oauthEmailConflict: 'Este correo electrónico ya está asociado a otra cuenta.',
   resetPasswordRequest: 'Restablecer contraseña',
   resetPasswordConfirm: 'Nueva contraseña',
   resetPassword: 'Restablecer',
@@ -317,6 +321,10 @@ export default {
   loginSuccess: '¡Contraseña restablecida!',
   login: 'Iniciar sesión',
   submit: 'Enviar',
+  orContinueWith: 'O continuar con',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
   heroTitle: 'Todos tus modelos de IA en un solo lugar',
   heroSubtitle: 'Conecta OpenAI, Gemini, Claude, Mistral y Groq. Organiza tus conversaciones en proyectos y cambia de modelo en un clic.',
   heroCta: 'Empezar gratis',
@@ -629,4 +637,12 @@ export default {
   changelogV10Item3: 'Hilos de conversación con historial',
   changelogV10Item4: 'Cifrado AES-256 de claves API',
   changelogV10Item5: 'Autenticación por correo electrónico con verificación',
+
+  // search results
+  searchResultCount: '{count} resultado(s)',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: 'Límite de {count} mensajes por día alcanzado.',
+  planLimitProjects: 'Límite de {count} proyectos alcanzado.',
+  planLimitThreads: 'Límite de {count} conversaciones alcanzado.',
 } as const;

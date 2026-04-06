@@ -6,7 +6,28 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-test:
+  backend-rust:
+    name: Backend (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend-rust
+      - name: Check formatting
+        run: cd backend-rust && cargo fmt -- --check
+      - name: Clippy
+        run: cd backend-rust && cargo clippy -- -D warnings
+      - name: Run tests
+        run: cd backend-rust && cargo test
+      - name: Build release
+        run: cd backend-rust && cargo build --release
+
+  frontend-svelte:
+    name: Frontend (Svelte)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,19 +35,12 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - name: Install backend dependencies
-        run: cd backend && npm ci --legacy-peer-deps
-      - name: Install frontend dependencies
-        run: cd frontend && npm ci --legacy-peer-deps
-      - name: Lint backend
-        run: cd backend && npx eslint . --quiet
-      - name: Lint frontend
-        run: cd frontend && npx eslint src --quiet
-      - name: Test backend
-        run: cd backend && npx vitest run
-      - name: Test frontend
-        run: cd frontend && npx vitest run
-      - name: Build backend
-        run: cd backend && npm run build
-      - name: Build frontend
-        run: cd frontend && npm run build
+          cache-dependency-path: frontend-svelte/package-lock.json
+      - name: Install dependencies
+        run: cd frontend-svelte && npm ci
+      - name: Svelte check
+        run: cd frontend-svelte && npm run check
+      - name: Lint
+        run: cd frontend-svelte && npm run lint
+      - name: Build
+        run: cd frontend-svelte && npm run build

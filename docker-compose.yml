@@ -1,30 +1,32 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: ./backend-rust
       dockerfile: Dockerfile
     ports:
       - '3001:3001'
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     env_file:
-      - ./backend/.env
+      - ./backend-rust/.env
+    environment:
+      DB_CLIENT: postgres
+      DATABASE_URL: postgres://${POSTGRES_USER:-chatgpt}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-chatgpt}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend-svelte
       dockerfile: Dockerfile
     ports:
-      - '5173:5173'
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    env_file:
-      - ./frontend/.env
+      - '4173:4173'
     depends_on:
       - backend
     restart: unless-stopped
@@ -32,14 +34,19 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: chatgpt
-      POSTGRES_PASSWORD: chatgpt
-      POSTGRES_DB: chatgpt
+      POSTGRES_USER: ${POSTGRES_USER:-chatgpt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-chatgpt}
     ports:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-chatgpt}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

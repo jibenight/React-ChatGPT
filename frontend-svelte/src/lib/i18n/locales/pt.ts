@@ -296,7 +296,7 @@ export default {
   passwordRequired: 'A senha é obrigatória.',
   confirmPassword: 'Confirmar senha',
   usernameLabel: 'Nome de usuário',
-  usernamePlaceholder: 'seu_usuario',
+  usernamePlaceholder: 'joao.silva',
   usernameRequired: 'O nome de usuário é obrigatório.',
   forgotPassword: 'Esqueceu a senha?',
   alreadyAccount: 'Já tem uma conta?',
@@ -310,6 +310,10 @@ export default {
   emailTaken: 'Este endereço de e-mail já está em uso.',
   passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
   passwordMismatch: 'As senhas não coincidem.',
+  passwordWeak: 'A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um dígito.',
+  oauthDenied: 'A autorização foi negada.',
+  oauthFailed: 'A autenticação falhou, tente novamente.',
+  oauthEmailConflict: 'Este e-mail já está associado a outra conta.',
   resetPasswordRequest: 'Redefinir senha',
   resetPasswordConfirm: 'Nova senha',
   resetPassword: 'Redefinir',
@@ -317,6 +321,10 @@ export default {
   loginSuccess: 'Senha redefinida!',
   login: 'Entrar',
   submit: 'Enviar',
+  orContinueWith: 'Ou continuar com',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
   heroTitle: 'Todos os seus modelos de IA em um só lugar',
   heroSubtitle: 'Conecte OpenAI, Gemini, Claude, Mistral e Groq. Organize suas conversas em projetos.',
   heroCta: 'Começar gratuitamente',
@@ -629,4 +637,12 @@ export default {
   changelogV10Item3: 'Fios de conversa com histórico',
   changelogV10Item4: 'Cifração AES-256 das chaves API',
   changelogV10Item5: 'Autenticação por e-mail com verificação',
+
+  // search results
+  searchResultCount: '{count} resultado(s)',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: 'Limite de {count} mensagens por dia atingido.',
+  planLimitProjects: 'Limite de {count} projetos atingido.',
+  planLimitThreads: 'Limite de {count} conversas atingido.',
 } as const;

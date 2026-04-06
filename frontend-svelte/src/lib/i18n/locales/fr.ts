@@ -224,7 +224,7 @@ export default {
   passwordRequired: 'Le mot de passe est requis.',
   confirmPassword: 'Confirmer le mot de passe',
   usernameLabel: 'Nom d\'utilisateur',
-  usernamePlaceholder: 'votre_pseudo',
+  usernamePlaceholder: 'jean.dupont',
   usernameRequired: 'Le nom d\'utilisateur est requis.',
   forgotPassword: 'Mot de passe oublié ?',
   alreadyAccount: 'Déjà un compte ?',
@@ -238,6 +238,10 @@ export default {
   emailTaken: 'Cette adresse e-mail est déjà utilisée.',
   passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères.',
   passwordMismatch: 'Les mots de passe ne correspondent pas.',
+  passwordWeak: 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre.',
+  oauthDenied: 'L\'autorisation a été refusée.',
+  oauthFailed: 'L\'authentification a échoué, veuillez réessayer.',
+  oauthEmailConflict: 'Cet e-mail est déjà associé à un autre compte.',
   resetPasswordRequest: 'Réinitialiser le mot de passe',
   resetPasswordConfirm: 'Nouveau mot de passe',
   resetPassword: 'Réinitialisation',
@@ -245,6 +249,10 @@ export default {
   loginSuccess: 'Mot de passe réinitialisé !',
   login: 'Se connecter',
   submit: 'Envoyer',
+  orContinueWith: 'Ou continuer avec',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
 
   // landing
   heroTitle: 'Tous vos modèles IA en un seul endroit',
@@ -645,4 +653,12 @@ export default {
   changelogV10Item3: 'Threads de conversation avec historique',
   changelogV10Item4: 'Chiffrement AES-256 des clés API',
   changelogV10Item5: 'Authentification par e-mail avec vérification',
+
+  // search results
+  searchResultCount: '{count} résultat(s)',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: 'Limite de {count} messages par jour atteinte.',
+  planLimitProjects: 'Limite de {count} projets atteinte.',
+  planLimitThreads: 'Limite de {count} conversations atteinte.',
 } as const;

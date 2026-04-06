@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from '$lib/api';
+import { i18n } from '$lib/i18n';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -154,19 +155,19 @@ export const planStore = {
   checkAndPrompt(feature: string): boolean {
     if (feature === 'message' && !this.canSendMessage()) {
       this.openUpgrade(
-        `Limite de ${_limits.messagesPerDay ?? 0} messages par jour atteinte.`,
+        i18n.t('planLimitMessages', { count: String(_limits.messagesPerDay ?? 0) }),
       );
       return false;
     }
     if (feature === 'project' && !this.canCreateProject()) {
       this.openUpgrade(
-        `Limite de ${_limits.projectsMax ?? 0} projets atteinte.`,
+        i18n.t('planLimitProjects', { count: String(_limits.projectsMax ?? 0) }),
       );
       return false;
     }
     if (feature === 'thread' && !this.canCreateThread()) {
       this.openUpgrade(
-        `Limite de ${_limits.threadsMax ?? 0} conversations atteinte.`,
+        i18n.t('planLimitThreads', { count: String(_limits.threadsMax ?? 0) }),
       );
       return false;
     }
@@ -174,12 +175,20 @@ export const planStore = {
   },
 
   async createCheckoutSession(plan: string, interval: 'monthly' | 'yearly'): Promise<string | null> {
-    const data: any = await apiPost('/api/billing/create-checkout-session', { plan, interval });
-    return data?.url ?? null;
+    try {
+      const data: any = await apiPost('/api/billing/create-checkout-session', { plan, interval });
+      return data?.url ?? null;
+    } catch {
+      return null;
+    }
   },
 
   async createPortalSession(): Promise<string | null> {
-    const data: any = await apiPost('/api/billing/create-portal-session');
-    return data?.url ?? null;
+    try {
+      const data: any = await apiPost('/api/billing/create-portal-session');
+      return data?.url ?? null;
+    } catch {
+      return null;
+    }
   },
 };

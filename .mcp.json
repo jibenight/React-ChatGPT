@@ -1,0 +1,22 @@
+{
+	"mcpServers": {
+		"svelte": {
+			"type": "stdio",
+			"command": "npx",
+			"env": {
+
+			},
+			"args": [
+				"-y",
+				"@sveltejs/mcp"
+			]
+		},
+		"chrome-devtools": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"chrome-devtools-mcp@latest"
+			]
+		}
+	}
+}

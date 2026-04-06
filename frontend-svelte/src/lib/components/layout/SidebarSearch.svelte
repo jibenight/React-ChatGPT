@@ -12,7 +12,7 @@
     role: string;
     content: string;
     provider: string | null;
-    created_at: string;
+    created_at: string | null;
     snippet: string;
   }
 
@@ -119,7 +119,7 @@
         </p>
       {:else}
         <p class="border-b border-gray-100 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-gray-400 dark:border-border dark:text-muted-foreground">
-          {total} résultat{total > 1 ? 's' : ''}
+          {i18n.t('searchResultCount', { count: String(total) })}
         </p>
         {#each results as result (result.id)}
           <button

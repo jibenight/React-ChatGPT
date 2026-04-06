@@ -224,7 +224,7 @@ export default {
   passwordRequired: 'Password is required.',
   confirmPassword: 'Confirm password',
   usernameLabel: 'Username',
-  usernamePlaceholder: 'your_handle',
+  usernamePlaceholder: 'john.doe',
   usernameRequired: 'Username is required.',
   forgotPassword: 'Forgot password?',
   alreadyAccount: 'Already have an account?',
@@ -238,6 +238,10 @@ export default {
   emailTaken: 'This email address is already taken.',
   passwordTooShort: 'Password must be at least 8 characters.',
   passwordMismatch: 'Passwords do not match.',
+  passwordWeak: 'Password must contain at least one uppercase letter, one lowercase letter and one digit.',
+  oauthDenied: 'Authorization was denied.',
+  oauthFailed: 'Authentication failed, please try again.',
+  oauthEmailConflict: 'This email is already associated with another account.',
   resetPasswordRequest: 'Reset password',
   resetPasswordConfirm: 'New password',
   resetPassword: 'Reset',
@@ -245,6 +249,10 @@ export default {
   loginSuccess: 'Password reset!',
   login: 'Sign in',
   submit: 'Send',
+  orContinueWith: 'Or continue with',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
 
   // landing
   heroTitle: 'All your AI models in one place',
@@ -645,4 +653,12 @@ export default {
   changelogV10Item3: 'Conversation threads with history',
   changelogV10Item4: 'AES-256 encryption of API keys',
   changelogV10Item5: 'Email authentication with verification',
+
+  // search results
+  searchResultCount: '{count} result(s)',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: 'Daily limit of {count} messages reached.',
+  planLimitProjects: 'Project limit of {count} reached.',
+  planLimitThreads: 'Conversation limit of {count} reached.',
 } as const;

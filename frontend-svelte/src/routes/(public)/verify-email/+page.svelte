@@ -4,8 +4,7 @@
   import { goto } from '$app/navigation';
   import { i18n } from '$lib/i18n/i18n.svelte';
   import MatrixBackground from '$lib/components/common/MatrixBackground.svelte';
-
-  const API_URL = import.meta.env.VITE_API_URL || '';
+  import { API_URL } from '$lib/api';
 
   type Status = 'loading' | 'success' | 'error';
 

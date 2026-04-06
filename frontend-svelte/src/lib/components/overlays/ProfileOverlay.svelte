@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { X, User, KeyRound, ShieldAlert, CreditCard } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
+  import { X, User, KeyRound, ShieldAlert, CreditCard, LogOut } from 'lucide-svelte';
   import * as tauri from '$lib/tauri';
+  import { logout } from '$lib/api';
+  import { authStore } from '$lib/stores/auth.svelte';
   import { userStore } from '$lib/stores/user.svelte';
   import SubscriptionStatus from '$lib/components/billing/SubscriptionStatus.svelte';
   import { i18n } from '$lib/i18n';
@@ -163,6 +166,24 @@
     }
   }
 
+  let isLoggingOut = $state(false);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+    try {
+      if (!authStore.isTauri) {
+        await logout();
+      }
+      authStore.onLogout();
+      onClose();
+      await goto('/login');
+    } catch (err) {
+      console.error(err);
+      isLoggingOut = false;
+    }
+  }
+
   function openDeleteConfirm(provider: string) {
     confirmDelete = { open: true, provider };
   }
@@ -216,7 +237,16 @@
       {/each}
     </ul>
 
-    <div class="mt-auto pt-4">
+    <div class="mt-auto pt-4 space-y-1">
+      <button
+        type="button"
+        onclick={handleLogout}
+        disabled={isLoggingOut}
+        class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+      >
+        <LogOut class="h-4 w-4" />
+        {i18n.t('logout')}
+      </button>
       <button
         type="button"
         onclick={onClose}

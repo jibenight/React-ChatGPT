@@ -296,7 +296,7 @@ export default {
   passwordRequired: 'パスワードは必須です。',
   confirmPassword: 'パスワードを確認',
   usernameLabel: 'ユーザー名',
-  usernamePlaceholder: 'your_handle',
+  usernamePlaceholder: 'taro.yamada',
   usernameRequired: 'ユーザー名は必須です。',
   forgotPassword: 'パスワードをお忘れですか？',
   alreadyAccount: 'すでにアカウントをお持ちですか？',
@@ -310,6 +310,10 @@ export default {
   emailTaken: 'このメールアドレスはすでに使用されています。',
   passwordTooShort: 'パスワードは8文字以上必要です。',
   passwordMismatch: 'パスワードが一致しません。',
+  passwordWeak: 'パスワードには大文字、小文字、数字をそれぞれ1文字以上含める必要があります。',
+  oauthDenied: '認証が拒否されました。',
+  oauthFailed: '認証に失敗しました。もう一度お試しください。',
+  oauthEmailConflict: 'このメールアドレスは既に別のアカウントに関連付けられています。',
   resetPasswordRequest: 'パスワードをリセット',
   resetPasswordConfirm: '新しいパスワード',
   resetPassword: 'リセット',
@@ -317,6 +321,10 @@ export default {
   loginSuccess: 'パスワードがリセットされました！',
   login: 'ログイン',
   submit: '送信',
+  orContinueWith: 'または以下で続行',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
   heroTitle: 'すべてのAIモデルを一か所に',
   heroSubtitle: 'OpenAI、Gemini、Claude、Mistral、Groqを接続。会話をプロジェクトに整理し、ワンクリックでモデルを切り替え。',
   heroCta: '無料で始める',
@@ -629,4 +637,12 @@ export default {
   changelogV10Item3: '履歴付き会話スレッド',
   changelogV10Item4: 'APIキーのAES-256暗号化',
   changelogV10Item5: '検証付きメール認証',
+
+  // search results
+  searchResultCount: '{count} 件の結果',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: '1日{count}メッセージの上限に達しました。',
+  planLimitProjects: 'プロジェクト上限{count}に達しました。',
+  planLimitThreads: '会話上限{count}に達しました。',
 } as const;

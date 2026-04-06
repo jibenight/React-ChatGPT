@@ -6,8 +6,9 @@ import pt from './locales/pt';
 import ja from './locales/ja';
 import ko from './locales/ko';
 
-type Translations = typeof fr;
-export type TranslationKey = keyof Translations;
+type TranslationMap = typeof fr;
+type Translations = { [K in keyof TranslationMap]: string };
+export type TranslationKey = keyof TranslationMap;
 
 const locales: Record<string, Translations> = { fr, en, es, de, pt, ja, ko };
 

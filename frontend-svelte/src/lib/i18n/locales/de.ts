@@ -308,7 +308,7 @@ export default {
   passwordRequired: 'Passwort ist erforderlich.',
   confirmPassword: 'Passwort bestätigen',
   usernameLabel: 'Benutzername',
-  usernamePlaceholder: 'dein_name',
+  usernamePlaceholder: 'max.mustermann',
   usernameRequired: 'Benutzername ist erforderlich.',
   forgotPassword: 'Passwort vergessen?',
   alreadyAccount: 'Bereits ein Konto?',
@@ -322,6 +322,10 @@ export default {
   emailTaken: 'Diese E-Mail-Adresse wird bereits verwendet.',
   passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen lang sein.',
   passwordMismatch: 'Die Passwörter stimmen nicht überein.',
+  passwordWeak: 'Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Ziffer enthalten.',
+  oauthDenied: 'Die Autorisierung wurde abgelehnt.',
+  oauthFailed: 'Authentifizierung fehlgeschlagen, bitte versuchen Sie es erneut.',
+  oauthEmailConflict: 'Diese E-Mail-Adresse ist bereits mit einem anderen Konto verknüpft.',
   resetPasswordRequest: 'Passwort zurücksetzen',
   resetPasswordConfirm: 'Neues Passwort',
   resetPassword: 'Zurücksetzen',
@@ -329,6 +333,10 @@ export default {
   loginSuccess: 'Passwort zurückgesetzt!',
   login: 'Anmelden',
   submit: 'Senden',
+  orContinueWith: 'Oder fortfahren mit',
+  continueWithGoogle: 'Google',
+  continueWithGithub: 'GitHub',
+  continueWithApple: 'Apple',
   heroTitle: 'Alle deine KI-Modelle an einem Ort',
   heroSubtitle: 'Verbinde OpenAI, Gemini, Claude, Mistral und Groq. Organisiere Gespräche in Projekten.',
   heroCta: 'Kostenlos starten',
@@ -629,4 +637,12 @@ export default {
   changelogV10Item3: 'Gesprächs-Threads mit Verlauf',
   changelogV10Item4: 'AES-256-Verschlüsselung der API-Schlüssel',
   changelogV10Item5: 'E-Mail-Authentifizierung mit Verifizierung',
+
+  // search results
+  searchResultCount: '{count} Ergebnis(se)',
+
+  // plan limits (checkAndPrompt)
+  planLimitMessages: 'Tageslimit von {count} Nachrichten erreicht.',
+  planLimitProjects: 'Projektlimit von {count} erreicht.',
+  planLimitThreads: 'Konversationslimit von {count} erreicht.',
 } as const;
